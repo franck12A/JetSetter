@@ -1,0 +1,59 @@
+generator client {
+    provider = "prisma-client-js"
+    }
+
+datasource db  {
+    provider= "postgresql"
+    url = env("DATABASE_URL")
+    shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+
+
+}
+
+model User {
+   id         Int     @id @default(autoincrement())
+   name       String
+   email      String  @unique
+   password   String
+   reservations  Reservation[]
+   fullName      String?
+   role          String    @default("user") // "user " | "admin"
+   createdAt     DateTime  @default(now())
+   updatedAt     DateTime  @updatedAt
+}
+
+model Product {
+   id         Int         @id @default(autoincrement())
+   name       String      @unique
+   description String?
+   price       Float
+   stock       Int        @default(0)
+   image       String?
+   createdAt   DateTime   @default(now())
+   updatedAt   DateTime   @updatedAt
+   reservations  Reservation[]
+}
+
+model  Reservation {
+   id           Int       @id  @default(autoincrement())
+   userId       Int
+   flightId     Int
+   createdAt    DateTime  @default(now())
+   updatedAt    DateTime  @updatedAt
+   product      Product   @relation(fields: [productId], references: [id])
+   productId    Int
+   quantity     Int       @default(1)
+   total        Float
+   status       String    @default("pending")  // pending | confirmed | cancelled
+   user         User      @relation(fields:  [userId], references: [id])
+   flight       Flight    @relation(fields:  [flightId], references: [id])
+}
+
+model Flight {
+   id          Int       @id @default(autoincrement())
+   origin       String
+   destination  String
+   price        Float
+   date         DateTime
+   reservations Reservation[]
+}

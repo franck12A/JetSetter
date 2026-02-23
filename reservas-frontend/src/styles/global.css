@@ -1,0 +1,99 @@
+/* =========================================================
+   🌍 Estilos Globales del Proyecto de Vuelos
+   ---------------------------------------------------------
+   Paleta profesional, moderna y coherente entre secciones
+========================================================= */
+
+:root {
+  /* 🎨 Colores principales */
+  --color-primary: #007bff;       /* Azul corporativo */
+  --color-primary-dark: #0056b3;  /* Azul oscuro */
+  --color-accent: #00b4d8;        /* Celeste vibrante */
+  --color-bg: #f7f9fc;            /* Fondo suave */
+  --color-text: #1a1a1a;          /* Texto principal */
+  --color-muted: #666;            /* Texto secundario */
+  --color-white: #fff;
+
+  /* 💫 Sombras y bordes */
+  --shadow-card: 0 6px 18px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.12);
+  --radius-card: 16px;
+
+  /* 🔠 Tipografía */
+  --font-primary: 'Poppins', sans-serif;
+}
+
+/* ---------- Reset general ---------- */
+/* src/styles/global.css */
+
+/* Aplica a toda la página */
+html, body, #root,  .main-bg{
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: linear-gradient(to bottom, #e6f0fa, #ffffff);
+  font-family: 'Poppins', sans-serif; /* Tipografía global */
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* ---------- Títulos globales ---------- */
+h1, h2, h3, h4 {
+  color: var(--color-primary-dark);
+}
+
+/* ---------- Botones globales ---------- */
+button {
+  font-family: var(--font-primary);
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+/* ---------- Enlaces ---------- */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ---------- Secciones ---------- */
+section {
+  margin: 3rem auto;
+  max-width: 1300px;
+  padding: 0 1rem;
+}
+
+/* ---------- Swiper general ---------- */
+.swiper-button-prev,
+.swiper-button-next {
+  color: var(--color-primary);
+}
+
+.swiper-pagination-bullet {
+  background: var(--color-primary);
+}
+
+.swiper-pagination-bullet-active {
+  background: var(--color-primary-dark);
+}
+
+/* ---------- Degradado de fondo global ---------- */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 350px;
+  background: linear-gradient(
+    180deg,
+    var(--color-primary) 0%,
+    var(--color-accent) 100%
+  );
+  z-index: -1;
+  opacity: 0.15;
+}
+
+main {
+  flex: 1;
+}

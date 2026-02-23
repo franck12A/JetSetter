@@ -1,0 +1,369 @@
+/* =============================
+   RecoCard.css
+============================= */
+
+.reco-card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  padding: 1rem;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  width: 260px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 360px;
+  cursor: pointer;
+}
+
+.reco-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12);
+}
+
+.reco-img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  transition: transform 0.4s ease;
+}
+
+.reco-card:hover .reco-img {
+  transform: scale(1.05);
+}
+
+.reco-destino {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #1e3a8a;
+  margin-top: 0.6rem;
+}
+
+.reco-categoria {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 0.6rem;
+}
+
+.reco-review {
+  margin-top: 0.6rem;
+  background-color: #f1f5f9;
+  padding: 0.6rem;
+  border-radius: 10px;
+  font-style: italic;
+}
+
+.review-text {
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.review-autor {
+  font-size: 0.8rem;
+  color: #007bff;
+  margin-top: 0.3rem;
+}
+
+/* =========================================================
+   ✈️ Sección de Recomendaciones
+========================================================= */
+
+.recomendaciones-section {
+  padding: 80px 0;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  text-align: center;
+  font-family: "Poppins", sans-serif;
+}
+
+.titulo-reco {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 50px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+  display: inline-block;
+}
+
+.titulo-reco::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 3px;
+  background: #007bff;
+  border-radius: 2px;
+}
+
+.tarjetas-wrapper {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  gap: 25px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ---------- Swiper ---------- */
+.swiper {
+  padding-bottom: 50px;
+}
+
+.swiper-button-next,
+.swiper-button-prev {
+  color: #007bff !important;
+  transition: 0.3s;
+}
+
+.swiper-button-next:hover,
+.swiper-button-prev:hover {
+  color: #0056b3 !important;
+}
+
+.swiper-pagination-bullet {
+  background: #ccc;
+  opacity: 1;
+  transition: all 0.3s;
+}
+
+.swiper-pagination-bullet-active {
+  background: #007bff;
+  width: 20px;
+  border-radius: 10px;
+}
+
+/* =========================================================
+   ✈️ Sección de Categorías
+========================================================= */
+
+.categorias-section {
+  margin: 3rem auto;
+  padding-top: 0.5rem;
+  width: 100%;
+  max-width: 1300px;
+  text-align: center;
+  font-family: "Poppins", sans-serif;
+}
+
+.categorias-section h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
+  display: inline-block;
+}
+
+.categorias-section h2::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: #007bff;
+  border-radius: 2px;
+}
+
+.categorias-botones {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+  justify-content: center;
+}
+
+.btn-categoria {
+  padding: 0.55rem 1.2rem;
+  border-radius: 999px;
+  border: 1.5px solid #007bff;
+  background-color: #fff;
+  color: #007bff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 5px rgba(0, 123, 255, 0.15);
+}
+
+.btn-categoria:hover,
+.btn-categoria.active {
+  background-color: #007bff;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+/* =========================================================
+   ✈️ Tarjetas de Vuelos
+========================================================= */
+
+.vuelo-card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  padding: 1rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.vuelo-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+}
+
+.vuelo-card img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 0.8rem;
+  transition: transform 0.4s ease;
+}
+
+.vuelo-card:hover img {
+  transform: scale(1.05);
+}
+
+.vuelo-card h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0.4rem 0;
+  color: #1e3a8a;
+}
+
+.vuelo-card p {
+  font-size: 0.9rem;
+  color: #555;
+  margin: 0.25rem 0;
+}
+
+/* ---------- Flechas del Swiper ---------- */
+.swiper-button-prev,
+.swiper-button-next {
+  color: #007bff !important;
+  border-radius: 50%;
+  width: 2.8rem;
+  height: 2.8rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.swiper-button-prev:hover,
+.swiper-button-next:hover {
+  background: #007bff;
+  color: #fff !important;
+  box-shadow: 0 4px 14px rgba(0, 123, 255, 0.3);
+}
+
+/* ---------- Paginación (dots) ---------- */
+.swiper-pagination {
+  bottom: 0 !important;
+}
+
+.swiper-pagination-bullet {
+  width: 10px;
+  height: 10px;
+  opacity: 0.6;
+  background: #007bff;
+  margin: 0 5px !important;
+  transition: all 0.3s;
+}
+
+.swiper-pagination-bullet-active {
+  opacity: 1;
+  transform: scale(1.3);
+  background: #0056b3;
+}
+
+/* =========================================================
+   ✈️ Buscador de Vuelos
+========================================================= */
+
+.buscador-wrapper {
+  width: 100%;
+  background-color: #5A9EC4;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.buscador {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.input-buscador {
+  flex: 1;
+  min-width: 150px;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+.input-buscador:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.input-numero {
+  flex: 0 0 80px;
+  text-align: center;
+}
+
+.btn-buscador {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-buscador:hover {
+  background-color: #0056b3;
+}
+
+/* =========================================================
+   ✈️ Home Page
+========================================================= */
+
+.main-bg {
+  min-height: 100vh;
+}
+
+.header-wrapper {
+  position: fixed;
+  left: 0;
+  width: 100%;
+  z-index: 50;
+  margin-top: 0;
+}
+
+.pt-\[140px\] {
+  padding-top: 140px;
+}

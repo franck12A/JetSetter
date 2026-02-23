@@ -1,0 +1,795 @@
+/* src/pages/AdminPanel/AdminPanel.css */
+
+/* Reset básico y layout */
+.admin-container {
+  min-height: 100vh;
+  background-color: #f9fafb;
+  padding-bottom: 6rem;
+  font-family: 'Poppins', sans-serif;
+}
+
+.admin-header {
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.admin-header .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.admin-header p {
+  font-size: 0.875rem;
+  color: #6b7280; /* gris */
+}
+
+.admin-header .header-actions button,
+.admin-header .header-actions a {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+}
+
+.admin-header .header-actions button {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: none;
+  cursor: pointer;
+}
+
+.admin-header .header-actions button:hover {
+  background-color: #fecaca;
+}
+
+.admin-header .header-actions a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.admin-header .header-actions a:hover {
+  text-decoration: underline;
+}
+
+/* Formulario */
+.admin-form {
+  background-color: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-form h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.admin-form form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.admin-form .grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-form label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.admin-form input,
+.admin-form textarea {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.admin-form textarea {
+  resize: none;
+}
+
+/* Preview */
+.admin-form .preview {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  width: 100%;
+  height: 10rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  background-color: #f3f4f6;
+}
+
+.admin-form .preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Botones */
+.admin-form .btn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-form .btn-primary {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.admin-form .btn-primary:hover {
+  background-color: #1d4ed8;
+}
+
+.admin-form .btn-secondary {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.admin-form .btn-secondary:hover {
+  background-color: #e5e7eb;
+}
+
+/* Lista de vuelos */
+.admin-list {
+  background-color: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-list h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.admin-list .search-input {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  width: 100%;
+  max-width: 250px;
+}
+
+.admin-list .grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.admin-list article {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  transition: box-shadow 0.2s;
+}
+
+.admin-list article:hover {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.admin-list img {
+  width: 7rem;
+  height: 5rem;
+  object-fit: cover;
+  border-radius: 0.375rem;
+}
+
+/* Artículo info */
+.admin-list .info {
+  flex: 1;
+}
+
+.admin-list .info h4 {
+  font-weight: 600;
+}
+
+.admin-list .info p {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0.125rem 0;
+}
+
+.admin-list .info .actions {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-list .info .actions button,
+.admin-list .info .actions a {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-list .info .actions .edit {
+  background-color: #fef3c7;
+  color: #b45309;
+  border: none;
+}
+
+.admin-list .info .actions .edit:hover {
+  background-color: #fde68a;
+}
+
+.admin-list .info .actions .delete {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: none;
+}
+
+.admin-list .info .actions .delete:hover {
+  background-color: #fecaca;
+}
+
+.admin-list .info .actions .view {
+  background-color: #eff6ff;
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.admin-list .info .actions .view:hover {
+  background-color: #dbeafe;
+}
+
+/* Paginación */
+.admin-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.admin-pagination button {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  background-color: #f3f4f6;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form-error {
+  color: red;
+  margin-bottom: 1rem;
+  font-weight: bold;
+}
+
+
+.admin-mobile-warning {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background-color: #f9fafb;
+  color: #374151;
+  font-family: 'Poppins', sans-serif;
+  padding: 2rem;
+}
+
+.admin-mobile-warning h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.admin-mobile-warning p {
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+.features-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f2f2f2;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal-content {
+  background: #ffffff;
+  padding: 2rem;
+  width: 420px;
+  max-width: 90%;
+  border-radius: 12px;
+  box-shadow: 0px 8px 30px rgba(0,0,0,0.25);
+  animation: showModal 0.25s ease-out;
+}
+
+@keyframes showModal {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-content h2 {
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+.modal-content form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.modal-content input,
+.modal-content textarea {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #d0d0d0;
+  font-size: 0.95rem;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.btn-save {
+  background: #0077ff;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-cancel {
+  background: #e2e2e2;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-save:hover {
+  background: #005cd1;
+}
+
+.btn-cancel:hover {
+  background: #c9c9c9;
+}
+
+
+/* ---------- TABLA DE CARACTERÍSTICAS ---------- */
+
+.admin-features-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+.admin-features-section h2 {
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+/* Tabla base */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 10px;
+  background: #f3f3f3;
+  font-weight: 600;
+  border-bottom: 2px solid #ddd;
+}
+
+.admin-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table tr:hover {
+  background: #fafafa;
+}
+
+/* ---------- BOTONES ---------- */
+
+.btn-edit,
+.btn-delete {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s ease;
+  margin: 0 4px;
+}
+
+/* Editar */
+.btn-edit {
+  background: #4c8bf5;
+  color: white;
+}
+
+.btn-edit:hover {
+  background: #3c79d6;
+}
+
+/* Eliminar */
+.btn-delete {
+  background: #eb5a46;
+  color: white;
+}
+
+.btn-delete:hover {
+  background: #d64535;
+}
+
+/* ---------- MODAL ---------- */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 420px;
+  max-width: 90%;
+  box-shadow: 0 5px 16px rgba(0,0,0,0.25);
+}
+
+.modal-content h2 {
+  margin-bottom: 1rem;
+}
+
+.modal-content label {
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+.modal-content input,
+.modal-content textarea {
+  width: 100%;
+  margin-top: 4px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  padding: 8px;
+}
+
+.modal-content button {
+  margin-right: 0.5rem;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.modal-content button[type="submit"] {
+  background: #4c8bf5;
+  color: white;
+}
+
+.modal-content button[type="submit"]:hover {
+  background: #3c79d6;
+}
+
+.modal-content button[type="button"] {
+  background: #ccc;
+}
+
+.modal-content button[type="button"]:hover {
+  background: #b1b1b1;
+}
+
+.feature-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9998;
+}
+
+.feature-modal {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  min-width: 350px;
+  max-width: 500px;
+  z-index: 9999;
+  box-shadow: 0 0 15px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---------- FEATURES DENTRO DEL FORM ---------- */
+
+.features-list {
+  display: flex;
+  flex-direction: column; /* cada feature en vertical */
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column; /* checkbox arriba, input debajo */
+  background: #f9fafb;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
+}
+
+.feature-item:hover {
+  border-color: #2563eb;
+  background: #f0f4ff;
+}
+
+.feature-item > label:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.feature-input {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.feature-input input,
+.feature-input select,
+.feature-input textarea {
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.feature-input input:focus,
+.feature-input select:focus,
+.feature-input textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  outline: none;
+}
+
+/* textarea de feature más alto */
+.feature-input textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+/* select boolean estilo */
+.feature-input select {
+  background-color: #fff;
+  cursor: pointer;
+}
+
+/* responsive */
+@media (min-width: 768px) {
+  .features-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .feature-item {
+    flex: 1 1 200px; /* ancho mínimo por feature */
+    max-width: 300px;
+  }
+}
+
+/* ---------- CONTENEDOR DE CARACTERÍSTICAS ---------- */
+
+.admin-features-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  max-width: 800px;        /* ancho similar al form */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Tabla base */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+}
+
+/* Encabezado de tabla */
+.admin-table th {
+  text-align: left;
+  padding: 10px;
+  background: #f3f3f3;
+  font-weight: 600;
+  border-bottom: 2px solid #ddd;
+}
+
+/* Celdas de tabla */
+.admin-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #eee;
+}
+
+/* Hover de fila */
+.admin-table tr:hover {
+  background: #fafafa;
+}
+
+/* ---------- MODAL DE NUEVA CARACTERÍSTICA ---------- */
+
+.feature-modal {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  min-width: 360px;
+  max-width: 480px;
+  z-index: 9999;
+  box-shadow: 0 0 20px rgba(0,0,0,0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Inputs y textarea dentro del modal */
+.feature-modal input,
+.feature-modal textarea,
+.feature-modal select {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.feature-modal input:focus,
+.feature-modal textarea:focus,
+.feature-modal select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  outline: none;
+}
+
+/* Select de tipo alineado y con margen superior */
+.feature-modal select {
+  margin-top: 4px;
+}
+
+/* Botones */
+.feature-modal .modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.feature-modal .modal-buttons button {
+  padding: 0.6rem 1.1rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.feature-modal .modal-buttons button:first-child {
+  background: #e2e2e2;
+  color: #374151;
+}
+
+.feature-modal .modal-buttons button:first-child:hover {
+  background: #c9c9c9;
+}
+
+.feature-modal .modal-buttons button:last-child {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.feature-modal .modal-buttons button:last-child:hover {
+  background: #1d4ed8;
+}

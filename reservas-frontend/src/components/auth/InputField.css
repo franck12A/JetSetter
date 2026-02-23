@@ -1,0 +1,50 @@
+/* CONTENEDOR DEL INPUT */
+.auth-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+/* LABEL */
+.auth-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+/* CAJA DEL INPUT (para animarle sombra y scale con framer-motion) */
+.auth-input-box {
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  transition: all 0.25s ease;
+}
+
+/* INPUT */
+.auth-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  background: transparent;
+  color: #1f2937;
+}
+
+/* PLACEHOLDER */
+.auth-input::placeholder {
+  color: #9ca3af;
+}
+
+/* HOVER STATE */
+.auth-input-box:hover {
+  border-color: #2563eb;
+}
+
+/* FOCUS STATE REAL */
+.auth-input:focus + .auth-input-box,
+.auth-input-box:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.25);
+}

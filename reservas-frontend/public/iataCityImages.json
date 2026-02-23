@@ -1,0 +1,128 @@
+{
+  "CDG": {
+    "city": "Paris",
+    "images": [
+      "/img/paris_1.jpg",
+      "/img/paris_2.jpg"
+    ]
+  },
+  "ORY": {
+    "city": "Paris",
+    "images": [
+      "/img/paris_1.jpg",
+      "/img/paris_2.jpg"
+    ]
+  },
+  "FCO": {
+    "city": "Roma",
+    "images": [
+      "/img/roma_1.jpg",
+      "/img/roma_2.jpg"
+    ]
+  },
+  "MXP": {
+    "city": "Milán",
+    "images": [
+      "/img/milan_1.jpg",
+      "/img/milan_2.jpg"
+    ]
+  },
+  "MAD": {
+    "city": "Madrid",
+    "images": [
+      "/img/madrid_1.jpg",
+      "/img/madrid_2.jpg"
+    ]
+  },
+  "BCN": {
+    "city": "Barcelona",
+    "images": [
+      "/img/barcelona_1.jpg",
+      "/img/barcelona_2.jpg"
+    ]
+  },
+  "EZE": {
+    "city": "Buenos Aires",
+    "images": [
+      "/img/buenosaires_1.jpg",
+      "/img/buenosaires_2.jpg"
+    ]
+  },
+  "AEP": {
+    "city": "Buenos Aires",
+    "images": [
+      "/img/buenosaires_1.jpg",
+      "/img/buenosaires_2.jpg"
+    ]
+  },
+  "JFK": {
+    "city": "Nueva York",
+    "images": [
+      "/img/newyork_1.jpg",
+      "/img/newyork_2.jpg"
+    ]
+  },
+  "LGA": {
+    "city": "Nueva York",
+    "images": [
+      "/img/newyork_1.jpg",
+      "/img/newyork_2.jpg"
+    ]
+  },
+  "LAX": {
+    "city": "Los Angeles",
+    "images": [
+      "/img/losangeles_1.jpg",
+      "/img/losangeles_2.jpg"
+    ]
+  },
+  "SFO": {
+    "city": "San Francisco",
+    "images": [
+      "/img/sanfrancisco_1.jpg",
+      "/img/sanfrancisco_2.jpg"
+    ]
+  },
+  "LHR": {
+    "city": "Londres",
+    "images": [
+      "/img/london_1.jpg",
+      "/img/london_2.jpg"
+    ]
+  },
+  "LGW": {
+    "city": "Londres",
+    "images": [
+      "/img/london_1.jpg",
+      "/img/london_2.jpg"
+    ]
+  },
+  "NRT": {
+    "city": "Tokio",
+    "images": [
+      "/img/tokyo_1.jpg",
+      "/img/tokyo_2.jpg"
+    ]
+  },
+  "HND": {
+    "city": "Tokio",
+    "images": [
+      "/img/tokyo_1.jpg",
+      "/img/tokyo_2.jpg"
+    ]
+  },
+  "GRU": {
+    "city": "Sao Paulo",
+    "images": [
+      "/img/saopaulo_1.jpg",
+      "/img/saopaulo_2.jpg"
+    ]
+  },
+  "GIG": {
+    "city": "Rio de Janeiro",
+    "images": [
+      "/img/rio_1.jpg",
+      "/img/rio_2.jpg"
+    ]
+  }
+}

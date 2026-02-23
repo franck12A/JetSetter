@@ -1,0 +1,37 @@
+.floating-group {
+  position: relative;
+  width: 100%;
+}
+
+.floating-group input {
+  width: 100%;
+  padding: 14px 12px;
+  border-radius: 10px;
+  border: 2px solid #d1d5db;
+  font-size: 1rem;
+  transition: 0.3s;
+  background: transparent;
+}
+
+.floating-group label {
+  position: absolute;
+  left: 12px;
+  top: 14px;
+  color: #6b7280;
+  pointer-events: none;
+  transition: 0.3s;
+  background: white;
+  padding: 0 4px;
+}
+
+.floating-group input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+}
+
+.floating-group input:focus + label,
+.floating-group input:not(:placeholder-shown) + label {
+  top: -9px;
+  font-size: 0.78rem;
+  color: #2563eb;
+}

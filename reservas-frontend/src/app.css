@@ -1,0 +1,15 @@
+/* ===== App.css ===== */
+/* Estilos base de la app y configuración general del root */
+
+#root {
+  margin: 0 auto;
+  text-align: center;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Animación logo (opcional si usás el logo animado en otra parte) */
+@keyframes logo-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

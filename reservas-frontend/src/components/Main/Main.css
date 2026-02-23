@@ -1,0 +1,137 @@
+/* Main.css */
+
+.main {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 10vh;
+  padding: 2rem;
+  padding-top: 1rem;
+
+}
+
+/* Carrusel de imágenes */
+.imagenes-rotando {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.imagen {
+  width: 12rem; /* w-48 */
+  height: 8rem; /* h-32 */
+  object-fit: cover;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: transform 0.7s ease;
+}
+
+.imagen:hover {
+  transform: scale(1.05);
+}
+
+/* Contenido principal */
+.main-content {
+  text-align: left; /* Ahora el texto va a la izquierda del avión */
+  position: relative;
+  z-index: 5;
+}
+
+.main-title {
+  font-size: 2.25rem; /* 36px */
+  font-weight: 700;
+  color: #1d4ed8;
+  margin-bottom: 0.5rem;
+}
+
+.main-subtitle {
+  font-size: 1.125rem; /* 18px */
+  color: #374151;
+}
+
+/* Avión */
+.avion {
+  position: absolute;
+  top: 15%;
+  left: 65%; /* más hacia la derecha */
+  width: 20rem;  /* más grande */
+  height: 20rem;
+  transition: transform 0.3s ease-out;
+  z-index: 20;
+
+}
+
+/* Texto que aparece al lado del avión */
+.avion-text {
+  position: absolute;
+  top: 15%;
+  left: 5%;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1e40af;
+  opacity: 0;
+  transform: translateX(-50px);
+  transition: all 0.5s ease-out;
+  z-index: 11;
+}
+
+.avion-text-show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Indicadores del carrusel */
+.indicador {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  cursor: pointer;
+  background-color: #cbd5e1;
+  transition: background-color 0.3s;
+  margin: 0 0.25rem;
+}
+
+.indicador.activo {
+  background-color: #2563eb;
+}
+
+/* Animación fade para contenido adicional */
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+
+.categorias-section {
+  margin-top: 0.1rem;
+}
+
+.vuelos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.tarjeta-vuelo {
+  background: white;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  transition: transform 0.5s;
+}
+
+.tarjeta-vuelo:hover {
+  transform: rotateY(10deg) scale(1.05); /* efecto rotación + hover */
+}
+
+.tarjeta-vuelo img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}

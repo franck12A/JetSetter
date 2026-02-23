@@ -1,0 +1,295 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+  --primary: #007bff;
+  --secondary: #00aaff;
+  --bg: #f4f6fb;
+  --card-bg: #ffffff;
+  --text-dark: #1e1e2f;
+  --text-muted: #6f6f89;
+  --radius: 14px;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --transition: all 0.3s ease;
+}
+
+body {
+  background: var(--bg);
+  font-family: "Inter", sans-serif;
+  color: var(--text-dark);
+}
+
+/* === CONTENEDOR === */
+.profile-container {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 1rem;
+  min-height: 100vh;
+}
+
+.profile-card {
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 1000px;
+  box-shadow: var(--shadow);
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* === HEADER === */
+.profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+  padding-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--secondary), var(--primary));
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.profile-info h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.profile-info .email {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-top: 0.3rem;
+}
+
+.profile-stats {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.6rem;
+}
+
+.profile-stats div {
+  background: #f4f6f9;
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  text-align: center;
+}
+
+.profile-stats span {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.profile-stats small {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* === BOTÓN === */
+.btn-logout {
+  background: #ff4b5c;
+  border: none;
+  padding: 0.6rem 1rem;
+  color: white;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-logout:hover {
+  background: #ff2f3f;
+  transform: scale(1.05);
+}
+
+/* === SECCIONES === */
+.profile-section {
+  margin-bottom: 2rem;
+}
+
+.profile-section h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  border-left: 4px solid var(--primary);
+  padding-left: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+/* === GRID TARJETAS === */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+/* === TARJETA === */
+.flight-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  height: 270px; /* 🔥 más compacta */
+}
+
+.flight-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+}
+
+/* === IMAGEN === */
+.flight-card-header {
+  position: relative;
+  height: 120px;
+  overflow: hidden;
+}
+
+.flight-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.flight-card:hover .flight-img {
+  transform: scale(1.05);
+}
+
+/* === BADGES === */
+.badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+}
+
+.badge-next {
+  background: linear-gradient(135deg, #28a745, #3ddc84);
+}
+
+.badge-past {
+  background: linear-gradient(135deg, #6c757d, #adb5bd);
+}
+
+/* === CONTENIDO TARJETA === */
+.flight-card-body {
+  padding: 0.8rem 1rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.flight-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.flight-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0.3rem 0;
+  line-height: 1.2;
+}
+
+.flight-meta p {
+  font-size: 0.8rem;
+  color: #444;
+  margin: 0.2rem 0;
+}
+
+/* === FOOTER === */
+.flight-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.6rem;
+  border-top: 1px solid #eee;
+}
+
+.flight-price {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 0.95rem;
+}
+
+.btn-ticket {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.btn-ticket:hover {
+  background: linear-gradient(135deg, #005dc1, #008fe5);
+}
+
+/* === MENSAJE VACÍO === */
+.no-favs {
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+  background: #f8f9fa;
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .profile-card {
+    padding: 1.5rem;
+  }
+  .flight-card {
+    height: 250px;
+  }
+}
+
+.btn-delete {
+  background-color: #e74c3c;
+  color: #fff;
+  border: none;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 0.5rem;
+}
+.btn-delete:hover {
+  background-color: #c0392b;
+}

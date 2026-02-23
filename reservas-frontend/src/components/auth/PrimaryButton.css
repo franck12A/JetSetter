@@ -1,0 +1,13 @@
+.primary-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(29,78,216,0.35);
+  transition: 0.3s;
+}

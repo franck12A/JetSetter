@@ -1,0 +1,206 @@
+/* ===================== */
+/* NAVBAR BASE */
+/* ===================== */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1rem 2rem;
+  background-color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 180px; /* <- evita que se colapse */
+  flex-shrink: 0;
+}
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+
+.logo-header {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+
+.navbar-lema {
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #1d4ed8;
+  white-space: nowrap;
+}
+/* ===================== */
+/* BOTONES */
+/* ===================== */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  flex-grow: 1;
+  min-width: 300px;
+}
+
+
+.btn-signup,
+.btn-login,
+.btn-admin,
+.btn-logout {
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  border: none;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Crear cuenta */
+.btn-signup {
+  background: #28a745;
+  color: white;
+}
+.btn-signup:hover {
+  background: #1e7e34;
+}
+
+/* Iniciar sesión */
+.btn-login {
+  background: #007bff;
+  color: white;
+}
+.btn-login:hover {
+  background: #0056b3;
+}
+
+/* Panel admin */
+.btn-admin {
+  background: #ffc107;
+  color: #212529;
+}
+.btn-admin:hover {
+  background: #e0a800;
+}
+
+/* Logout */
+.btn-logout {
+  background: #dc3545;
+  color: white;
+}
+.btn-logout:hover {
+  background: #b02a37;
+}
+
+/* ===================== */
+/* USUARIO / AVATAR */
+/* ===================== */
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  position: relative;
+}
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #007bff, #00c6ff);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.user-avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.user-name {
+  font-weight: 600;
+  color: #333;
+}
+
+/* ===================== */
+/* MENÚ DESPLEGABLE */
+/* ===================== */
+.user-menu {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+  min-width: 150px;
+  z-index: 100;
+  animation: fadeIn 0.15s ease-in-out;
+}
+
+.user-menu-item {
+  background: transparent;
+  border: none;
+  padding: 0.5rem;
+  text-align: left;
+  cursor: pointer;
+  font-weight: 600;
+  color: #333;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.user-menu-item:hover {
+  background: #f3f4f6;
+}
+
+.user-menu-item.logout {
+  color: #dc2626;
+}
+
+.user-menu-item.logout:hover {
+  background: #fee2e2;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===================== */
+/* RESPONSIVE */
+/* ===================== */
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .navbar-right {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
