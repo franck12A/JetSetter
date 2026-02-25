@@ -2,13 +2,23 @@
 /* NAVBAR BASE */
 /* ===================== */
 .navbar {
+  --blue-primary: #007bff;
+  --blue-dark: #0056b3;
+  --green-primary: #28a745;
+  --green-dark: #1e7e34;
+  --yellow-primary: #ffc107;
+  --yellow-dark: #e0a800;
+  --red-primary: #dc3545;
+  --red-dark: #b02a37;
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
   padding: 1rem 2rem;
-  background-color: #ffffff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(4px);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -42,6 +52,7 @@
   font-size: 1.2rem;
   color: #1d4ed8;
   white-space: nowrap;
+  letter-spacing: 0.2px;
 }
 /* ===================== */
 /* BOTONES */
@@ -66,43 +77,48 @@
   text-decoration: none;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+  transition: filter 0.2s ease, box-shadow 0.2s ease;
 }
 
 /* Crear cuenta */
 .btn-signup {
-  background: #28a745;
+  background: linear-gradient(180deg, var(--green-primary) 0%, var(--green-dark) 100%);
   color: white;
 }
 .btn-signup:hover {
-  background: #1e7e34;
+  filter: brightness(1.04);
+  box-shadow: 0 6px 14px rgba(30, 126, 52, 0.3);
 }
 
 /* Iniciar sesión */
 .btn-login {
-  background: #007bff;
+  background: linear-gradient(180deg, var(--blue-primary) 0%, var(--blue-dark) 100%);
   color: white;
 }
 .btn-login:hover {
-  background: #0056b3;
+  filter: brightness(1.04);
+  box-shadow: 0 6px 14px rgba(0, 86, 179, 0.3);
 }
 
 /* Panel admin */
 .btn-admin {
-  background: #ffc107;
+  background: linear-gradient(180deg, var(--yellow-primary) 0%, var(--yellow-dark) 100%);
   color: #212529;
 }
 .btn-admin:hover {
-  background: #e0a800;
+  filter: brightness(1.03);
+  box-shadow: 0 6px 14px rgba(224, 168, 0, 0.28);
 }
 
 /* Logout */
 .btn-logout {
-  background: #dc3545;
+  background: linear-gradient(180deg, var(--red-primary) 0%, var(--red-dark) 100%);
   color: white;
 }
 .btn-logout:hover {
-  background: #b02a37;
+  filter: brightness(1.04);
+  box-shadow: 0 6px 14px rgba(176, 42, 55, 0.3);
 }
 
 /* ===================== */
@@ -137,7 +153,7 @@
 
 .user-name {
   font-weight: 600;
-  color: #333;
+  color: #1f2937;
 }
 
 /* ===================== */
@@ -148,8 +164,9 @@
   top: 50px;
   right: 0;
   background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.14);
   display: flex;
   flex-direction: column;
   padding: 0.5rem;

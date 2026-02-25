@@ -13,6 +13,7 @@ import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Produ
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -313,41 +314,48 @@ public class AmadeusController {
             @RequestParam(required = false) String origen,
             @RequestParam(required = false) String destino,
             @RequestParam(required = false) String fecha,
-            @RequestParam(defaultValue = "50") int limit
+            @RequestParam(defaultValue = "20") int limit
     ) {
         Random random = new Random();
 
-        int maxVuelos = AmadeusController.IMAGENES_POR_PAIS.size();
-        int cantidadVuelos = Math.min(limit, maxVuelos);
+        int cantidadVuelos = Math.max(1, Math.min(limit, 50));
+        String origenSeguro = (origen == null || origen.isBlank()) ? null : origen.trim().toUpperCase();
+        String destinoSeguro = (destino == null || destino.isBlank()) ? null : destino.trim().toUpperCase();
+        String fechaSegura = (fecha == null || fecha.isBlank()) ? LocalDate.now().plusDays(7).toString() : fecha.trim();
+        productService.cleanupSimulatedProducts(10, 500);
 
-        List<String> paises = new ArrayList<>(AmadeusController.IMAGENES_POR_PAIS.keySet());
-        Collections.shuffle(paises);
+        List<String> aeropuertos = new ArrayList<>(AEROPUERTOS.keySet());
+        if (aeropuertos.size() < 2) return List.of();
 
         List<FlightOfferDTO> vuelos = new ArrayList<>();
 
         for (int i = 0; i < cantidadVuelos; i++) {
 
-            String paisCode = paises.get(i);
-            List<String> imgs = AmadeusController.IMAGENES_POR_PAIS.getOrDefault(paisCode, List.of("default.jpg"));
+            String origenLoop = origenSeguro != null ? origenSeguro : aeropuertos.get(random.nextInt(aeropuertos.size()));
+            String destinoLoop = destinoSeguro != null ? destinoSeguro : aeropuertos.get(random.nextInt(aeropuertos.size()));
+            while (destinoLoop.equals(origenLoop)) {
+                destinoLoop = aeropuertos.get(random.nextInt(aeropuertos.size()));
+            }
 
             FlightOfferDTO dto = new FlightOfferDTO();
 
             // ID único
-            String externalId = origen + "-" + destino + "-" + fecha + "-" + i;
+            String externalId = origenLoop + "-" + destinoLoop + "-" + fechaSegura + "-" + i;
             dto.setId(externalId);
 
             // Origen y destino
-            dto.setOrigen((String) AEROPUERTOS.getOrDefault(origen.toUpperCase(), Map.of("nombre", origen)).get("nombre"));
-            dto.setDestino((String) AEROPUERTOS.getOrDefault(destino.toUpperCase(), Map.of("nombre", destino)).get("nombre"));
+            dto.setOrigen(origenLoop);
+            dto.setDestino(destinoLoop);
 
             // País destino
-            String codigoPaisDestino = IMAGENES_POR_PAIS.keySet().stream()
-                    .filter(codigo -> imgs.stream().anyMatch(img -> IMAGENES_POR_PAIS.get(codigo).contains(img)))
-                    .findFirst()
-                    .orElse("ARG");
+            String codigoPaisDestino = String.valueOf(
+                    AEROPUERTOS.getOrDefault(destinoLoop, Map.of("pais", "ARG")).get("pais")
+            );
             dto.setPaisDestino(PAIS_POR_IATA.getOrDefault(codigoPaisDestino, "Desconocido"));
+            dto.setCountry(codigoPaisDestino);
 
             // Imágenes país
+            List<String> imgs = AmadeusController.IMAGENES_POR_PAIS.getOrDefault(codigoPaisDestino, List.of("argentina_1.jpg"));
             List<String> imagenesPaisList = imgs.stream()
                     .map(img -> "/assets/imagenespaises/" + img)
                     .collect(Collectors.toList());
@@ -368,23 +376,27 @@ public class AmadeusController {
             dto.setCategoria("Internacional");
 
             // **Fechas directamente en DTO**
-            dto.setFechaSalida(fecha + "T23:55:00");   // Primera hora estimada
-            dto.setFechaLlegada(fecha + "T07:10:00");  // Llegada estimada
+            int horaSalida = random.nextInt(0, 24);
+            int minutoSalida = random.nextInt(0, 6) * 10;
+            int duracionHoras = 2 + random.nextInt(12);
+            int horaLlegada = (horaSalida + duracionHoras) % 24;
+            dto.setFechaSalida(fechaSegura + "T" + String.format("%02d:%02d:00", horaSalida, minutoSalida));
+            dto.setFechaLlegada(fechaSegura + "T" + String.format("%02d:%02d:00", horaLlegada, minutoSalida));
 
             // Segmento opcional (solo uno representativo)
             Map<String, Object> seg = new HashMap<>();
-            seg.put("aerolinea", "AZ");
+            String aerolinea = List.of("AR", "LA", "IB", "AF", "AZ", "KL", "LH", "UX").get(random.nextInt(8));
+            seg.put("aerolinea", aerolinea);
             seg.put("numeroVuelo", String.valueOf(500 + random.nextInt(400)));
             seg.put("salida", dto.getFechaSalida());
             seg.put("llegada", dto.getFechaLlegada());
             dto.setSegmentos(List.of(seg));
+            dto.setAerolinea(aerolinea);
 
-            // Guardar Product si no existe
-            Product savedProduct = productService.saveIfNotExists(dto);
-
-            // Asignar ID real al DTO
-            dto.setProductId(savedProduct.getId());
-            dto.setId(String.valueOf(savedProduct.getId()));
+            // Mantener resultados de busqueda en cache para no contaminar /api/products
+            // (la Home consume /api/products y no debe llenarse con cada busqueda del usuario).
+            dto.setProductId(null);
+            vuelosCache.put(dto.getId(), dto);
 
             vuelos.add(dto);
         }
@@ -392,13 +404,50 @@ public class AmadeusController {
         return vuelos;
     }
 
+    @GetMapping("/random")
+    public List<FlightOfferDTO> getVuelosRandom(@RequestParam(defaultValue = "20") int limit) {
+        return buscarVuelos(null, null, null, limit);
+    }
+
+    @GetMapping("/random/paged")
+    public ResponseEntity<Map<String, Object>> getVuelosRandomPaginados(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Page<Product> productos = productService.getSimulatedProductsPage(page, size);
+        List<FlightOfferDTO> content = productos.getContent().stream()
+                .map(this::toDtoResumen)
+                .toList();
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("content", content);
+        payload.put("page", productos.getNumber());
+        payload.put("size", productos.getSize());
+        payload.put("totalElements", productos.getTotalElements());
+        payload.put("totalPages", productos.getTotalPages());
+        payload.put("last", productos.isLast());
+        return ResponseEntity.ok(payload);
+    }
+
 
 
 
 
     @GetMapping("/vuelos/{id}")
-    public FlightOfferDTO getVueloById(@PathVariable Long id) {
-        Product product = productService.findById(id);
+    public FlightOfferDTO getVueloById(@PathVariable String id) {
+        FlightOfferDTO cached = vuelosCache.get(id);
+        if (cached != null) {
+            return cached;
+        }
+
+        Long numericId;
+        try {
+            numericId = Long.parseLong(id);
+        } catch (NumberFormatException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Vuelo no encontrado");
+        }
+
+        Product product = productService.findById(numericId);
 
         if (product == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Vuelo no encontrado");
@@ -409,8 +458,8 @@ public class AmadeusController {
         dto.setProductId(product.getId());
 
         // Origen y destino
-        if (product.getName() != null && product.getName().contains("→")) {
-            String[] partes = product.getName().split("→");
+        if (product.getName() != null && (product.getName().contains("→") || product.getName().contains("â†’"))) {
+            String[] partes = product.getName().split("→|â†’");
             dto.setOrigen(partes[0].trim());
             dto.setDestino(partes[1].trim());
         } else {
@@ -447,16 +496,33 @@ public class AmadeusController {
             dto.setFechaLlegada(product.getDepartureDate() != null ? product.getDepartureDate().plusHours(2).toString() : null);
         }
 
-        // Características (similares a /buscar)
-        Random random = new Random();
-        String duracion = (8 + random.nextInt(5)) + "h " + (10 + random.nextInt(50)) + "m";
-        String clase = random.nextBoolean() ? "Economy" : "Lite";
-        String equipaje = random.nextBoolean() ? "Sí" : "No";
+        // Características deterministas para una vista de detalle consistente
+        String duracion;
+        if (!segmentos.isEmpty()) {
+            Map<String, Object> primero = segmentos.get(0);
+            Map<String, Object> ultimo = segmentos.get(segmentos.size() - 1);
+            try {
+                LocalDateTime salida = LocalDateTime.parse(String.valueOf(primero.get("salida")));
+                LocalDateTime llegada = LocalDateTime.parse(String.valueOf(ultimo.get("llegada")));
+                long minutos = Math.max(0, Duration.between(salida, llegada).toMinutes());
+                duracion = (minutos / 60) + "h " + (minutos % 60) + "m";
+            } catch (Exception ignored) {
+                duracion = "N/D";
+            }
+        } else if (product.getDepartureDate() != null) {
+            duracion = "2h 0m";
+        } else {
+            duracion = "N/D";
+        }
+
+        String clase = (product.getCategory() != null && product.getCategory().getName() != null)
+                ? product.getCategory().getName()
+                : "Economy";
 
         dto.setCaracteristicas(List.of(
-                "Duración aproximada: " + duracion,
+                "Duracion: " + duracion,
                 "Clase: " + clase,
-                "Equipaje incluido: " + equipaje
+                "Equipaje: No especificado"
         ));
 
         // Imágenes según país
@@ -479,6 +545,57 @@ public class AmadeusController {
         return dto;
     }
 
+    private FlightOfferDTO toDtoResumen(Product product) {
+        FlightOfferDTO dto = new FlightOfferDTO();
+        dto.setId(String.valueOf(product.getId()));
+        dto.setProductId(product.getId());
+
+        if (product.getName() != null && (product.getName().contains("→") || product.getName().contains("â†’"))) {
+            String[] partes = product.getName().split("→|â†’");
+            dto.setOrigen(partes[0].replace("Vuelo", "").trim());
+            dto.setDestino(partes.length > 1 ? partes[1].trim() : "Desconocido");
+        } else {
+            dto.setOrigen(product.getName() != null ? product.getName() : "Desconocido");
+            dto.setDestino(product.getCountry() != null ? product.getCountry() : "Desconocido");
+        }
+
+        dto.setPaisDestino(product.getCountry() != null ? product.getCountry() : "Desconocido");
+        dto.setCountry(product.getCountry() != null ? product.getCountry() : "Desconocido");
+        dto.setPrecioTotal(product.getPrice());
+        dto.setAerolinea(product.getAerolinea() != null ? product.getAerolinea() : "Desconocida");
+        dto.setNumeroVuelo(product.getNumeroVuelo() != null ? product.getNumeroVuelo() : "000");
+        dto.setFechaSalida(product.getDepartureDate() != null ? product.getDepartureDate().toString() : null);
+        dto.setFechaLlegada(product.getDepartureDate() != null ? product.getDepartureDate().plusHours(2).toString() : null);
+
+        List<Map<String, Object>> segmentos = productService.parseSegmentosPublic(product.getSegmentosJson());
+        dto.setSegmentos(segmentos);
+        if (!segmentos.isEmpty()) {
+            Map<String, Object> primero = segmentos.get(0);
+            Map<String, Object> ultimo = segmentos.get(segmentos.size() - 1);
+            dto.setFechaSalida(String.valueOf(primero.getOrDefault("salida", dto.getFechaSalida())));
+            dto.setFechaLlegada(String.valueOf(ultimo.getOrDefault("llegada", dto.getFechaLlegada())));
+        }
+
+        String codigoPais = "ARG";
+        if (product.getCountry() != null) {
+            codigoPais = PAIS_POR_IATA.entrySet().stream()
+                    .filter(e -> e.getValue().equalsIgnoreCase(product.getCountry()) || e.getKey().equalsIgnoreCase(product.getCountry()))
+                    .map(Map.Entry::getKey)
+                    .findFirst()
+                    .orElse("ARG");
+        }
+
+        List<String> imagenesPais = IMAGENES_POR_PAIS.getOrDefault(codigoPais, List.of("argentina_1.jpg"))
+                .stream()
+                .map(img -> "/assets/imagenespaises/" + img)
+                .toList();
+        dto.setImagenesPais(imagenesPais);
+        dto.setImagenPrincipal(imagenesPais.get(0));
+        dto.setCategoria("Internacional");
+
+        return dto;
+    }
+
 
 
 
@@ -488,3 +605,4 @@ public class AmadeusController {
 
 
 }
+

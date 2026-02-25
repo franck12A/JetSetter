@@ -14,12 +14,19 @@ import "swiper/css/pagination";
 import "swiper/css/autoplay";
 import "./Recomendaciones.css";
 
-export default function Recomendaciones({ origen, destino, fecha }) {
-  const [productos, setProductos] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function Recomendaciones({ vuelos = [], origen, destino, fecha }) {
+  const [productos, setProductos] = useState(vuelos);
+  const [loading, setLoading] = useState(vuelos && vuelos.length > 0 ? false : true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // si vienen vuelos por props, los usamos directamente
+    if (vuelos && vuelos.length > 0) {
+      setProductos(vuelos);
+      setLoading(false);
+      return;
+    }
+
     const loadProductos = async () => {
       setLoading(true);
       setError("");
@@ -35,19 +42,20 @@ export default function Recomendaciones({ origen, destino, fecha }) {
       }
     };
     loadProductos();
-  }, []);
+  }, [vuelos]);
 
   const recomendaciones = useMemo(() => {
     const shuffled = [...productos].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, 20).map((p) => {
       const categoryName = p.category?.name || "Sin categoría";
       const CategoryIcon = getSafeIcon(categoryName);
+      const nameParts = (p.name || "").split("→").map(s => s.trim());
       return {
         ...p,
         categoryName,
         CategoryIcon,
-        aerolinea: p.name.split("→")[0] || "Desconocida",
-        numeroVuelo: p.name.split("→")[1] || "000",
+        aerolinea: nameParts[0] || "Desconocida",
+        numeroVuelo: nameParts[1] || "000",
         caracteristicas: p.features?.map(f => f.name) || ["Clase: Lite", "Equipaje incluido: No"]
       };
     });

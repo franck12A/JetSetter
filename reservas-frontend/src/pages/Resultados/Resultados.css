@@ -36,7 +36,7 @@
 .vuelo-paginado-card {
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, #ffffff, #f0f4ff);
+  background: var(--surface-card);
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 6px 18px rgba(0,0,0,0.06);

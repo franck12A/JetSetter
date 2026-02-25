@@ -7,7 +7,7 @@ import { FaPlane } from "react-icons/fa";
 import VueloCard from "../../components/VueloCards";
 
 import productService from "../../services/productService";
-import { getSafeIcon } from "../../utils/iconRegistry";
+import { getSafeIcon, CATEGORY_ICONS } from "../../utils/iconRegistry";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -15,12 +15,61 @@ import "swiper/css/pagination";
 import "swiper/css/autoplay";
 import "./CategoriasSection.css";
 
-export default function CategoriasSection({ onSelectCategoria }) {
-  const [productos, setProductos] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function CategoriasSection({ vuelos = [], categorias = [], onSelectCategoria }) {
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // lista de categorías con iconos garantizados
+  const listaCategorias = useMemo(() => {
+    let res = [];
+    if (Array.isArray(categorias) && categorias.length > 0) {
+      res = categorias.map((c) => {
+        if (typeof c === "string") {
+          return { name: c, Icon: getSafeIcon(c) };
+        }
+        return {
+          ...c,
+          name: c.name || c,
+          Icon: c.Icon || getSafeIcon(c.name || c),
+        };
+      });
+    } else {
+      // reconstruir a partir de los vuelos para compatibilidad
+      const mapCats = new Map();
+      (vuelos || []).forEach((v) => {
+        (v.categorias || []).forEach((cn) => {
+          if (!mapCats.has(cn)) mapCats.set(cn, { name: cn, Icon: getSafeIcon(cn) });
+        });
+        if (v.category) {
+          const cn = v.category.name || v.category;
+          if (!mapCats.has(cn)) {
+            mapCats.set(cn, {
+              name: cn,
+              Icon: v.category.Icon || getSafeIcon(cn),
+            });
+          }
+        }
+      });
+      res = Array.from(mapCats.values());
+    }
+    // si no hay suficientes categories, añadir defaults del registry para demo
+    if (res.length < 3) {
+      const needed = 3 - res.length;
+      const missing = Object.keys(CATEGORY_ICONS).filter(
+        (k) => !res.some((c) => c.name === k)
+      );
+      missing.slice(0, needed).forEach((k) => {
+        res.push({ name: k, Icon: getSafeIcon(k) });
+      });
+    }
+    return res;
+  }, [categorias, vuelos]);
+
+  // estado de productos solo para mantener compatibilidad si se usa externamente
+  const [productos, setProductos] = useState([]);
+
   useEffect(() => {
+    // opcional: cargar productos para crear recomendaciones de categoria externa
     const loadProductos = async () => {
       setLoading(true);
       setError("");
@@ -38,56 +87,44 @@ export default function CategoriasSection({ onSelectCategoria }) {
     loadProductos();
   }, []);
 
-  const vuelosFiltrados = useMemo(() => {
-    if (!productos || productos.length === 0) return [];
-    const shuffled = [...productos].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 20).map((p) => {
-      const categoryName = p.category?.name || "Otros";
-      const CategoryIcon = getSafeIcon(categoryName);
-
-      // Normalizamos propiedades para que coincidan con el antiguo formato
-      return {
-        ...p,
-        categoryName,
-        CategoryIcon,
-        aerolinea: p.name.split("→")[0] || "Desconocida",
-        numeroVuelo: p.name.split("→")[1] || "0000",
-        fechaSalida: p.departureDate || "ND",
-        fechaLlegada: p.arrivalDate || "ND",
-        precioTotal: p.price || 0,
-        caracteristicas: p.features?.map(f => f.title || f.name) || ["Clase: Lite", "Equipaje incluido: No"]
-      };
-    });
-  }, [productos]);
-
-  if (loading) return <p>Cargando vuelos...</p>;
+  if (loading) return <p>Cargando categorías...</p>;
   if (error) return <p>{error}</p>;
-  if (vuelosFiltrados.length === 0) return <p>No hay vuelos disponibles.</p>;
+  if (listaCategorias.length === 0) return <p>No hay categorías disponibles.</p>;
 
-return (
-  <section className="categorias-section">
-    <Swiper
-      modules={[Navigation, Pagination, Autoplay, A11y]}
-      spaceBetween={20}
-      slidesPerView={3}
-      navigation
-      pagination={{ clickable: true }}
-      autoplay={{ delay: 3000, disableOnInteraction: false }}
-      loop
-    >
-      {vuelosFiltrados.map((vuelo, index) => {
-        const IconVuelo = vuelo.CategoryIcon || FaPlane;
+  return (
+    <section className="categorias-section">
+      <h2>Categorías</h2>
+      <Swiper
+        modules={[Navigation, Pagination, Autoplay, A11y]}
+        spaceBetween={10} /* menos espacio entre iconos */
+        slidesPerView={3}
+        breakpoints={{
+          320: { slidesPerView: 1, spaceBetween: 8 },
+          640: { slidesPerView: 2, spaceBetween: 10 },
+          1024: { slidesPerView: 3, spaceBetween: 12 }
+        }}
+        navigation
+        pagination={{ clickable: true }}
+        autoplay={{ delay: 3000, disableOnInteraction: false }}
+        loop
+      >
+        {listaCategorias.map((cat, index) => {
+          const name = cat.name || cat;
+          const IconCat = cat.Icon || getSafeIcon(name) || FaPlane;
+          const handleClick = () => {
+            if (onSelectCategoria) onSelectCategoria(name);
+          };
 
-        return (
-         <SwiperSlide key={vuelo.id || index}>
-           <Link to={`/vuelo/${vuelo.id}`} className="vuelo-link">
-                <VueloCard vuelo={vuelo} compact IconComponent={vuelo.CategoryIcon} />
-           </Link>
-         </SwiperSlide>
-
-        );
-      })}
-    </Swiper>
-  </section>
-);
+          return (
+            <SwiperSlide key={name + index}>
+              <div className="categoria-card" onClick={handleClick}>
+                <IconCat size={40} className="categoria-icono" />
+                <span className="categoria-nombre">{name}</span>
+              </div>
+            </SwiperSlide>
+          );
+        })}
+      </Swiper>
+    </section>
+  );
 }

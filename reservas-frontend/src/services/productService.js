@@ -44,14 +44,18 @@ const calcularDuracion = (inicio, fin) => {
 const productService = {
 
   // ---------------- VUELOS API ----------------
-obtenerVuelosAPI: async (origen, destino, fecha) => {
-  if (!origen || !destino || !fecha) return [];
+obtenerVuelosAPI: async (origen, destino, fecha, limit = 20) => {
 
   const token = obtenerToken();
 
   try {
-    const { data } = await axios.get(`${API_URL}/amadeus/buscar`, {
-      params: { origen, destino, fecha },
+    const endpoint = (origen && destino && fecha) ? "/amadeus/buscar" : "/amadeus/random";
+    const params = (origen && destino && fecha)
+      ? { origen, destino, fecha, limit }
+      : { limit };
+
+    const { data } = await axios.get(`${API_URL}${endpoint}`, {
+      params,
       headers: { Authorization: token ? `Bearer ${token}` : undefined }
     });
 
@@ -139,11 +143,11 @@ obtenerVuelosAPI: async (origen, destino, fecha) => {
        segmentos: data.segmentos?.map(seg => ({
          aerolinea: seg.aerolinea || "Desconocida",
          numeroVuelo: seg.numeroVuelo || "000",
-         salida: formatearFecha(seg.salida),
-         llegada: formatearFecha(seg.llegada)
+         salida: seg.salida || null,
+         llegada: seg.llegada || null
        })) || [],
-       fechaSalida: formatearFecha(data.fechaSalida || data.departureDate || primerSegmento.salida),
-       fechaLlegada: formatearFecha(data.fechaLlegada || ultimoSegmento.llegada || null),
+       fechaSalida: data.fechaSalida || data.departureDate || primerSegmento.salida || null,
+       fechaLlegada: data.fechaLlegada || ultimoSegmento.llegada || null,
      };
 
    } catch (error) {
@@ -187,8 +191,17 @@ obtenerVuelosAPI: async (origen, destino, fecha) => {
     return data;
   },
 
-  getRandomProducts: async (count = 3) => {
+ getRandomProducts: async (count = 3) => {
     const { data } = await axios.get(`${API_URL}/api/products/random`, { params: { count }, headers: getHeaders() });
+    return data;
+  },
+
+  getRandomFlightsPaged: async (page = 0, size = 20) => {
+    const token = obtenerToken();
+    const { data } = await axios.get(`${API_URL}/amadeus/random/paged`, {
+      params: { page, size },
+      headers: { Authorization: token ? `Bearer ${token}` : undefined }
+    });
     return data;
   },
 

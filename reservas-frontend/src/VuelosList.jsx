@@ -5,7 +5,7 @@ function VuelosList() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:3000/productos/random")
+    fetch("http://localhost:8080/api/products/random?count=6")
       .then(res => res.json())
       .then(data => {
         setVuelos(data);

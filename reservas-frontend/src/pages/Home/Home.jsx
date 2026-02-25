@@ -6,10 +6,20 @@ import Navbar from "../../components/Navbar/Navbar";
 import BuscadorVuelos from "../../components/BuscadorVuelos/BuscadorVuelos";
 import CategoriasSection from "../../components/CategoriasSection/CategoriasSection";
 import Recomendaciones from "../../components/Recomendaciones/Recomendaciones";
+import { useNavigate } from "react-router-dom";
 import Paginacion from "../../components/Paginacion/Paginacion";
 import "./Home.css";
 
 import productService from "../../services/productService";
+
+const splitRoute = (name = "") => {
+  const clean = name.replace(/^Vuelo\s+/i, "");
+  const parts = clean.split(/→|->/).map((p) => p.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    return { origen: parts[0], destino: parts[1] };
+  }
+  return { origen: clean || "N/A", destino: "N/A" };
+};
 export default function Home() {
   const [vuelos, setVuelos] = useState([]);
   const [categorias, setCategorias] = useState([]);
@@ -21,19 +31,24 @@ export default function Home() {
 const fetchVuelos = async () => {
   try {
     const productos = await productService.getAllProducts();
-    // Mapear los campos para que coincidan con la UI
-    const vuelosData = productos.map(p => ({
-      ...p,
-      origen: p.origin,
-      destino: p.destination,
-      fechaSalida: p.departureDate,
-      fechaLlegada: p.arrivalDate,
-      categorias: [p.category?.name || "Otros"],
-      caracteristicas: p.features?.map(f => f.title || f.name) || [],
-      imagenPrincipal: p.imageUrl || "/assets/default.jpg",
-      precioTotal: p.price,
-    }));
-    setVuelos(vuelosData);
+    if (Array.isArray(productos) && productos.length > 0) {
+      const vuelosData = productos.map(p => ({
+        ...p,
+        ...splitRoute(p.name),
+        fechaSalida: p.departureDate,
+        fechaLlegada: null,
+        categorias: [p.category?.name || "Otros"],
+        caracteristicas: p.features?.map(f => f.title || f.name) || [],
+        imagenPrincipal: p.image || "/assets/default.jpg",
+        precioTotal: p.price,
+      }));
+      setVuelos(vuelosData);
+      return;
+    }
+
+    // Fallback: si la BD está vacía, mostrar vuelos de Amadeus.
+    const amadeusVuelos = await productService.obtenerVuelosAPI(null, null, null, 20);
+    setVuelos(amadeusVuelos || []);
   } catch (err) {
     console.error("Error al obtener vuelos desde productService:", err);
   }
@@ -47,7 +62,13 @@ const fetchVuelos = async () => {
       const res = await fetch("http://localhost:8080/api/categories");
       if (!res.ok) throw new Error("Error al cargar categorías");
       const data = await res.json();
-      setCategorias(data || []);
+      // el backend puede enviar { id, name, icon } u otros campos
+      const mapped = (data || []).map((c) => {
+        const name = c.name || c;
+        const Icon = getSafeIcon(name);
+        return { ...c, name, Icon };
+      });
+      setCategorias(mapped);
     } catch (err) {
       console.error("Error cargando categorías:", err);
     }
@@ -76,19 +97,30 @@ const fetchVuelos = async () => {
     if (currentPage > totalPages) setCurrentPage(totalPages > 0 ? totalPages : 1);
   }, [totalPages, currentPage]);
 
+  const navigate = useNavigate();
+
+  const handleSelectCategoria = (cat) => {
+    // navegar a resultados con filtro por categoria
+    navigate(`/resultados?categoria=${encodeURIComponent(cat)}`);
+  };
+
   return (
     <div className="main-bg">
       <div className="header-wrapper">
         <Navbar />
         <BuscadorVuelos
           categorias={categorias}
-          vuelosRaw={vuelos}
+          backendVuelos={vuelos}
           onFiltrar={setVuelosFiltrados}
         />
       </div>
 
       <div className="main-content">
-        <CategoriasSection vuelos={vuelos} categorias={categorias} />
+        <CategoriasSection
+          vuelos={vuelos}
+          categorias={categorias}
+          onSelectCategoria={handleSelectCategoria}
+        />
         <Recomendaciones vuelos={vuelos} />
 
         <div className="vuelos-paginados-section">
@@ -164,7 +196,8 @@ const fetchVuelos = async () => {
                         {isFavorite ? "❤️ Favorito" : "🤍 Agregar"}
                       </button>
                       <button className="btn-reservar" onClick={reservarVuelo}>
-                        Reservar
+                        <span style={{color: 'red', marginRight: '4px'}}>❤️</span>
+                        <span style={{color: 'black'}}>Reservar</span>
                       </button>
                     </div>
 

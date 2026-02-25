@@ -6,9 +6,20 @@ import "react-date-range/dist/theme/default.css";
 import "./BuscadorVuelos.css";
 
 import productService from "../../services/productService";
+import { getSafeIcon } from "../../utils/iconRegistry";
 
-export default function BuscadorVuelos({ categorias = [], backendVuelos = [], onFiltrar }) {
+const splitRoute = (name = "") => {
+  const clean = name.replace(/^Vuelo\s+/i, "");
+  const parts = clean.split(/→|->/).map((p) => p.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    return { origen: parts[0], destino: parts[1] };
+  }
+  return { origen: clean || "N/A", destino: "N/A" };
+};
+
+export default function BuscadorVuelos({ categorias = [], backendVuelos = [], vuelosRaw = [], onFiltrar }) {
   const navigate = useNavigate();
+  const sourceVuelos = backendVuelos.length ? backendVuelos : vuelosRaw;
 
   const [pasajeros, setPasajeros] = useState(1);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
@@ -16,7 +27,7 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], on
   const [fecha, setFecha] = useState({ startDate: null, endDate: null, key: "selection" });
   const [origen, setOrigen] = useState("");
   const [destino, setDestino] = useState("");
-  const [vuelos, setVuelos] = useState(backendVuelos);
+  const [vuelos, setVuelos] = useState(sourceVuelos);
 
   // ------------------ ORÍGENES -----------------
   const origenesDisponibles = useMemo(() => {
@@ -37,7 +48,7 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], on
     const fechaISO = fecha.startDate?.toISOString().split("T")[0];
 
     // ---------------- Backend interno ----------------
-    let vuelosBackend = backendVuelos.filter(v => {
+    let vuelosBackend = sourceVuelos.filter(v => {
       const okOrigen = origen ? v.origen === origen : true;
       const okDestino = destino ? v.destino === destino : true;
       const okFecha = fechaISO ? v.fechaSalida?.startsWith(fechaISO) : true;
@@ -52,18 +63,18 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], on
 
         const vuelosService = productos
           .filter(p => {
-            const okOrigen = p.origin === origen;
-            const okDestino = p.destination === destino;
+            const route = splitRoute(p.name);
+            const okOrigen = route.origen === origen;
+            const okDestino = route.destino === destino;
             const okFecha = p.departureDate?.startsWith(fechaISO);
             const okCategoria = categoriaSeleccionada ? p.category?.name === categoriaSeleccionada : true;
             return okOrigen && okDestino && okFecha && okCategoria;
           })
           .map(p => ({
             ...p,
-            origen: p.origin,
-            destino: p.destination,
+            ...splitRoute(p.name),
             fechaSalida: p.departureDate,
-            fechaLlegada: p.arrivalDate,
+            fechaLlegada: null,
             categorias: [p.category?.name || "Otros"],
             caracteristicas: p.features?.map(f => f.title || f.name) || ["Clase: Lite", "Equipaje incluido: No"],
           }));
@@ -98,15 +109,7 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], on
 
                 <button
                   onClick={handleBuscar}
-                  style={{
-                    backgroundColor: "#00bfff",
-                    color: "#fff",
-                    border: "none",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "0.25rem",
-                    cursor: "pointer",
-                    fontWeight: "bold"
-                  }}
+                  className="search-btn btn btn-primary"
                 >
                   Buscar
                 </button>
@@ -123,15 +126,19 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], on
             </div>
 
             <div className="category-filters">
-              {categorias.map((c) => (
-                <div
-                  key={c.id || c.name}
-                  className={`filter-chip ${categoriaSeleccionada === c.name ? "active" : ""}`}
-                  onClick={() => setCategoriaSeleccionada(c.name)}
-                >
-                  {c.icon && <i className={c.icon}></i>} {c.name}
-                </div>
-              ))}
+              {categorias.map((c) => {
+                const name = c.name || c;
+                const IconComp = c.Icon || getSafeIcon(name);
+                return (
+                  <div
+                    key={c.id || name}
+                    className={`filter-chip ${categoriaSeleccionada === name ? "active" : ""}`}
+                    onClick={() => setCategoriaSeleccionada(name)}
+                  >
+                    {IconComp && <IconComp size={14} className="filter-icon" />} {name}
+                  </div>
+                );
+              })}
 
               {showDatePicker && (
                 <div className="date-range-wrapper active">

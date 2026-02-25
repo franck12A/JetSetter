@@ -6,6 +6,13 @@ import Paginacion from "../../components/Paginacion/Paginacion";
 import { getVueloImage } from "../../utils/images";
 import "./Resultados.css";
 
+const splitRoute = (name = "") => {
+  const clean = name.replace(/^Vuelo\s+/i, "");
+  const parts = clean.split(/→|->/).map((p) => p.trim()).filter(Boolean);
+  if (parts.length >= 2) return { origen: parts[0], destino: parts[1] };
+  return { origen: clean || "N/A", destino: "N/A" };
+};
+
 export default function Resultados() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -25,7 +32,14 @@ export default function Resultados() {
     const fetchVuelos = async () => {
       try {
         const resBackend = await fetch("http://localhost:8080/api/products");
-        const backendData = await resBackend.json();
+        const backendDataRaw = await resBackend.json();
+        const backendData = (backendDataRaw || []).map((p) => ({
+          ...p,
+          ...splitRoute(p.name),
+          date: p.departureDate,
+          price: p.price,
+          category: p.category,
+        }));
 
         const resMock = await fetch("/mockVuelos.json");
         const mockData = await resMock.json();
@@ -60,11 +74,11 @@ const normalize = (str) =>
 
 const coincideOrigen =
   filtroOrigen.trim() === "" ||
-  normalize(v.origin).includes(normalize(filtroOrigen));
+  normalize(v.origen || v.origin).includes(normalize(filtroOrigen));
 
 const coincideDestino =
   filtroDestino.trim() === "" ||
-  normalize(v.destination).includes(normalize(filtroDestino));
+  normalize(v.destino || v.destination).includes(normalize(filtroDestino));
     const coincideCategoria =
       filtroCategoria === "" ||
       (v.category?.name || v.category || "").toLowerCase() ===
@@ -192,7 +206,7 @@ const coincideDestino =
                   <img src={getVueloImage(vuelo)} alt={vuelo.name} />
                 <div className="vuelo-paginado-info">
                   <h3>{vuelo.name}</h3>
-                  <p><FaPlane /> {vuelo.origin} → {vuelo.destination}</p>
+                  <p><FaPlane /> {vuelo.origen || vuelo.origin} → {vuelo.destino || vuelo.destination}</p>
                   <p><FaClock /> Duración: {vuelo.duration || "N/A"}</p>
                   <p>{vuelo.category?.name || vuelo.category || "—"}</p>
                   <p>${vuelo.price}</p>
@@ -205,7 +219,8 @@ const coincideDestino =
                       {isFavorite ? "❤️ Favorito" : "🤍 Agregar"}
                     </button>
                     <button className="btn-reservar" onClick={() => reservarVuelo(vuelo)}>
-                      Reservar
+                      <span style={{color: 'red', marginRight: '4px'}}>❤️</span>
+                      <span style={{color: 'black'}}>Reservar</span>
                     </button>
                   </div>
 

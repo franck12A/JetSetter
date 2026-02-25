@@ -11,7 +11,10 @@ import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.repository.
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -73,6 +76,32 @@ public class ProductService {
     }
     public List<Product> findAll() {
         return productRepository.findAll();
+    }
+
+    public Page<Product> getSimulatedProductsPage(int page, int size) {
+        int safePage = Math.max(0, page);
+        int safeSize = Math.max(1, Math.min(size, 100));
+        return productRepository.findByExternalIdStartingWith("SIM-", PageRequest.of(safePage, safeSize));
+    }
+
+    @Transactional
+    public void cleanupSimulatedProducts(int ttlDays, int maxRows) {
+        int safeTtlDays = Math.max(1, ttlDays);
+        int safeMaxRows = Math.max(50, maxRows);
+
+        LocalDateTime cutoff = LocalDateTime.now().minusDays(safeTtlDays);
+        productRepository.deleteByExternalIdStartingWithAndCreatedAtBefore("SIM-", cutoff);
+
+        List<Product> ordered = productRepository.findByExternalIdStartingWithOrderByCreatedAtDesc("SIM-");
+        if (ordered.size() <= safeMaxRows) return;
+
+        List<Long> idsToDelete = ordered.stream()
+                .skip(safeMaxRows)
+                .map(Product::getId)
+                .toList();
+        if (!idsToDelete.isEmpty()) {
+            productRepository.deleteByIdIn(idsToDelete);
+        }
     }
 
 

@@ -1,24 +1,88 @@
 /* Navbar fijo */
+:root {
+  /* color palette - mantenemos azules/celeste */
+  --blue-primary: #0069d9;
+  --blue-light: #cce5ff;
+  --blue-dark: #0056b3;
+  --cyan-light: #e0f7fa;
+  --surface-page: #f1f5f9;
+  --surface-card: #ffffff;
+  --ink-strong: #1f2937;
+  --accent: #ff6b00;
+  --accent-dark: #e55b00;
+  --transition-fast: 0.2s;
+}
+
 .header-wrapper {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   z-index: 100;
+  background: var(--blue-light);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
 /* Fondo general */
 .main-bg {
   flex: 1;
   display: block;
-  background: #f8f9fa;
+  background:
+    radial-gradient(circle at 10% 0%, var(--blue-light) 0%, transparent 35%),
+    radial-gradient(circle at 90% 5%, var(--cyan-light) 0%, transparent 30%),
+    var(--surface-page);
 }
 
+
 /* Contenido principal separado del navbar y footer */
+body {
+  font-family: "Poppins", sans-serif;
+  color: var(--ink-strong);
+  line-height: 1.6;
+}
+
 .main-content {
-  padding-top: 160px;
+  padding-top: 220px; /* dejamos más espacio para el buscador fijo */
   padding-bottom: 150px;
   position: relative;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: "Poppins", sans-serif;
+  color: var(--blue-dark);
+}
+
+/* reusable button style */
+.btn {
+  display: inline-block;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: background var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
+}
+
+.btn-primary {
+  background: var(--blue-primary);
+  color: #fff;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: var(--blue-dark);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.btn-accent {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+}
+
+.btn-accent:hover {
+  background: var(--accent-dark);
 }
 
 /* ======================================== */
@@ -30,6 +94,8 @@
   background: linear-gradient(180deg, #f8f9fa 0%, #e2e6ea 100%);
   padding: 2rem 1rem;
   border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
 }
 
 /* Grid vertical solo para paginación */
@@ -43,9 +109,10 @@
 .vuelo-paginado-card {
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, #ffffff, #f0f4ff);
+  background: var(--surface-card);
   border-radius: 12px;
   overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.06);
   box-shadow: 0 6px 18px rgba(0,0,0,0.06);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -75,29 +142,44 @@
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
+  color: var(--ink-strong);
 }
 
 .vuelo-paginado-info p {
   margin: 0.2rem 0;
-  color: #555;
+  color: var(--ink-strong);
   display: flex;
   align-items: center;
   gap: 0.3rem;
 }
 
+.vuelo-precio {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+  color: #0f172a;
+  background: var(--blue-light);
+  border: 1px solid rgba(0, 86, 179, 0.18);
+  border-radius: 999px;
+  width: fit-content;
+  padding: 0.2rem 0.6rem;
+}
+
 .vuelo-paginado-info button {
-  background: #ff6b00;
+  background: linear-gradient(180deg, var(--orange-primary) 0%, var(--orange-dark) 100%);
   color: #fff;
   border: none;
   border-radius: 6px;
   padding: 0.4rem 0.8rem;
   cursor: pointer;
   margin-top: 0.5rem;
-  transition: background 0.2s ease;
+  box-shadow: 0 4px 10px rgba(229, 91, 0, 0.22);
+  transition: filter 0.2s ease, box-shadow 0.2s ease;
 }
 
 .vuelo-paginado-info button:hover {
-  background: #e55b00;
+  filter: brightness(1.04);
+  box-shadow: 0 7px 14px rgba(229, 91, 0, 0.28);
 }
 
 /* ======================================== */
@@ -108,27 +190,30 @@
   justify-content: center;
   align-items: center;
   margin-top: 2rem;
-  background: #fff;
+  background: var(--surface-card);
   padding: 1rem 1.5rem;
   border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow: 0 6px 18px rgba(0,0,0,0.08);
   gap: 0.75rem;
 }
 
 .paginacion-container button {
-  background: #007bff;
+  background: linear-gradient(180deg, var(--blue-primary) 0%, var(--blue-dark) 100%);
   color: #fff;
   border: none;
   padding: 0.5rem 0.9rem;
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.95rem;
-  transition: background 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 86, 179, 0.2);
+  transition: filter 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .paginacion-container button:hover:not(:disabled) {
-  background: #0056b3;
+  filter: brightness(1.04);
   transform: translateY(-2px);
+  box-shadow: 0 7px 14px rgba(0, 86, 179, 0.28);
 }
 
 .paginacion-container button:disabled {
@@ -156,6 +241,7 @@
 .producto-card {
   background: #fff;
   border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
   padding: 1rem;
   width: 220px;
@@ -184,29 +270,36 @@
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.2s ease-in-out;
+  transition: filter 0.2s ease-in-out, box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
 
 .btn-fav {
-  background: #eee;
+  background: linear-gradient(180deg, #f5f5f5 0%, #e9ecef 100%);
+  color: #374151;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
 }
 
 .btn-fav.activo {
-  background: #ff6b6b;
+  background: linear-gradient(180deg, #ff6b6b 0%, #e55353 100%);
   color: white;
+  box-shadow: 0 4px 10px rgba(229, 83, 83, 0.24);
 }
 
 .btn-reservar {
-  background: #007bff;
-  color: white;
+  background: linear-gradient(180deg, var(--blue-primary) 0%, var(--blue-dark) 100%);
+  color: black; /* texto negro */
+  box-shadow: 0 4px 10px rgba(0, 86, 179, 0.25);
 }
 
 .btn-reservar:hover {
-  background: #0056b3;
+  filter: brightness(1.04);
+  box-shadow: 0 7px 14px rgba(0, 86, 179, 0.3);
 }
 
 .btn-detalle {
   width: 100%;
   margin-top: 10px;
-  background: #f5f5f5;
+  background: linear-gradient(180deg, #f5f5f5 0%, #e9ecef 100%);
+  color: #1f2937;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
 }
