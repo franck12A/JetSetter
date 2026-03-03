@@ -1,188 +1,362 @@
-.detalle-container {
+/* Contenedor principal */
+.detalle-page-container {
   min-height: 100vh;
-  padding: 24px;
-  color: #1b1f24;
-  background:
-    radial-gradient(circle at 10% 10%, rgba(43, 140, 255, 0.1), transparent 35%),
-    linear-gradient(180deg, #f6f9fc 0%, #eef4fa 100%);
+  padding: 2rem;
+  background-color: #f4f6fa;
+  display: flex;
+  justify-content: center;
 }
 
-.detalle-header {
-  max-width: 1200px;
-  margin: 0 auto 20px;
-  padding: 16px 20px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #dbe6f3;
+.detalle-card-wrapper {
+  background: white;
+  border-radius: 20px;
+  max-width: 1000px;
+  width: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === HEADER SUPERIOR === */
+.dv-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  margin-bottom: 2rem;
 }
 
-.detalle-title {
+.dv-back-btn {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dv-back-btn:hover {
+  background: #e2e8f0;
+}
+
+.dv-title-center {
+  text-align: center;
+}
+
+.dv-title-center h1 {
   margin: 0;
-  font-size: 1.8rem;
-  line-height: 1.2;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
 }
 
-.detalle-subtitle {
-  margin: 4px 0 0;
-  color: #4b627a;
-}
-
-.btn-back {
-  border: 1px solid #c7d7ea;
-  border-radius: 10px;
-  background: #fff;
-  color: #25537f;
-  padding: 10px 14px;
+.dv-title-center p {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
   font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+}
+
+.dv-top-volver-texto {
+  background: transparent;
+  border: none;
+  color: #2563eb;
+  font-weight: 600;
+  font-size: 0.9rem;
   cursor: pointer;
 }
 
-.detalle-main {
-  max-width: 1200px;
-  margin: 0 auto;
+/* === SPLIT LAYOUT === */
+.dv-content-split {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 2rem;
 }
 
-.galeria-principal {
-  min-height: 360px;
-  border-radius: 20px;
+/* === LADO IZQUIERDO (IMAGEN) === */
+.dv-image-side {
+  width: 100%;
+  height: auto;
+  min-height: 500px;
+  /* Para mantener la proporción vertical como en la foto */
+  border-radius: 16px;
   overflow: hidden;
-  border: 1px solid #dbe6f3;
-  box-shadow: 0 20px 45px rgba(31, 61, 92, 0.16);
-  background: #fff;
 }
 
-.galeria-principal img {
+.dv-image-side img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
-.detalle-info {
-  border-radius: 20px;
-  border: 1px solid #dbe6f3;
-  background: #ffffff;
-  padding: 18px;
-  box-shadow: 0 20px 45px rgba(31, 61, 92, 0.1);
-}
-
-.detalle-kpis {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.kpi-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: 12px;
-  background: #f1f7ff;
-  border: 1px solid #d3e5ff;
-  color: #245b8f;
-  padding: 10px 12px;
-  font-weight: 600;
-  min-height: 44px;
-}
-
-.detalle-actions {
-  margin-top: 16px;
+/* === LADO DERECHO (INFO) === */
+.dv-info-side {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.detalle-meta {
-  margin: 8px 0 14px;
-  padding: 10px 12px;
+/* KPI Rows (Precio, Fecha, Duracion) */
+.dv-kpi-row {
+  display: flex;
+  align-items: center;
+  border: 1px solid #f1f5f9;
   border-radius: 12px;
-  border: 1px solid #dbe6f3;
-  background: #f8fbff;
+  padding: 1rem;
+  gap: 1rem;
 }
 
-.detalle-meta p {
-  margin: 6px 0;
+.dv-kpi-icon-container {
+  width: 36px;
+  height: 36px;
+  background-color: #f0f9ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0ea5e9;
+  font-size: 1.1rem;
 }
 
-.detalle-segmentos {
-  margin-top: 12px;
-  padding: 12px;
+.dv-kpi-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.dv-kpi-text span {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.2rem;
+}
+
+.dv-kpi-text strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* Clase & Equipaje */
+.dv-class-section {
+  border: 1px solid #f1f5f9;
   border-radius: 12px;
-  border: 1px solid #dbe6f3;
-  background: #ffffff;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
 }
 
-.detalle-segmentos h3 {
-  margin: 0 0 10px;
+.dv-class-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
 }
 
-.segmento-item {
+.dv-subtitle {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+}
+
+.dv-badge-danger {
+  background-color: #fef2f2;
+  color: #ef4444;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.dv-class-section h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.dv-class-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Itinerario Timeline */
+.dv-itinerary-section {
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.dv-timeline {
+  display: flex;
+  flex-direction: column;
+  margin-top: 1.5rem;
+  position: relative;
+}
+
+.dv-tl-item {
+  display: flex;
+  position: relative;
+  z-index: 2;
+}
+
+.dv-tl-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  border: 4px solid #fff;
+  box-shadow: 0 0 0 2px #0ea5e9;
+  position: absolute;
+  left: 3px;
+  top: 4px;
+}
+
+.end-dot {
+  box-shadow: 0 0 0 2px #22c55e;
+}
+
+.dv-tl-content {
+  margin-left: 2rem;
+  flex: 1;
+}
+
+.dv-tl-header {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
-  border-top: 1px solid #ecf1f8;
-  padding-top: 10px;
-  margin-top: 10px;
+  align-items: center;
 }
 
-.segmento-item:first-of-type {
-  border-top: none;
-  margin-top: 0;
-  padding-top: 0;
+.dv-tl-header strong {
+  font-size: 0.9rem;
+  color: #1e293b;
 }
 
-.btn-primary {
+.dv-tl-time {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.dv-tl-sub {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.dv-tl-flight-info {
+  display: flex;
+  position: relative;
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+.dv-tl-line {
+  position: absolute;
+  left: 9px;
+  top: -24px;
+  bottom: -24px;
+  width: 2px;
+  background-color: #f1f5f9;
+  z-index: 1;
+}
+
+.dv-tl-flight-card {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.dv-flight-icon {
+  transform: rotate(45deg);
+  font-size: 0.9rem;
+}
+
+.dv-tl-confirmed {
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+/* BOTONES DE ACCIÓN INFERIORES */
+.dv-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.dv-btn-reservar {
+  background: #0ea5e9;
+  color: white;
   border: none;
-  border-radius: 10px;
-  background: #1976d2;
-  color: #fff;
-  padding: 10px 18px;
+  border-radius: 12px;
+  padding: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
+  transition: background 0.2s;
 }
 
-.btn-fav {
-  border-radius: 10px;
-  border: 1px solid #b8d0ec;
-  background: #fff;
-  color: #245b8f;
-  padding: 10px 18px;
-  font-weight: 700;
+.dv-btn-reservar:hover {
+  background: #0284c7;
+}
+
+.dv-btn-favorito {
+  background: white;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background 0.2s;
 }
 
-.detalle-bookings {
-  margin-top: 16px;
-  border-top: 1px solid #e3edf7;
-  padding-top: 12px;
+.dv-btn-favorito:hover {
+  background: #f8fafc;
 }
 
-.detalle-bookings h3 {
-  margin: 0 0 8px;
+.fav-active {
+  color: #ef4444;
 }
 
-.detalle-bookings ul {
-  margin: 0;
-  padding-left: 16px;
-}
-
-.detalle-state {
-  text-align: center;
-  padding: 40px 12px;
-}
-
-@media (max-width: 950px) {
-  .detalle-main {
+/* RESPONSIVE */
+@media (max-width: 800px) {
+  .dv-content-split {
     grid-template-columns: 1fr;
   }
 
-  .detalle-kpis {
-    grid-template-columns: 1fr;
+  .dv-image-side {
+    min-height: 300px;
+    height: 300px;
   }
 }

@@ -15,10 +15,8 @@
   justify-content: space-between;
   width: 100%;
   padding: 1rem 2rem;
-  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(4px);
+  background: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -28,7 +26,8 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  min-width: 180px; /* <- evita que se colapse */
+  min-width: 180px;
+  /* <- evita que se colapse */
   flex-shrink: 0;
 }
 
@@ -50,10 +49,10 @@
 .navbar-lema {
   font-weight: bold;
   font-size: 1.2rem;
-  color: #1d4ed8;
-  white-space: nowrap;
+  color: #000000;
   letter-spacing: 0.2px;
 }
+
 /* ===================== */
 /* BOTONES */
 /* ===================== */
@@ -86,6 +85,7 @@
   background: linear-gradient(180deg, var(--green-primary) 0%, var(--green-dark) 100%);
   color: white;
 }
+
 .btn-signup:hover {
   filter: brightness(1.04);
   box-shadow: 0 6px 14px rgba(30, 126, 52, 0.3);
@@ -96,6 +96,7 @@
   background: linear-gradient(180deg, var(--blue-primary) 0%, var(--blue-dark) 100%);
   color: white;
 }
+
 .btn-login:hover {
   filter: brightness(1.04);
   box-shadow: 0 6px 14px rgba(0, 86, 179, 0.3);
@@ -106,6 +107,7 @@
   background: linear-gradient(180deg, var(--yellow-primary) 0%, var(--yellow-dark) 100%);
   color: #212529;
 }
+
 .btn-admin:hover {
   filter: brightness(1.03);
   box-shadow: 0 6px 14px rgba(224, 168, 0, 0.28);
@@ -116,6 +118,7 @@
   background: linear-gradient(180deg, var(--red-primary) 0%, var(--red-dark) 100%);
   color: white;
 }
+
 .btn-logout:hover {
   filter: brightness(1.04);
   box-shadow: 0 6px 14px rgba(176, 42, 55, 0.3);
@@ -130,11 +133,25 @@
   gap: 0.7rem;
   position: relative;
 }
+
+.navbar-bell-icon {
+  font-size: 1.3rem;
+  color: #333;
+  margin-right: 0.5rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.navbar-bell-icon:hover {
+  transform: scale(1.1);
+}
+
 .user-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #007bff, #00c6ff);
+  background: #1d4ed8;
+  /* Solid blue */
   color: white;
   display: flex;
   align-items: center;
@@ -143,12 +160,11 @@
   text-transform: uppercase;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .user-avatar:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 .user-name {
@@ -166,7 +182,7 @@
   background: #fff;
   border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 10px;
-  box-shadow: 0 10px 24px rgba(0,0,0,0.14);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
   display: flex;
   flex-direction: column;
   padding: 0.5rem;
@@ -200,8 +216,15 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ===================== */

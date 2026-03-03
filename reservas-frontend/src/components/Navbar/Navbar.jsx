@@ -2,6 +2,7 @@
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
+import { FaRegBell } from "react-icons/fa";
 import "./Navbar.css";
 
 export default function Navbar() {
@@ -18,14 +19,14 @@ export default function Navbar() {
 
   const userRole = user?.role?.toUpperCase();
 
-console.log("🧠 Usuario en Navbar:", user);
+  console.log("🧠 Usuario en Navbar:", user);
   return (
     <header className="navbar">
       {/* === IZQUIERDA: Logo === */}
       <div className="navbar-left" onClick={() => navigate("/")}>
         <div className="navbar-logo">
           <img
-            src="/assets/logopaginapro.png"
+            src="\assets\logoJettSeter.png"
             alt="logo"
             className="logo-header"
           />
@@ -46,6 +47,7 @@ console.log("🧠 Usuario en Navbar:", user);
           </>
         ) : (
           <div className="navbar-user">
+            <FaRegBell className="navbar-bell-icon" />
             <div
               className="user-avatar"
               onClick={toggleMenu}
@@ -54,7 +56,6 @@ console.log("🧠 Usuario en Navbar:", user);
               {user.firstName?.[0]?.toUpperCase()}
               {user.lastName?.[0]?.toUpperCase()}
             </div>
-            <span className="user-name">{user.firstName}</span>
 
             {showMenu && (
               <div className="user-menu">

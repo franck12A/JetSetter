@@ -1,277 +1,98 @@
-/* === Contenedor general === */
 .categorias-section {
   width: 100%;
   max-width: 1200px;
-  margin: 2rem auto 0; /* separo del buscador fijo */
-  padding: 3rem 1rem 1rem;
-  text-align: center;
-  position: relative;
-  z-index: 10;
+  margin: 0 auto;
+  padding: 0 1rem;
 }
 
-/* === Botones de categoría === */
-/* === Contenedor de botones de categoría === */
-.categorias-botones {
+.categorias-header {
   display: flex;
-  justify-content: center;
-  flex-wrap: wrap;   /* Permite que bajen si no caben en pantallas pequeñas */
-  gap: 0.5rem;       /* Espacio entre botones */
-  margin: 20px 0;
-}
-
-.btn-categoria {
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 20px;     /* Botones redonditos */
-  padding: 0.5rem 1rem;    /* Ajusta tamaño horizontal y vertical */
-  font-size: 0.85rem;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  display: inline-flex;    /* Para que no se estiren al 100% */
-  align-items: center;
-  justify-content: center;
-  width: auto;             /* Forzamos que no ocupe todo el ancho */
-}
-
-.btn-categoria:hover {
-  background-color: #0056b3;
-  transform: translateY(-2px);
-}
-
-.btn-categoria.active {
-  background-color: #0056b3;
-  box-shadow: 0 0 10px rgba(0, 86, 179, 0.4);
-}
-
-/* === Swiper ajustes === */
-.swiper {
-  width: 100%;
-  padding-bottom: 3rem; /* espacio para paginación */
-}
-
-.swiper-slide {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-right: 3px; /* íconos aún más juntos */
-}
-
-/* === Tarjetas === */
-.vuelo-card {
-  background: linear-gradient(135deg, #ffffff, #f0f4ff);
-  border-radius: 20px;
-  padding: 1rem;
-  width: 250px;
-  height: 300px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: space-between;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-  transition: all 0.3s ease;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 
-.vuelo-card:hover {
-  transform: scale(1.04);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+.categorias-header h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
 }
 
-/* === Imágenes === */
-.vuelo-img {
-  width: 100%;
-  height: 220px;
-  border-radius: 10px;
-  object-fit: cover;
-  margin-bottom: 0.8rem;
+.ver-todas {
+  color: #1d4ed8;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-/* === Texto dentro de las tarjetas === */
-.vuelo-card h4 {
-  margin: 0.5rem 0;
-  font-size: 1.1rem;
-  color: #333;
+/* === Contenedor de botones de categoría === */
+.categorias-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
 }
-
-.vuelo-card p {
-  margin: 0.3rem 0;
-  color: #555;
-  font-size: 0.95rem;
-}
-
-/* === Paginación Swiper === */
-.swiper-pagination-bullets {
-  bottom: 0 !important;
-}
-
-.swiper-button-next,
-.swiper-button-prev {
-  color: #007bff;
-  transition: color 0.3s ease, transform 0.2s ease;
-}
-
-.swiper-button-next:hover,
-.swiper-button-prev:hover {
-  color: #0056b3;
-  transform: scale(1.1);
-}
-
-/* === Responsive === */
-@media (max-width: 1024px) {
-  .vuelo-card {
-    max-width: 280px;
-  }
-
-  .vuelo-img {
-    height: 200px;
-  }
-}
-
-@media (max-width: 768px) {
-  .vuelo-card {
-    max-width: 240px;
-  }
-
-  .vuelo-img {
-    height: 180px;
-  }
-
-  .categorias-botones {
-    gap: 0.7rem;
-  }
-}
-
-/* === NUEVO: Cards visuales de categorías === */
 
 .categoria-card {
   background: #ffffff;
-  border: 2px solid #e5e5e5;
-  border-radius: 14px;
-  padding: 12px;
-  width: 110px;
+  border: 1px solid #f1f5f9;
+  border-radius: 16px;
+  padding: 1.5rem;
   cursor: pointer;
-  font-weight: 600;
   text-align: center;
-  transition: 0.25s ease;
+  transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .categoria-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  border-color: #cbd5e1;
 }
 
-.categoria-card.active {
-  border-color: #007bff;
-  background: #e9f1ff;
-  box-shadow: 0 0 10px rgba(0, 123, 255, 0.35);
-}
-
-.categoria-icono {
+.categoria-icono-wrapper {
   width: 48px;
   height: 48px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: #f7f7f7;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
+  margin-bottom: 0.25rem;
 }
 
-.categoria-icono img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+/* Colores específicos de iconos como en la imagen */
+.categoria-card:nth-child(3n+1) .categoria-icono-wrapper {
+  background-color: #e0f2fe;
+  /* Celeste claro */
+  color: #0284c7;
+  /* Celeste fuerte */
 }
 
-.categoria-card span {
-  font-size: 0.85rem;
-  color: #333;
+.categoria-card:nth-child(3n+2) .categoria-icono-wrapper {
+  background-color: #dcfce7;
+  /* Verde claro */
+  color: #059669;
+  /* Verde fuerte */
 }
 
-/* Responsive */
-@media (max-width: 600px) {
-  .categoria-card {
-    width: 90px;
-    padding: 10px;
-  }
-  .categoria-icono {
-    width: 42px;
-    height: 42px;
-  }
-}
-
-/* Estilo general de los iconos de categoría */
-.categoria-icono svg {
-  color: #1e90ff; /* azul por defecto */
-  width: 28px;
-  height: 28px;
-  transition: color 0.3s ease;
-}
-
-/* Icono activo de la categoría */
-.categoria-card.active .categoria-icono svg {
-  color: #ff6347; /* color tomate cuando está activo */
-}
-
-/* Hover sobre cualquier botón de categoría */
-.categoria-card:hover .categoria-icono svg {
-  color: #32cd32; /* verde cuando pasas el mouse */
+.categoria-card:nth-child(3n) .categoria-icono-wrapper {
+  background-color: #ffedd5;
+  /* Naranja claro */
+  color: #d97706;
+  /* Naranja fuerte */
 }
 
 .categoria-icono {
-  background: none;   /* Quita cualquier fondo */
-  padding: 0;         /* Quita el padding */
-  border: none;       /* Quita bordes */
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 1.5rem;
 }
 
-.categoria-card {
-  background: none;       /* Sin fondo */
-  border: none;           /* Sin borde */
-  padding: 6px 12px;      /* Solo algo de espacio alrededor */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
-}
-
-vuelo-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 22px rgba(0,0,0,0.18);
-}
-
-.vuelo-icono {
-  background: #e5f0ff;
-  border-radius: 50%;
-  padding: 15px;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.vuelo-card h4 {
-  font-size: 1rem;
+.categoria-nombre {
+  font-size: 0.85rem;
   font-weight: 600;
-  margin: 0.5rem 0;
+  color: #0f172a;
 }
-
-.vuelo-card p {
-  font-size: 0.9rem;
-  margin: 0.3rem 0;
-  color: #333;
-}
-
-/* Opcional: degradé por categoría */
-.vuelo-card.economy .vuelo-icono svg { color: #1e90ff; }
-.vuelo-card.business .vuelo-icono svg { color: #ff8c00; }
-.vuelo-card.first .vuelo-icono svg { color: #ff6347; }

@@ -1,6 +1,4 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination, Autoplay, A11y } from "swiper/modules";
 import { Link } from "react-router-dom";
 import { FaPlane } from "react-icons/fa";
 
@@ -93,21 +91,12 @@ export default function CategoriasSection({ vuelos = [], categorias = [], onSele
 
   return (
     <section className="categorias-section">
-      <h2>Categorías</h2>
-      <Swiper
-        modules={[Navigation, Pagination, Autoplay, A11y]}
-        spaceBetween={10} /* menos espacio entre iconos */
-        slidesPerView={3}
-        breakpoints={{
-          320: { slidesPerView: 1, spaceBetween: 8 },
-          640: { slidesPerView: 2, spaceBetween: 10 },
-          1024: { slidesPerView: 3, spaceBetween: 12 }
-        }}
-        navigation
-        pagination={{ clickable: true }}
-        autoplay={{ delay: 3000, disableOnInteraction: false }}
-        loop
-      >
+      <div className="categorias-header">
+        <h2>Categorías</h2>
+        <a href="#/resultados" className="ver-todas">Ver todas</a>
+      </div>
+
+      <div className="categorias-grid">
         {listaCategorias.map((cat, index) => {
           const name = cat.name || cat;
           const IconCat = cat.Icon || getSafeIcon(name) || FaPlane;
@@ -116,15 +105,15 @@ export default function CategoriasSection({ vuelos = [], categorias = [], onSele
           };
 
           return (
-            <SwiperSlide key={name + index}>
-              <div className="categoria-card" onClick={handleClick}>
-                <IconCat size={40} className="categoria-icono" />
-                <span className="categoria-nombre">{name}</span>
+            <div key={name + index} className="categoria-card" onClick={handleClick}>
+              <div className="categoria-icono-wrapper">
+                <IconCat className="categoria-icono" />
               </div>
-            </SwiperSlide>
+              <span className="categoria-nombre">{name}</span>
+            </div>
           );
         })}
-      </Swiper>
+      </div>
     </section>
   );
 }

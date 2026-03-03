@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
-import { FaClock, FaMapMarkerAlt, FaPlaneDeparture, FaTicketAlt } from "react-icons/fa";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { FaChevronLeft, FaRegCalendarAlt, FaRegClock, FaMoneyBillWave, FaPlane, FaRegHeart, FaHeart, FaInfoCircle } from "react-icons/fa";
 
 import productService from "../../services/productService";
 import { getUserFavorites, addFavorite, removeFavorite } from "../../services/favoritesApi";
 import { createBooking } from "../../services/bookingsApi";
 import "./DetalleVuelo.css";
+import Recomendaciones from "../../components/Recomendaciones/Recomendaciones";
+
 
 const parseRouteName = (name, fallbackCountry = "-") => {
   const raw = name || "";
@@ -75,6 +77,7 @@ const normalizeVuelo = (data) => {
 export default function DetalleVuelo() {
   const { id } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const user = useMemo(() => JSON.parse(localStorage.getItem("user")), []);
 
   const [vuelo, setVuelo] = useState(location.state?.vuelo ? normalizeVuelo(location.state.vuelo) : null);
@@ -164,73 +167,122 @@ export default function DetalleVuelo() {
   if (!vuelo) return <p className="detalle-state">Vuelo no encontrado</p>;
 
   return (
-    <div className="detalle-container">
-      <div className="detalle-header">
-        <div>
-          <h1 className="detalle-title">{vuelo.origen} {"->"} {vuelo.destino}</h1>
-          <p className="detalle-subtitle">{vuelo.aerolinea} | Vuelo {vuelo.numeroVuelo}</p>
-        </div>
-        <button className="btn-back" onClick={() => window.history.back()}>Volver</button>
-      </div>
+    <div className="detalle-page-container">
+      <div className="detalle-card-wrapper">
 
-      <div className="detalle-main">
-        <div className="galeria-principal">
-          <img src={vuelo.imagenPrincipal} alt={vuelo.aerolinea} />
+        {/* HEADER: Volver + Titulo */}
+        <div className="dv-header">
+          <button className="dv-back-btn" onClick={() => navigate(-1)}>
+            <FaChevronLeft />
+          </button>
+          <div className="dv-title-center">
+            <h1>{vuelo.origen} → {vuelo.destino}</h1>
+            <p>{vuelo.aerolinea} | VUELO {vuelo.numeroVuelo}</p>
+          </div>
+          <button className="dv-top-volver-texto" onClick={() => navigate(-1)}>Volver</button>
         </div>
 
-        <div className="detalle-info">
-          <div className="detalle-kpis">
-            <div className="kpi-chip"><FaTicketAlt /> ${vuelo.precioTotal}</div>
-            <div className="kpi-chip"><FaPlaneDeparture /> Salida: {vuelo.fechaSalida}</div>
-            <div className="kpi-chip"><FaClock /> {vuelo.duracion}</div>
-            <div className="kpi-chip"><FaMapMarkerAlt /> {vuelo.paisDestino}</div>
+        <div className="dv-content-split">
+
+          {/* LADO IZQ: IMAGEN */}
+          <div className="dv-image-side">
+            <img src={vuelo.imagenPrincipal} alt={`Destino ${vuelo.destino}`} />
           </div>
 
-          <div className="detalle-meta">
-            <p><strong>{vuelo.clase}</strong></p>
-            <p><strong>{vuelo.equipaje}</strong></p>
-            <p><strong>Llegada:</strong> {vuelo.fechaLlegada}</p>
-          </div>
+          {/* LADO DER: INFO */}
+          <div className="dv-info-side">
 
-          {vuelo.segmentos?.length > 0 && (
-            <div className="detalle-segmentos">
-              <h3>Itinerario</h3>
-              {vuelo.segmentos.map((seg, idx) => (
-                <div key={`${seg.numeroVuelo || idx}-${idx}`} className="segmento-item">
-                  <div>
-                    <p><strong>Tramo {idx + 1}</strong></p>
-                    <p>{seg.aerolinea || "-"} #{seg.numeroVuelo || "-"}</p>
-                  </div>
-                  <div>
-                    <p>Salida: {formatDateTime(seg.salida)}</p>
-                    <p>Llegada: {formatDateTime(seg.llegada)}</p>
+            {/* KPI Rows */}
+            <div className="dv-kpi-row">
+              <div className="dv-kpi-icon-container"><FaMoneyBillWave /></div>
+              <div className="dv-kpi-text">
+                <span>PRECIO</span>
+                <strong>${vuelo.precioTotal}</strong>
+              </div>
+            </div>
+
+            <div className="dv-kpi-row">
+              <div className="dv-kpi-icon-container"><FaRegCalendarAlt /></div>
+              <div className="dv-kpi-text">
+                <span>FECHA</span>
+                <strong>{vuelo.fechaSalidaRaw ? new Date(vuelo.fechaSalidaRaw).toLocaleDateString("es-AR", { day: '2-digit', month: 'short', year: 'numeric' }) : vuelo.fechaSalida}</strong>
+              </div>
+            </div>
+
+            <div className="dv-kpi-row">
+              <div className="dv-kpi-icon-container"><FaRegClock /></div>
+              <div className="dv-kpi-text">
+                <span>DURACIÓN</span>
+                <strong>{vuelo.duracion.replace("Duracion:", "").trim()}</strong>
+              </div>
+            </div>
+
+            {/* Clase & Equipaje */}
+            <div className="dv-class-section">
+              <div className="dv-class-header">
+                <span className="dv-subtitle">CLASE & EQUIPAJE</span>
+                <span className="dv-badge-danger">SIN MALETA</span>
+              </div>
+              <h4>{vuelo.clase.replace("Clase:", "").trim() || "Tarifa Economy"}</h4>
+              <p className="dv-class-hint"><FaInfoCircle /> Solo incluye artículo personal debajo del asiento.</p>
+            </div>
+
+            {/* Itinerario Timeline */}
+            <div className="dv-itinerary-section">
+              <span className="dv-subtitle">ITINERARIO</span>
+
+              <div className="dv-timeline">
+                {/* Punto Salida */}
+                <div className="dv-tl-item">
+                  <div className="dv-tl-dot start-dot"></div>
+                  <div className="dv-tl-content">
+                    <div className="dv-tl-header">
+                      <strong>Salida {vuelo.origen}</strong>
+                      <span className="dv-tl-time">{vuelo.fechaSalida.split(" ")[1] || "00:00"}</span>
+                    </div>
+                    <p className="dv-tl-sub">{vuelo.origen} Airport</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
 
-          <div className="detalle-actions">
-            <button className="btn-primary" onClick={handleBooking}>Reservar</button>
-            <button className="btn-fav" onClick={handleFavorite}>
-              {isFavorite ? "Favorito" : "Agregar a favoritos"}
-            </button>
+                {/* Info Vuelo del medio */}
+                <div className="dv-tl-flight-info">
+                  <div className="dv-tl-line"></div>
+                  <div className="dv-tl-flight-card">
+                    <FaPlane className="dv-flight-icon" />
+                    <span>{vuelo.aerolinea} #{vuelo.numeroVuelo}</span>
+                    <span className="dv-tl-confirmed">CONFIRMADO</span>
+                  </div>
+                </div>
+
+                {/* Punto Llegada */}
+                <div className="dv-tl-item">
+                  <div className="dv-tl-dot end-dot"></div>
+                  <div className="dv-tl-content">
+                    <div className="dv-tl-header">
+                      <strong>Llegada {vuelo.destino}</strong>
+                      <span className="dv-tl-time">{vuelo.fechaLlegada.split(" ")[1] || "00:00"}</span>
+                    </div>
+                    <p className="dv-tl-sub">{vuelo.paisDestino} Intl Airport</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Acciones */}
+            <div className="dv-action-buttons">
+              <button className="dv-btn-reservar" onClick={handleBooking}>
+                Reservar ahora
+              </button>
+              <button className="dv-btn-favorito" onClick={handleFavorite}>
+                {isFavorite ? <FaHeart className="fav-active" /> : <FaRegHeart />}
+                {isFavorite ? "En favoritos" : "Agregar a favoritos"}
+              </button>
+            </div>
+
           </div>
-
-          {bookings.length > 0 && (
-            <div className="detalle-bookings">
-              <h3>Mis reservas de este vuelo</h3>
-              <ul>
-                {bookings.map((b) => (
-                  <li key={b.id}>
-                    Fecha: {new Date(b.bookingDate).toLocaleDateString("es-AR")} | Pasajeros: {b.passengers} | Estado: {b.status}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       </div>
+
     </div>
   );
 }

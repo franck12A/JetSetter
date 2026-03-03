@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FaPlane, FaClock } from "react-icons/fa";
+import { FaPlane, FaClock, FaFilter, FaChair, FaHeart, FaRegHeart } from "react-icons/fa";
 
 import Navbar from "../../components/Navbar/Navbar";
 import BuscadorVuelos from "../../components/BuscadorVuelos/BuscadorVuelos";
@@ -28,31 +28,31 @@ export default function Home() {
   const [vuelosFiltrados, setVuelosFiltrados] = useState([]);
 
   // 🔹 Traer vuelos desde la API real
-const fetchVuelos = async () => {
-  try {
-    const productos = await productService.getAllProducts();
-    if (Array.isArray(productos) && productos.length > 0) {
-      const vuelosData = productos.map(p => ({
-        ...p,
-        ...splitRoute(p.name),
-        fechaSalida: p.departureDate,
-        fechaLlegada: null,
-        categorias: [p.category?.name || "Otros"],
-        caracteristicas: p.features?.map(f => f.title || f.name) || [],
-        imagenPrincipal: p.image || "/assets/default.jpg",
-        precioTotal: p.price,
-      }));
-      setVuelos(vuelosData);
-      return;
-    }
+  const fetchVuelos = async () => {
+    try {
+      const productos = await productService.getAllProducts();
+      if (Array.isArray(productos) && productos.length > 0) {
+        const vuelosData = productos.map(p => ({
+          ...p,
+          ...splitRoute(p.name),
+          fechaSalida: p.departureDate,
+          fechaLlegada: null,
+          categorias: [p.category?.name || "Otros"],
+          caracteristicas: p.features?.map(f => f.title || f.name) || [],
+          imagenPrincipal: p.image || "/assets/default.jpg",
+          precioTotal: p.price,
+        }));
+        setVuelos(vuelosData);
+        return;
+      }
 
-    // Fallback: si la BD está vacía, mostrar vuelos de Amadeus.
-    const amadeusVuelos = await productService.obtenerVuelosAPI(null, null, null, 20);
-    setVuelos(amadeusVuelos || []);
-  } catch (err) {
-    console.error("Error al obtener vuelos desde productService:", err);
-  }
-};
+      // Fallback: si la BD está vacía, mostrar vuelos de Amadeus.
+      const amadeusVuelos = await productService.obtenerVuelosAPI(null, null, null, 20);
+      setVuelos(amadeusVuelos || []);
+    } catch (err) {
+      console.error("Error al obtener vuelos desde productService:", err);
+    }
+  };
 
 
 
@@ -108,14 +108,14 @@ const fetchVuelos = async () => {
     <div className="main-bg">
       <div className="header-wrapper">
         <Navbar />
+      </div>
+
+      <div className="main-content">
         <BuscadorVuelos
           categorias={categorias}
           backendVuelos={vuelos}
           onFiltrar={setVuelosFiltrados}
         />
-      </div>
-
-      <div className="main-content">
         <CategoriasSection
           vuelos={vuelos}
           categorias={categorias}
@@ -124,33 +124,35 @@ const fetchVuelos = async () => {
         <Recomendaciones vuelos={vuelos} />
 
         <div className="vuelos-paginados-section">
-          <h2>Vuelos disponibles</h2>
+          <div className="vp-header">
+            <h2>Vuelos disponibles</h2>
+            <button className="vp-filter-btn"><FaFilter /></button>
+          </div>
           <div className="vuelos-paginados-grid">
             {vuelosPaginados.map((vuelo) => {
               const user = JSON.parse(localStorage.getItem("user"));
               const isFavorite = user?.favorites?.includes(vuelo.id);
 
-        const toggleFavorite = async () => {
-          if (!user) return alert("Debes iniciar sesión para agregar favoritos");
-          try {
-            const res = await fetch(
-              `http://localhost:8080/api/favorites/toggle/${user.id}/${vuelo.id}`,
-              { method: "POST" }
-            );
-            if (!res.ok) throw new Error("Error al actualizar favoritos");
-            const updatedUser = await res.json();
-            localStorage.setItem("user", JSON.stringify(updatedUser));
-            // actualizar el estado para que se refleje sin recargar
-            setVuelos((prevVuelos) =>
-              prevVuelos.map((v) =>
-                v.id === vuelo.id ? { ...v, favorito: !v.favorito } : v
-              )
-            );
-          } catch (err) {
-            console.error("Error al actualizar favorito:", err);
-          }
-        };
-
+              const toggleFavorite = async () => {
+                if (!user) return alert("Debes iniciar sesión para agregar favoritos");
+                try {
+                  const res = await fetch(
+                    `http://localhost:8080/api/favorites/toggle/${user.id}/${vuelo.id}`,
+                    { method: "POST" }
+                  );
+                  if (!res.ok) throw new Error("Error al actualizar favoritos");
+                  const updatedUser = await res.json();
+                  localStorage.setItem("user", JSON.stringify(updatedUser));
+                  // actualizar el estado para que se refleje sin recargar
+                  setVuelos((prevVuelos) =>
+                    prevVuelos.map((v) =>
+                      v.id === vuelo.id ? { ...v, favorito: !v.favorito } : v
+                    )
+                  );
+                } catch (err) {
+                  console.error("Error al actualizar favorito:", err);
+                }
+              };
 
               const reservarVuelo = async () => {
                 if (!user) return alert("Debes iniciar sesión para reservar un vuelo");
@@ -172,38 +174,43 @@ const fetchVuelos = async () => {
               };
 
               return (
-                <div key={vuelo.id} className="vuelo-paginado-card">
-                  <img
-                    src={vuelo.imagenPrincipal || "/assets/default.jpg"}
-                    alt={vuelo.destino || "Vuelo"}
-                  />
-                  <div className="vuelo-paginado-info">
-                    <h3>{vuelo.origen} → {vuelo.destino}</h3>
-                    <p>
-                      <FaPlane /> {vuelo.origen} → {vuelo.destino}
-                    </p>
-                    <p>
-                      <FaClock /> Duración: {vuelo.caracteristicas?.[0] || "N/A"}
-                    </p>
-                    <p>{vuelo.categorias?.join(", ")}</p>
-                    <p>${vuelo.precioTotal}</p>
+                <div key={vuelo.id} className="vuelo-nuevo-card">
+                  <div className="vnc-img-wrapper">
+                    <img
+                      src={vuelo.imagenPrincipal || "/assets/default.jpg"}
+                      alt={vuelo.destino || "Vuelo"}
+                    />
+                    <div className="vnc-price-overlay">
+                      <span className="vnc-desde">DESDE</span>
+                      <span className="vnc-price">${vuelo.precioTotal}</span>
+                    </div>
+                    <button
+                      className={`vnc-fav-btn ${isFavorite ? "activo" : ""}`}
+                      onClick={toggleFavorite}
+                    >
+                      {isFavorite ? <FaHeart color="white" /> : <FaRegHeart color="white" />}
+                    </button>
+                  </div>
 
-                    <div className="botones-vuelo">
-                      <button
-                        className={`btn-fav ${isFavorite ? "activo" : ""}`}
-                        onClick={toggleFavorite}
-                      >
-                        {isFavorite ? "❤️ Favorito" : "🤍 Agregar"}
-                      </button>
-                      <button className="btn-reservar" onClick={reservarVuelo}>
-                        <span style={{color: 'red', marginRight: '4px'}}>❤️</span>
-                        <span style={{color: 'black'}}>Reservar</span>
-                      </button>
+                  <div className="vnc-info">
+                    <div className="vnc-title-row">
+                      <h3 className="vnc-route">{vuelo.origen} <FaPlane className="vnc-plane-icon" /> {vuelo.destino}</h3>
+                      <span className="vnc-category">{vuelo.categorias?.[0] || "INTERNACIONAL"}</span>
                     </div>
 
-                    <Link to={`/vuelo/${vuelo.id}`}>
-                      <button className="btn-detalle">Ver detalle</button>
-                    </Link>
+                    <div className="vnc-details-row">
+                      <span className="vnc-duration"><FaClock /> {vuelo.caracteristicas?.[0] || "N/A"}</span>
+                      <span className="vnc-class"><FaChair /> Económica</span>
+                    </div>
+
+                    <div className="vnc-actions">
+                      <button className="vnc-btn-reservar" onClick={reservarVuelo}>
+                        Reservar
+                      </button>
+                      <Link to={`/vuelo/${vuelo.id}`} className="vnc-link-detalle">
+                        <button className="vnc-btn-detalle">Ver detalle</button>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               );

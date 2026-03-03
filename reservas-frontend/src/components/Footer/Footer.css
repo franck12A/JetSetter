@@ -1,15 +1,12 @@
 .footer-container {
   width: 100%;
-  background-color: #1e90ff;
+  background-color: #1d4ed8;
   color: white;
-  padding: 1rem 2rem;
+  padding: 1.5rem 2rem;
   font-size: 14px;
   display: flex;
-  position: fixed;
-  bottom: 0;
-  left: 0;
+  position: relative;
   z-index: 10;
-  height: 80px;
 }
 
 .footer-container a {
@@ -25,7 +22,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1200px; /* para que no ocupe toda la pantalla en desktop */
+  max-width: 1200px;
+  /* para que no ocupe toda la pantalla en desktop */
   margin: 0 auto;
   padding: 0 20px;
 }
@@ -41,12 +39,12 @@
   width: auto;
 }
 
- .footer-right {
-    flex-direction: column;
-    padding: 10px;
-    justify-content: space-between;
+.footer-right {
+  flex-direction: column;
+  padding: 10px;
+  justify-content: space-between;
 
-  }
+}
 
 /* Responsive */
 @media (max-width: 768px) {

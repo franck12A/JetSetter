@@ -235,59 +235,59 @@ useEffect(() => {
 
      {/* CONTENEDOR GENERAL */}
      <div className="admin-container">
-       <header className="admin-header">
-         <div className="container">
-           <h1>Panel de Administración — Vuelos</h1>
-           <p>Crear, editar y eliminar vuelos (localStorage)</p>
-
-           <div className="header-actions">
-             <Link to="/">Ver sitio</Link>
-
-             <button
-               onClick={() => {
-                 localStorage.removeItem(LOCAL_KEY);
-                 setVuelos([]);
-                 alert("LocalStorage 'vuelos' vaciado.");
-               }}
-             >
-               Limpiar local
-             </button>
-
-             <button
-               onClick={() => {
-                 setEditingCategory(null);
-                 setNewCategory({ title: "", description: "", imageUrl: "", imageFile: null });
-                 setShowCategoryModal(true);
-               }}
-             >
-               + Agregar categoría
-             </button>
-
-
-             <button
-               onClick={() => {
-                 setEditingFeature(null);
-                 setNewFeature({ title: "", description: "", type: "" });
-                 setShowFeatureModal(true);
-               }}
-             >
-               + Nueva característica
-             </button>
-
-             <Link to="/admin/lista-vuelos" className="btn-lista-vuelos">
-               Lista de productos
-             </Link>
-           </div>
-
-           {backendError && <div className="form-error">{backendError}</div>}
+       {/* TOP NAVIGATION BAR */}
+       <div className="admin-top-bar">
+         <div className="admin-logo">
+          <img src="/assets/logoJettSeter.png" alt="JetSetter Logo" className="admin-logo-img" />
+          <span style={{color: '#3b82f6', fontWeight: '700'}}>JetSetter</span> <span style={{color: '#000', fontWeight: '700'}}>Admin</span>
          </div>
+         <div className="admin-top-actions">
+           <Link to="/" className="btn-top-action btn-view">Ver sitio</Link>
+           <button
+             className="btn-top-action btn-clear"
+             onClick={() => {
+               if (window.confirm("¿Limpiar localStorage?")) {
+                 localStorage.removeItem("features_local");
+                 localStorage.removeItem("categories_local");
+                 setVuelos([]);
+                 setAvailableFeatures([]);
+                 setCategories([]);
+                 alert("✅ LocalStorage limpiado");
+               }
+             }}
+           >
+             Limpiar
+           </button>
+         </div>
+       </div>
+
+       {/* HEADER PRINCIPAL */}
+       <header className="admin-header">
+         <div className="admin-header-main">
+           <div className="admin-title-section">
+             <h1>Administración de Vuelos</h1>
+             <p>Gestiona el inventario de vuelos y características.</p>
+           </div>
+         </div>
+
+         {backendError && <div className="form-error">{backendError}</div>}
        </header>
 
        {/* LISTA DE FEATURES */}
        <section className="admin-features-section">
-         <h2>Características registradas</h2>
+         <div className="features-section-header">
+           <h2>Características registradas</h2>
+           <div className="features-header-right">
+             <span className="features-count">{availableFeatures.length} total</span>
+             <button className="btn-new-feature" onClick={() => {
+               setEditingFeature(null);
+               setNewFeature({ title: "", description: "", type: "" });
+               setShowFeatureModal(true);
+             }}>+ Nueva</button>
+           </div>
+         </div>
 
-         {availableFeatures.length === 0 && <p>No hay características aún.</p>}
+         {availableFeatures.length === 0 && <p className="no-data">No hay características aún.</p>}
 
          {availableFeatures.length > 0 && (
            <table className="admin-table">
@@ -360,6 +360,7 @@ useEffect(() => {
        <main className="container">
          <section className="admin-form">
            <h2>{editingId ? "Editar vuelo" : "Crear nuevo vuelo"}</h2>
+           <p>Completa todos los campos para publicar un nuevo destino.</p>
 
            <form
              onSubmit={(e) => {
@@ -381,8 +382,9 @@ useEffect(() => {
 
              <div className="grid-2">
                <label>
-                 Nombre
+                 Nombre del Vuelo
                  <input
+                   placeholder="Ej. Vuelo Madrid - Tokyo"
                    value={form.name}
                    onChange={(e) =>
                      setForm({ ...form, name: e.target.value })
@@ -392,8 +394,9 @@ useEffect(() => {
                </label>
 
                <label>
-                 País
+                 País de Destino
                  <input
+                   placeholder="Ej. España"
                    value={form.country}
                    onChange={(e) =>
                      setForm({ ...form, country: e.target.value })
@@ -408,6 +411,7 @@ useEffect(() => {
                    type="number"
                    min="0"
                    step="0.01"
+                   placeholder="$ 0.00"
                    value={form.price}
                    onChange={(e) =>
                      setForm({ ...form, price: e.target.value })
@@ -449,9 +453,10 @@ useEffect(() => {
              </label>
 
                <label>
-                 Descripción
+                 Descripción del Vuelo
                  <textarea
                    rows="3"
+                   placeholder="Detalles del trayecto y servicios..."
                    value={form.description}
                    onChange={(e) =>
                      setForm({ ...form, description: e.target.value })
@@ -613,7 +618,7 @@ useEffect(() => {
                        imageFilesDataUrls: [],
                      })
                    }
-                   placeholder="https://..."
+                   placeholder="https://url-de-la-imagen.com"
                  />
                </label>
 

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { DateRangePicker } from "react-date-range";
+import { FaPlaneDeparture, FaPlaneArrival, FaUser, FaRegCalendarAlt, FaSearch } from "react-icons/fa";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import "./BuscadorVuelos.css";
@@ -91,78 +92,73 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], vu
   };
 
   return (
-    <div className="bg-light py-4">
-      <div className="container">
-        <div className="search-container">
-          <div className="search-wrapper">
-            <div className="search-header">
-              <div className="search-input-group" style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                <select value={origen} onChange={(e) => setOrigen(e.target.value)} className="search-select">
-                  <option value="">Origen</option>
-                  {origenesDisponibles.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
-                </select>
+    <div className="hero-section">
+      <div className="search-wrapper">
+        <h1 className="hero-title">¿A dónde volamos hoy?</h1>
 
-                <select value={destino} onChange={(e) => setDestino(e.target.value)} className="search-select">
-                  <option value="">Destino</option>
-                  {destinosDisponibles.map(d => <option key={d.key} value={d.key}>{d.label}</option>)}
-                </select>
+        <div className="search-row-full">
+          {/* Origen Pill */}
+          <div className="search-pill">
+            <FaPlaneDeparture className="pill-icon" />
+            <select value={origen} onChange={(e) => setOrigen(e.target.value)} className="search-select">
+              <option value="">Origen</option>
+              {origenesDisponibles.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+            </select>
+          </div>
 
-                <button
-                  onClick={handleBuscar}
-                  className="search-btn btn btn-primary"
-                >
-                  Buscar
-                </button>
-              </div>
-
-              <div className="quick-filters">
-                <span className="quick-filter">Pasajeros: {pasajeros}</span>
-                <span className="quick-filter" onClick={() => setShowDatePicker(!showDatePicker)}>
-                  {fecha.startDate && fecha.endDate
-                    ? `${fecha.startDate.toLocaleDateString()} - ${fecha.endDate.toLocaleDateString()}`
-                    : "Seleccionar fechas"}
-                </span>
-              </div>
-            </div>
-
-            <div className="category-filters">
-              {categorias.map((c) => {
-                const name = c.name || c;
-                const IconComp = c.Icon || getSafeIcon(name);
-                return (
-                  <div
-                    key={c.id || name}
-                    className={`filter-chip ${categoriaSeleccionada === name ? "active" : ""}`}
-                    onClick={() => setCategoriaSeleccionada(name)}
-                  >
-                    {IconComp && <IconComp size={14} className="filter-icon" />} {name}
-                  </div>
-                );
-              })}
-
-              {showDatePicker && (
-                <div className="date-range-wrapper active">
-                  <DateRangePicker
-                    ranges={[{
-                      startDate: fecha.startDate || new Date(),
-                      endDate: fecha.endDate || new Date(),
-                      key: "selection"
-                    }]}
-                    onChange={(item) => setFecha({
-                      startDate: item.selection.startDate,
-                      endDate: item.selection.endDate,
-                      key: "selection"
-                    })}
-                    showSelectionPreview
-                    moveRangeOnFirstSelection={false}
-                    editableDateInputs
-                  />
-                </div>
-              )}
-            </div>
-
+          {/* Destino Pill */}
+          <div className="search-pill">
+            <FaPlaneArrival className="pill-icon" />
+            <select value={destino} onChange={(e) => setDestino(e.target.value)} className="search-select">
+              <option value="">Destino</option>
+              {destinosDisponibles.map(d => <option key={d.key} value={d.key}>{d.label}</option>)}
+            </select>
           </div>
         </div>
+
+        <div className="search-row-auto">
+          {/* Pasajeros Pill */}
+          <div className="search-pill">
+            <FaUser className="pill-icon" />
+            <span className="search-pill-text">Pasajeros: {pasajeros}</span>
+          </div>
+
+          {/* Fechas Pill */}
+          <div className="search-pill relative" onClick={() => setShowDatePicker(!showDatePicker)}>
+            <FaRegCalendarAlt className="pill-icon" />
+            <span className="search-pill-text">
+              {fecha.startDate && fecha.endDate
+                ? `${fecha.startDate.toLocaleDateString()} - ${fecha.endDate.toLocaleDateString()}`
+                : "Seleccionar fechas"}
+            </span>
+
+            {showDatePicker && (
+              <div className="date-range-wrapper" onClick={(e) => e.stopPropagation()}>
+                <DateRangePicker
+                  ranges={[{
+                    startDate: fecha.startDate || new Date(),
+                    endDate: fecha.endDate || new Date(),
+                    key: "selection"
+                  }]}
+                  onChange={(item) => setFecha({
+                    startDate: item.selection.startDate,
+                    endDate: item.selection.endDate,
+                    key: "selection"
+                  })}
+                  showSelectionPreview
+                  moveRangeOnFirstSelection={false}
+                  editableDateInputs
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Botón Buscar Completo ancho */}
+        <button onClick={handleBuscar} className="search-btn">
+          <FaSearch className="btn-icon" />
+          Buscar Vuelos
+        </button>
       </div>
     </div>
   );

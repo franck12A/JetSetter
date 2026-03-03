@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { FaPlane, FaClock, FaCar } from "react-icons/fa";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  FaPlane, FaClock, FaCar,
+  FaChevronLeft, FaPen, FaRegHeart, FaTicketAlt,
+  FaCog, FaQuestionCircle, FaChevronRight
+} from "react-icons/fa";
 import "./Profile.css";
 
 function normalizeImage(src) {
@@ -16,35 +21,33 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [user] = useState(() => JSON.parse(localStorage.getItem("user")));
   const [token] = useState(() => localStorage.getItem("token"));
+  const navigate = useNavigate();
 
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    const storedToken = localStorage.getItem("token");
 
+    if (!storedUser || !storedToken) return;
 
+    setLoading(true);
 
-useEffect(() => {
-  const storedUser = JSON.parse(localStorage.getItem("user"));
-  const storedToken = localStorage.getItem("token");
+    // Favoritos
+    fetch("http://localhost:8080/api/favorites", {
+      headers: { "Authorization": `Bearer ${storedToken}` }
+    })
+      .then(res => res.json())
+      .then(data => setFavorites(data))
+      .catch(err => console.error(err));
 
-  if (!storedUser || !storedToken) return;
-
-  setLoading(true);
-
-  // Favoritos
-  fetch("http://localhost:8080/api/favorites", {
-    headers: { "Authorization": `Bearer ${storedToken}` }
-  })
-    .then(res => res.json())
-    .then(data => setFavorites(data))
-    .catch(err => console.error(err));
-
-  // Reservas
-  fetch("http://localhost:8080/api/bookings/user", {
-    headers: { "Authorization": `Bearer ${storedToken}` }
-  })
-    .then(res => res.json())
-    .then(data => setBookings(data))
-    .catch(err => console.error(err))
-    .finally(() => setLoading(false));
-}, []); // 🔑 vacía: solo se ejecuta 1 vez
+    // Reservas
+    fetch("http://localhost:8080/api/bookings/user", {
+      headers: { "Authorization": `Bearer ${storedToken}` }
+    })
+      .then(res => res.json())
+      .then(data => setBookings(data))
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, []); // 🔑 vacía: solo se ejecuta 1 vez
 
 
   const handleLogout = () => {
@@ -123,26 +126,49 @@ useEffect(() => {
   );
 
   return (
-    <div className="profile-container">
-      <div className="profile-card">
-        {/* HEADER */}
-        <div className="profile-header">
-          <div className="profile-avatar">{user.username?.charAt(0).toUpperCase() || "U"}</div>
-          <div className="profile-info">
-            <h2>{user.username}</h2>
-            <p className="email">{user.email || "sin correo"}</p>
-            <div className="profile-stats">
-              <div><span>{favorites.length}</span><small>Favoritos</small></div>
-              <div><span>{bookings.length}</span><small>Reservas</small></div>
+    <div className="profile-page-container">
+      {/* HEADER NAV */}
+      <div className="profile-top-nav">
+        <button className="ptn-back" onClick={() => navigate(-1)}>
+          <FaChevronLeft />
+        </button>
+        <button className="ptn-logout" onClick={handleLogout}>Cerrar sesión</button>
+      </div>
+
+      <div className="profile-wrapper">
+        {/* AVATAR INFO */}
+        <div className="profile-user-info">
+          <div className="pui-avatar-wrapper">
+            <div className="pui-avatar">
+              {user.username?.charAt(0).toUpperCase() || "U"}
             </div>
+            <button className="pui-edit-btn"><FaPen /></button>
           </div>
-          <button className="btn-logout" onClick={handleLogout}>Cerrar sesión</button>
+          <h2 className="pui-name">{user.username || "Mi Perfil"}</h2>
+          <p className="pui-email">{user.email || "sin correo"}</p>
+        </div>
+
+        {/* STATS */}
+        <div className="profile-stats-grid">
+          <div className="ps-card">
+            <h3>{favorites.length}</h3>
+            <span>FAVORITOS</span>
+          </div>
+          <div className="ps-card">
+            <h3>{bookings.length}</h3>
+            <span>RESERVAS</span>
+          </div>
         </div>
 
         {/* FAVORITOS */}
-        <section className="profile-section mb-5">
-          <h3>❤️ Vuelos favoritos</h3>
-          {favorites.length === 0 ? <p className="no-favs">No tienes vuelos favoritos aún.</p> :
+        <section className="profile-content-section">
+          <h3 className="pcs-title">❤️ Vuelos favoritos</h3>
+          {favorites.length === 0 ? (
+            <div className="pcs-empty-state">
+              <div className="pcs-empty-icon"><FaRegHeart /></div>
+              <p>No tienes vuelos favoritos aún.</p>
+            </div>
+          ) : (
             <div className="card-grid">
               {favorites.map((vuelo, idx) => {
                 const IconComponent = icons[vuelo.iconName] || FaPlane;
@@ -158,20 +184,25 @@ useEffect(() => {
                       <div className="flight-footer">
                         <IconComponent style={{ marginRight: 8 }} />
                         <span className="flight-price">${vuelo.price}</span>
-                        <button className="btn-delete" onClick={() => handleRemoveFavorite(vuelo.id)}>❌ Eliminar</button>
+                        <button className="btn-delete" onClick={() => handleRemoveFavorite(vuelo.id)}>❌ </button>
                       </div>
                     </div>
                   </div>
                 );
               })}
             </div>
-          }
+          )}
         </section>
 
         {/* RESERVAS */}
-        <section className="profile-section">
-          <h3>✈️ Mis reservas</h3>
-          {bookings.length === 0 ? <p className="no-favs">No tienes reservas registradas.</p> :
+        <section className="profile-content-section">
+          <h3 className="pcs-title">✈️ Mis reservas</h3>
+          {bookings.length === 0 ? (
+            <div className="pcs-empty-state">
+              <div className="pcs-empty-icon"><FaTicketAlt /></div>
+              <p>No tienes reservas registradas.</p>
+            </div>
+          ) : (
             <div className="card-grid">
               {bookings.map((b, idx) => {
                 const vuelo = b.product || b;
@@ -187,23 +218,34 @@ useEffect(() => {
                     </div>
                     <div className="flight-card-body">
                       <h5 className="flight-title">{vuelo.name}</h5>
-                      <p className="flight-desc">{vuelo.description}</p>
-                      <div className="flight-meta">
-                        <p>🛫 Origen: {vuelo.origen || "Desconocido"}</p>
-                        <p>🛬 Destino: {vuelo.destino || "Desconocido"}</p>
-                        <p>📅 {fechaVuelo.toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})}</p>
-                      </div>
-                      <div className="flight-footer">
+                      <p className="flight-meta-data">📅 {fechaVuelo.toLocaleDateString("es-AR")}</p>
+                      <div className="flight-footer mt-2">
                         <span className="flight-price">${vuelo.price}</span>
-                        <button className="btn-delete" onClick={() => handleCancelBooking(b.id)}>❌ Cancelar reserva</button>
+                        <button className="btn-delete" onClick={() => handleCancelBooking(b.id)}>❌</button>
                       </div>
                     </div>
                   </div>
                 );
               })}
             </div>
-          }
+          )}
         </section>
+
+        {/* MENU */}
+        <div className="profile-options-menu">
+          <button className="pom-item">
+            <div className="pom-item-left">
+              <FaCog className="pom-icon" /> <span>Ajustes de cuenta</span>
+            </div>
+            <FaChevronRight className="pom-arrow" />
+          </button>
+          <button className="pom-item border-none">
+            <div className="pom-item-left">
+              <FaQuestionCircle className="pom-icon" /> <span>Centro de ayuda</span>
+            </div>
+            <FaChevronRight className="pom-arrow" />
+          </button>
+        </div>
       </div>
     </div>
   );

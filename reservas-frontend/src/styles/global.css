@@ -6,12 +6,18 @@
 
 :root {
   /* 🎨 Colores principales */
-  --color-primary: #007bff;       /* Azul corporativo */
-  --color-primary-dark: #0056b3;  /* Azul oscuro */
-  --color-accent: #00b4d8;        /* Celeste vibrante */
-  --color-bg: #f7f9fc;            /* Fondo suave */
-  --color-text: #1a1a1a;          /* Texto principal */
-  --color-muted: #666;            /* Texto secundario */
+  --color-primary: #007bff;
+  /* Azul corporativo */
+  --color-primary-dark: #0056b3;
+  /* Azul oscuro */
+  --color-accent: #00b4d8;
+  /* Celeste vibrante */
+  --color-bg: #f7f9fc;
+  /* Fondo suave */
+  --color-text: #1a1a1a;
+  /* Texto principal */
+  --color-muted: #666;
+  /* Texto secundario */
   --color-white: #fff;
 
   /* 💫 Sombras y bordes */
@@ -27,19 +33,27 @@
 /* src/styles/global.css */
 
 /* Aplica a toda la página */
-html, body, #root,  .main-bg{
+html,
+body,
+#root,
+.main-bg {
   margin: 0;
   padding: 0;
   height: 100%;
-  background: linear-gradient(to bottom, #e6f0fa, #ffffff);
-  font-family: 'Poppins', sans-serif; /* Tipografía global */
+  background: #f8f9fa;
+  /* Color sólido sutil (gris muy claro) igual a captura */
+  font-family: 'Poppins', sans-serif;
+  /* Tipografía global */
   display: flex;
   flex-direction: column;
 }
 
 
 /* ---------- Títulos globales ---------- */
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   color: var(--color-primary-dark);
 }
 
@@ -85,11 +99,9 @@ body::before {
   left: 0;
   width: 100%;
   height: 350px;
-  background: linear-gradient(
-    180deg,
-    var(--color-primary) 0%,
-    var(--color-accent) 100%
-  );
+  background: linear-gradient(180deg,
+      var(--color-primary) 0%,
+      var(--color-accent) 100%);
   z-index: -1;
   opacity: 0.15;
 }

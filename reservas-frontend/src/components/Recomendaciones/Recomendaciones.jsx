@@ -4,9 +4,8 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay, A11y } from "swiper/modules";
 import { Link } from "react-router-dom";
 
-import VueloCards from "../../components/VueloCards"; // usamos VueloCard directamente
 import productService from "../../services/productService";
-import { getSafeIcon } from "../../utils/iconRegistry";
+import CarouselCard from "../CarouselCard/CarouselCard";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -47,13 +46,9 @@ export default function Recomendaciones({ vuelos = [], origen, destino, fecha })
   const recomendaciones = useMemo(() => {
     const shuffled = [...productos].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, 20).map((p) => {
-      const categoryName = p.category?.name || "Sin categoría";
-      const CategoryIcon = getSafeIcon(categoryName);
       const nameParts = (p.name || "").split("→").map(s => s.trim());
       return {
         ...p,
-        categoryName,
-        CategoryIcon,
         aerolinea: nameParts[0] || "Desconocida",
         numeroVuelo: nameParts[1] || "000",
         caracteristicas: p.features?.map(f => f.name) || ["Clase: Lite", "Equipaje incluido: No"]
@@ -67,37 +62,43 @@ export default function Recomendaciones({ vuelos = [], origen, destino, fecha })
 
   return (
     <section className="recomendaciones-section">
-      <h2 className="titulo-reco">Recomendaciones</h2>
+      <div className="reco-header">
+        <h2 className="titulo-reco">Recomendaciones</h2>
+        <div className="reco-nav-buttons">
+          <button className="reco-nav-btn prev-btn">&lt;</button>
+          <button className="reco-nav-btn next-btn">&gt;</button>
+        </div>
+      </div>
       <div className="reco-wrapper">
         <Swiper
           modules={[Navigation, Pagination, Autoplay, A11y]}
           spaceBetween={20}
           slidesPerView={3}
-          navigation
-          pagination={{ clickable: true }}
+          centeredSlides={true}
+          centerInsufficientSlides={true}
+          breakpoints={{
+            320: { slidesPerView: 1, spaceBetween: 15 },
+            768: { slidesPerView: 2, spaceBetween: 20 },
+            1024: { slidesPerView: 3, spaceBetween: 20 }
+          }}
+          navigation={{
+            prevEl: '.prev-btn',
+            nextEl: '.next-btn',
+          }}
           autoplay={{ delay: 4000, disableOnInteraction: false }}
           loop
         >
           {recomendaciones.map((v, index) => (
-       <SwiperSlide key={v.id || index}>
-         <Link to={`/vuelo/${v.id}`} className="reco-link" state={{ vuelo: v }}>
-           <VueloCards
-             vuelo={v}
-             compact={false}   // usamos completo para mostrar imagen
-             showImage={true}  // mostramos la imagen real del vuelo
-             IconComponent={null}
-              miniCard={true}// no usamos icono de categoría
-           />
-
-           {/* 🔹 Bloque comentado para futuras opiniones / estrellas */}
-           {/*
-           <div className="reco-rating">
-             <span>⭐⭐⭐⭐☆</span>  // ejemplo estático
-             <p>4.0 (12 opiniones)</p>
-           </div>
-           */}
-         </Link>
-       </SwiperSlide>
+            <SwiperSlide key={v.id || index}>
+              <Link to={`/vuelo/${v.id}`} className="reco-link" state={{ vuelo: v }}>
+                <CarouselCard
+                  image={v.imagenPrincipal}
+                  subtitle={`${v.origen} → ${v.destino}`}
+                  title={v.destino}
+                  price={v.precioTotal}
+                />
+              </Link>
+            </SwiperSlide>
 
           ))}
         </Swiper>
