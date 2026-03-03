@@ -16,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -184,6 +185,7 @@ public ResponseEntity<Product> updateProduct(
 
     // --- Eliminar producto ---
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.ok("Producto eliminado correctamente");

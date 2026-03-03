@@ -6,6 +6,7 @@ import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Model.Booki
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Service.BookingService;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.dto.BookingRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,6 +26,7 @@ public class BookingController {
     }
 
     @GetMapping("/user")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Booking>> getBookings(Authentication authentication) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
@@ -33,6 +35,7 @@ public class BookingController {
     }
 
     @PostMapping("/create")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> createBooking(@RequestBody BookingRequest request,
                                            Authentication authentication) {
         String email = authentication.getName();
@@ -53,6 +56,7 @@ public class BookingController {
     }
 
     @DeleteMapping("/{bookingId}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> cancelBooking(@PathVariable Long bookingId,
                                                 Authentication authentication) {
         String email = authentication.getName();

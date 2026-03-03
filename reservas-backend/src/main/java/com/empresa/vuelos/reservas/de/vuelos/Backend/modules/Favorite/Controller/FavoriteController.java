@@ -11,6 +11,7 @@ import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.Service.Pro
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Product;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +34,7 @@ public class FavoriteController {
 
     // Agregar favorito
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> addFavorite(@RequestBody FavoriteRequest request,
                                               Authentication authentication) {
         String email = authentication.getName();
@@ -47,6 +49,7 @@ public class FavoriteController {
 
     // Obtener favoritos del usuario logueado
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Product>> getFavorites(Authentication authentication) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
@@ -60,6 +63,7 @@ public class FavoriteController {
 
     // Eliminar favorito
     @DeleteMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> removeFavorite(@RequestBody FavoriteRequest request,
                                                  Authentication authentication) {
         String email = authentication.getName();

@@ -4,6 +4,7 @@ import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.Service.Fea
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.dto.FeatureDTO;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Feature;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,16 +26,19 @@ public class FeatureController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Feature create(@Valid @RequestBody FeatureDTO dto) {
         return service.create(dto);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Feature update(@PathVariable Long id, @Valid @RequestBody FeatureDTO dto) {
         return service.update(id, dto);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public void delete(@PathVariable Long id) {
         service.delete(id);
     }

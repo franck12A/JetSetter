@@ -4,14 +4,12 @@ import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.DTO.UserReques
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Model.User;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Service.AuthService;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Gmail.EmailService;
-import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Product;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -62,55 +60,9 @@ public class AuthController {
 
 
 
-    // ===== FAVORITOS =====
-
-    // Obtener favoritos de un usuario
-    @GetMapping("/{userId}/favorites")
-    public ResponseEntity<?> getFavorites(@PathVariable Long userId) {
-        try {
-            Set<Product> favorites = authService.getFavorites(userId);
-            return ResponseEntity.ok(favorites);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    // Agregar a favoritos
-// Agregar a favoritos
-    @PostMapping("/{userId}/favorites/{productId}")
-    public ResponseEntity<?> addFavorite(@PathVariable Long userId, @PathVariable Long productId) {
-        try {
-            if (userId == null || userId <= 0) {
-                return ResponseEntity.status(401).body("Debe iniciar sesión para agregar favoritos");
-            }
-
-            User user = authService.addFavorite(userId, productId);
-            user.setPassword(null);
-            return ResponseEntity.ok(user);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    // Quitar de favoritos
-    @DeleteMapping("/{userId}/favorites/{productId}")
-    public ResponseEntity<?> removeFavorite(@PathVariable Long userId, @PathVariable Long productId) {
-        try {
-            if (userId == null || userId <= 0) {
-                return ResponseEntity.status(401).body("Debe iniciar sesión para quitar favoritos");
-            }
-
-            User user = authService.removeFavorite(userId, productId);
-            user.setPassword(null);
-            return ResponseEntity.ok(user);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
     // ===== ADMIN ROLES =====
     @PutMapping("/{userId}/role")
-    //@PreAuthorize("hasAuthority('ROLE_ADMIN')") // opcional, si querés reforzar seguridad
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateUserRole(
             @PathVariable Long userId,
             @RequestParam String role
@@ -128,6 +80,7 @@ public class AuthController {
 
     // Listar todos los usuarios
     @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getAllUsers() {
         try {
             return ResponseEntity.ok(authService.getAllUsers());

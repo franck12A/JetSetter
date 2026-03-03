@@ -5,6 +5,7 @@ import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Category.Service.Ca
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Category.Service.FileService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,6 +27,7 @@ public class CategoryController {
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Category> createCategory(@RequestBody Category category) {
         return ResponseEntity.ok(categoryService.saveCategory(category));
     }
