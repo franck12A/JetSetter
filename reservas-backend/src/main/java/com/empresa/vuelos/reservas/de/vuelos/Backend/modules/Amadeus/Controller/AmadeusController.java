@@ -137,6 +137,11 @@ public class AmadeusController {
                     "ciudad", "Barcelona",
                     "pais", "ESP"
             )),
+            Map.entry("MAD", Map.of(
+                    "nombre", "Aeropuerto Adolfo Suárez Madrid-Barajas",
+                    "ciudad", "Madrid",
+                    "pais", "ESP"
+            )),
             Map.entry("OSL", Map.of(
                     "nombre", "Aeropuerto de Oslo-Gardermoen",
                     "ciudad", "Oslo",
@@ -151,6 +156,43 @@ public class AmadeusController {
     );
 
 
+
+
+    private String resolveIataCode(String rawLocation) {
+        if (rawLocation == null || rawLocation.isBlank()) return null;
+
+        String trimmed = rawLocation.trim();
+        String normalizedCode = trimmed.toUpperCase();
+        if (AEROPUERTOS.containsKey(normalizedCode)) return normalizedCode;
+
+        return AEROPUERTOS.entrySet().stream()
+                .filter(e -> {
+                    String ciudad = String.valueOf(e.getValue().getOrDefault("ciudad", ""));
+                    String nombre = String.valueOf(e.getValue().getOrDefault("nombre", ""));
+                    return ciudad.equalsIgnoreCase(trimmed) || nombre.equalsIgnoreCase(trimmed);
+                })
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(normalizedCode);
+    }
+
+    private String getDisplayLocation(String iataCode) {
+        Map<String, Object> info = AEROPUERTOS.get(iataCode);
+        if (info == null) return iataCode;
+        String ciudad = String.valueOf(info.getOrDefault("ciudad", ""));
+        if (!ciudad.isBlank()) return ciudad;
+        return String.valueOf(info.getOrDefault("nombre", iataCode));
+    }
+
+    private String normalizeLocationLabel(String rawValue) {
+        if (rawValue == null || rawValue.isBlank()) return "Desconocido";
+        String clean = rawValue.replaceFirst("(?i)^Vuelo\\s+", "").trim();
+        String resolvedIata = resolveIataCode(clean);
+        if (resolvedIata != null && AEROPUERTOS.containsKey(resolvedIata)) {
+            return getDisplayLocation(resolvedIata);
+        }
+        return clean;
+    }
 
 
     // Mapa de IATA -> carpeta imagen
@@ -223,8 +265,8 @@ public class AmadeusController {
     private FlightOfferDTO generarVueloPorDestino(String id, String origen, String destino) {
         FlightOfferDTO vuelo = new FlightOfferDTO();
         vuelo.setId(id);
-        vuelo.setOrigen(origen != null ? origen : "EZE");
-        vuelo.setDestino(destino != null ? destino : "CDG");
+        vuelo.setOrigen(getDisplayLocation(resolveIataCode(origen != null ? origen : "EZE")));
+        vuelo.setDestino(getDisplayLocation(resolveIataCode(destino != null ? destino : "CDG")));
         vuelo.setPaisDestino(destino != null ? destino : "FR");
 
         // Imagen según destino
@@ -272,8 +314,8 @@ public class AmadeusController {
     private FlightOfferDTO generarVueloSimulado(String id) {
         FlightOfferDTO vuelo = new FlightOfferDTO();
         vuelo.setId(id);
-        vuelo.setOrigen("EZE");
-        vuelo.setDestino("CDG");
+        vuelo.setOrigen(getDisplayLocation("EZE"));
+        vuelo.setDestino(getDisplayLocation("CDG"));
         vuelo.setPaisDestino("FR");
         vuelo.setPrecioTotal(683.18);
         vuelo.setCategoria("Internacional");
@@ -319,8 +361,15 @@ public class AmadeusController {
         Random random = new Random();
 
         int cantidadVuelos = Math.max(1, Math.min(limit, 50));
-        String origenSeguro = (origen == null || origen.isBlank()) ? null : origen.trim().toUpperCase();
-        String destinoSeguro = (destino == null || destino.isBlank()) ? null : destino.trim().toUpperCase();
+        String origenSeguro = resolveIataCode(origen);
+        String destinoSeguro = resolveIataCode(destino);
+
+        if (origenSeguro != null && !AEROPUERTOS.containsKey(origenSeguro)) {
+            origenSeguro = null;
+        }
+        if (destinoSeguro != null && !AEROPUERTOS.containsKey(destinoSeguro)) {
+            destinoSeguro = null;
+        }
         String fechaSegura = (fecha == null || fecha.isBlank()) ? LocalDate.now().plusDays(7).toString() : fecha.trim();
         productService.cleanupSimulatedProducts(10, 500);
 
@@ -344,8 +393,8 @@ public class AmadeusController {
             dto.setId(externalId);
 
             // Origen y destino
-            dto.setOrigen(origenLoop);
-            dto.setDestino(destinoLoop);
+            dto.setOrigen(getDisplayLocation(origenLoop));
+            dto.setDestino(getDisplayLocation(destinoLoop));
 
             // País destino
             String codigoPaisDestino = String.valueOf(
@@ -393,9 +442,13 @@ public class AmadeusController {
             dto.setSegmentos(List.of(seg));
             dto.setAerolinea(aerolinea);
 
-            // Mantener resultados de busqueda en cache para no contaminar /api/products
-            // (la Home consume /api/products y no debe llenarse con cada busqueda del usuario).
-            dto.setProductId(null);
+            // Persistir (o reusar) Product local para poder favoritear/reservar con ID numerico.
+            Product persisted = productService.saveIfNotExists(dto);
+            if (persisted == null || persisted.getId() == null) {
+                throw new IllegalStateException("No se pudo obtener productId para externalId: " + dto.getId());
+            }
+            dto.setProductId(persisted.getId());
+            System.out.println("✅ Amadeus DTO persisted: externalId=" + dto.getId() + " productId=" + dto.getProductId());
             vuelosCache.put(dto.getId(), dto);
 
             vuelos.add(dto);
@@ -460,11 +513,11 @@ public class AmadeusController {
         // Origen y destino
         if (product.getName() != null && (product.getName().contains("→") || product.getName().contains("â†’"))) {
             String[] partes = product.getName().split("→|â†’");
-            dto.setOrigen(partes[0].trim());
-            dto.setDestino(partes[1].trim());
+            dto.setOrigen(normalizeLocationLabel(partes[0]));
+            dto.setDestino(normalizeLocationLabel(partes[1]));
         } else {
-            dto.setOrigen(product.getName());
-            dto.setDestino(product.getName());
+            dto.setOrigen(normalizeLocationLabel(product.getName()));
+            dto.setDestino(normalizeLocationLabel(product.getName()));
         }
 
         dto.setPaisDestino(product.getCountry() != null ? product.getCountry() : "Desconocido");
@@ -552,10 +605,10 @@ public class AmadeusController {
 
         if (product.getName() != null && (product.getName().contains("→") || product.getName().contains("â†’"))) {
             String[] partes = product.getName().split("→|â†’");
-            dto.setOrigen(partes[0].replace("Vuelo", "").trim());
-            dto.setDestino(partes.length > 1 ? partes[1].trim() : "Desconocido");
+            dto.setOrigen(normalizeLocationLabel(partes[0]));
+            dto.setDestino(partes.length > 1 ? normalizeLocationLabel(partes[1]) : "Desconocido");
         } else {
-            dto.setOrigen(product.getName() != null ? product.getName() : "Desconocido");
+            dto.setOrigen(product.getName() != null ? normalizeLocationLabel(product.getName()) : "Desconocido");
             dto.setDestino(product.getCountry() != null ? product.getCountry() : "Desconocido");
         }
 

@@ -51,6 +51,7 @@ export const obtenerVuelos = async (origen, destino, fecha) => {
 
       return {
         id: vuelo.id,
+        productId: vuelo.productId ?? (Number.isInteger(Number(vuelo.id)) ? Number(vuelo.id) : null),
         aerolinea: primerSegmento.aerolinea || vuelo.aerolinea || "Desconocida",
         numeroVuelo: primerSegmento.numeroVuelo || vuelo.numeroVuelo || "000",
         precioTotal: vuelo.precioTotal || 0,
@@ -99,6 +100,7 @@ export const obtenerVueloPorId = async (id) => {
 
     return {
       id: data.id,
+      productId: data.productId ?? (Number.isInteger(Number(data.id)) ? Number(data.id) : null),
       aerolinea: data.aerolinea || primerSegmento.aerolinea || "Desconocida",
       numeroVuelo: data.numeroVuelo || primerSegmento.numeroVuelo || "000",
 

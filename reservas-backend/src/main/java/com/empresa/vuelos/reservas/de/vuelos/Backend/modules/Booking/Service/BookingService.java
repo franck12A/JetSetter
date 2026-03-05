@@ -6,16 +6,17 @@ import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Model.Booki
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Repository.BookingRepository;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Product;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.repository.ProductRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Optional;
 
 @Service
-public class BookingService   {
+public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
@@ -49,15 +50,38 @@ public class BookingService   {
         booking.setPassengers(passengers);
         booking.setStatus("PENDIENTE");
 
-        // Si viene una fecha válida, se usa. Sino, se toma el momento actual.
         if (dateStr != null && !dateStr.isEmpty()) {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            booking.setBookingDate(LocalDate.parse(dateStr, formatter).atStartOfDay());
+            booking.setBookingDate(parseBookingDate(dateStr));
         } else {
             booking.setBookingDate(LocalDateTime.now());
         }
 
         return bookingRepository.save(booking);
+    }
+
+    public Long resolveProductId(Object rawProductId) throws Exception {
+        if (rawProductId == null) {
+            throw new IllegalArgumentException("productId es obligatorio");
+        }
+
+        String value = String.valueOf(rawProductId).trim();
+        if (value.isEmpty()) {
+            throw new IllegalArgumentException("productId es obligatorio");
+        }
+
+        try {
+            Long numericId = Long.parseLong(value);
+            Optional<Product> byId = productRepository.findById(numericId);
+            if (byId.isPresent()) {
+                return byId.get().getId();
+            }
+        } catch (NumberFormatException ignored) {
+            // No era numérico: seguimos con externalId.
+        }
+
+        Product product = productRepository.findByExternalId(value)
+                .orElseThrow(() -> new Exception("Vuelo no encontrado para productId/externalId: " + value));
+        return product.getId();
     }
 
     // Obtener todas las reservas
@@ -73,5 +97,37 @@ public class BookingService   {
     // Cancelar (eliminar) reserva
     public void cancelBooking(Long id) {
         bookingRepository.deleteById(id);
+    }
+
+    private LocalDateTime parseBookingDate(String rawDate) {
+        String value = rawDate.trim();
+        if (value.isEmpty()) return LocalDateTime.now();
+
+        List<DateTimeFormatter> localDateFormats = List.of(
+                DateTimeFormatter.ISO_LOCAL_DATE,          // yyyy-MM-dd
+                DateTimeFormatter.ofPattern("dd/MM/yyyy"), // 11/03/2026
+                DateTimeFormatter.ofPattern("d/M/yyyy")    // 11/3/2026
+        );
+
+        for (DateTimeFormatter formatter : localDateFormats) {
+            try {
+                return LocalDate.parse(value, formatter).atStartOfDay();
+            } catch (DateTimeParseException ignored) {
+            }
+        }
+
+        List<DateTimeFormatter> dateTimeFormats = List.of(
+                DateTimeFormatter.ISO_LOCAL_DATE_TIME,     // 2026-03-11T10:00:00
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+        );
+
+        for (DateTimeFormatter formatter : dateTimeFormats) {
+            try {
+                return LocalDateTime.parse(value, formatter);
+            } catch (DateTimeParseException ignored) {
+            }
+        }
+
+        throw new IllegalArgumentException("Formato de fecha invalido: " + rawDate);
     }
 }

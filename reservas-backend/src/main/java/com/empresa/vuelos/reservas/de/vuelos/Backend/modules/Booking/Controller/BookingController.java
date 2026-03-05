@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -43,9 +44,10 @@ public class BookingController {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         try {
+            Long resolvedProductId = bookingService.resolveProductId(request.productId);
             Booking booking = bookingService.createBooking(
                     user.getId(),
-                    request.productId,
+                    resolvedProductId,
                     request.dateStr,
                     request.passengers
             );
@@ -57,7 +59,7 @@ public class BookingController {
 
     @DeleteMapping("/{bookingId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<String> cancelBooking(@PathVariable Long bookingId,
+    public ResponseEntity<Map<String, String>> cancelBooking(@PathVariable Long bookingId,
                                                 Authentication authentication) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
@@ -69,7 +71,7 @@ public class BookingController {
                 .orElseThrow(() -> new RuntimeException("Reserva no encontrada para este usuario"));
 
         bookingService.cancelBooking(bookingId);
-        return ResponseEntity.ok("Reserva cancelada correctamente");
+        return ResponseEntity.ok(Map.of("message", "Reserva cancelada correctamente"));
     }
 
 }

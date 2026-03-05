@@ -5,6 +5,8 @@ import {
   FaChevronLeft, FaPen, FaRegHeart, FaTicketAlt,
   FaCog, FaQuestionCircle, FaChevronRight
 } from "react-icons/fa";
+import { addFavorite, removeFavorite, getUserFavorites } from "../../services/favoritesApi";
+import { getUserBookings, cancelBooking, createBooking } from "../../services/bookingsApi";
 import "./Profile.css";
 
 function normalizeImage(src) {
@@ -27,26 +29,20 @@ export default function Profile() {
     const storedUser = JSON.parse(localStorage.getItem("user"));
     const storedToken = localStorage.getItem("token");
 
-    if (!storedUser || !storedToken) return;
+    if (!storedUser || !storedToken) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
 
-    // Favoritos
-    fetch("http://localhost:8080/api/favorites", {
-      headers: { "Authorization": `Bearer ${storedToken}` }
-    })
-      .then(res => res.json())
-      .then(data => setFavorites(data))
-      .catch(err => console.error(err));
-
-    // Reservas
-    fetch("http://localhost:8080/api/bookings/user", {
-      headers: { "Authorization": `Bearer ${storedToken}` }
-    })
-      .then(res => res.json())
-      .then(data => setBookings(data))
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
+    Promise.all([
+      getUserFavorites().catch(err => { console.error("Error fetching favorites:", err); return []; }),
+      getUserBookings(storedUser.id).catch(err => { console.error("Error fetching bookings:", err); return []; })
+    ]).then(([favsData, booksData]) => {
+      setFavorites(favsData);
+      setBookings(booksData);
+    }).finally(() => setLoading(false));
   }, []); // 🔑 vacía: solo se ejecuta 1 vez
 
 
@@ -57,55 +53,42 @@ export default function Profile() {
   };
 
   // Favoritos
-  const handleAddFavorite = (productId) => {
-    fetch("http://localhost:8080/api/favorites", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({ productId })
-    })
-      .then(res => res.json())
-      .then(fav => setFavorites(prev => [...prev, fav]))
-      .catch(err => console.error(err));
+  const handleAddFavorite = async (productId) => {
+    try {
+      await addFavorite(productId);
+      const updatedFavs = await getUserFavorites();
+      setFavorites(updatedFavs);
+    } catch (err) {
+      console.error("Error adding favorite:", err);
+    }
   };
 
-  const handleRemoveFavorite = (productId) => {
-    fetch("http://localhost:8080/api/favorites", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({ productId })
-    })
-      .then(() => setFavorites(prev => prev.filter(f => f.id !== productId)))
-      .catch(err => console.error(err));
+  const handleRemoveFavorite = async (productId) => {
+    try {
+      await removeFavorite(productId);
+      setFavorites(prev => prev.filter(f => f.id !== productId && f.productId !== productId));
+    } catch (err) {
+      console.error("Error removing favorite:", err);
+    }
   };
 
   // Reservas
-  const handleCreateBooking = (productId, dateStr, passengers = 1) => {
-    fetch("http://localhost:8080/api/bookings/create", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({ productId, dateStr, passengers })
-    })
-      .then(res => res.json())
-      .then(booking => setBookings(prev => [...prev, booking]))
-      .catch(err => console.error(err));
+  const handleCreateBooking = async (productId, dateStr, passengers = 1) => {
+    try {
+      const booking = await createBooking({ userId: user.id, productId, dateStr, passengers });
+      setBookings(prev => [...prev, booking]);
+    } catch (err) {
+      console.error("Error creating booking:", err);
+    }
   };
 
-  const handleCancelBooking = (bookingId) => {
-    fetch(`http://localhost:8080/api/bookings/${bookingId}`, {
-      method: "DELETE",
-      headers: { "Authorization": `Bearer ${token}` }
-    })
-      .then(() => setBookings(prev => prev.filter(b => b.id !== bookingId)))
-      .catch(err => console.error(err));
+  const handleCancelBooking = async (bookingId) => {
+    try {
+      await cancelBooking(bookingId);
+      setBookings(prev => prev.filter(b => b.id !== bookingId));
+    } catch (err) {
+      console.error("Error cancelling booking:", err);
+    }
   };
 
   if (!user) return (

@@ -35,8 +35,8 @@ function writeLocalCategories(categories) {
 export default function AdminPanel() {
   const [vuelos, setVuelos] = useState([]);
   const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
-  const perPage = 8;
+  const PAGE_SIZE = 8;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [editingId, setEditingId] = useState(null);
   const [backendError, setBackendError] = useState("");
   const [isMobile, setIsMobile] = useState(false);
@@ -88,7 +88,7 @@ export default function AdminPanel() {
 useEffect(() => {
   const loadVuelos = async () => {
     try {
-      const data = await productService.getAllProducts(); // <- método que definimos en productService
+      const data = await productService.getRandomProducts(20);
       setVuelos(data);
     } catch (err) {
       console.error("Error cargando vuelos:", err);
@@ -220,8 +220,11 @@ useEffect(() => {
     });
   }, [vuelos, query]);
 
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(filtered.length / perPage)), [filtered, perPage]);
-  const paginated = useMemo(() => filtered.slice((page - 1) * perPage, page * perPage), [filtered, page, perPage]);
+  const visibleVuelos = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [query]);
 
   if (isMobile) return (
     <div className="admin-mobile-warning">
@@ -668,14 +671,23 @@ useEffect(() => {
 
          <section className="admin-list">
            <AdminProductsList
-             vuelos={paginated}
+             vuelos={visibleVuelos}
              onEdit={handleEdit}
              onDelete={handleDelete}
-             page={page}
-             setPage={setPage}
-             perPage={perPage}
-             totalPages={totalPages}
            />
+           <div className="admin-list-footer">
+             <span className="admin-list-counter">
+               Mostrando {visibleVuelos.length} de {filtered.length} vuelos
+             </span>
+             {visibleCount < filtered.length && (
+               <button
+                 className="admin-btn-load-more"
+                 onClick={() => setVisibleCount((prev) => Math.min(filtered.length, prev + PAGE_SIZE))}
+               >
+                 Ver mas
+               </button>
+             )}
+           </div>
          </section>
        </main>
 

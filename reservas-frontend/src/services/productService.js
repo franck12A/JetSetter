@@ -6,8 +6,15 @@ const API_URL = "http://localhost:8080";
 // ---------------- TOKEN ----------------
 const obtenerToken = () => {
   try {
-    const user = JSON.parse(localStorage.getItem("user"));
-    return user?.token || null;
+    const directToken = localStorage.getItem("token");
+    if (directToken && directToken !== "null" && directToken !== "undefined") {
+      return directToken.startsWith("Bearer ") ? directToken.slice(7) : directToken;
+    }
+
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const userToken = user?.token;
+    if (!userToken || userToken === "null" || userToken === "undefined") return null;
+    return userToken.startsWith("Bearer ") ? userToken.slice(7) : userToken;
   } catch {
     return null;
   }
@@ -76,6 +83,7 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20) => {
 
       return {
         id: vuelo.id,
+        productId: vuelo.productId ?? (Number.isInteger(Number(vuelo.id)) ? Number(vuelo.id) : null),
         aerolinea: vuelo.aerolinea || primerSegmento.aerolinea || "Desconocida",
         numeroVuelo: vuelo.numeroVuelo || primerSegmento.numeroVuelo || "000",
         precioTotal: vuelo.precioTotal || vuelo.price || 0,
@@ -130,6 +138,7 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20) => {
 
      return {
        id: data.id,
+       productId: data.productId ?? (Number.isInteger(Number(data.id)) ? Number(data.id) : null),
        aerolinea: data.aerolinea || primerSegmento.aerolinea || "Desconocida",
        numeroVuelo: data.numeroVuelo || primerSegmento.numeroVuelo || "000",
        precioTotal: data.precioTotal || data.price || 0,

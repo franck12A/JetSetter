@@ -308,6 +308,35 @@
   gap: 1rem;
 }
 
+.admin-list-footer {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-list-counter {
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.admin-btn-load-more {
+  padding: 0.55rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #1d4ed8;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.admin-btn-load-more:hover {
+  background-color: #1e40af;
+}
+
 .admin-list article {
   display: flex;
   gap: 1rem;

@@ -4,43 +4,44 @@ import productService from "../../services/productService";
 function VuelosList() {
   const [vuelos, setVuelos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")) || null);
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")) || null);
 
-useEffect(() => {
-  const loadVuelos = async () => {
-    setLoading(true);
-    try {
-      const data = await productService.getAllProducts();
-      // Mapear si es necesario para la UI
-      const vuelosData = data.map(p => ({
-        ...p,
-        image: p.imageUrl || "default.jpg",  // coincide con la propiedad usada en el <img>
-        name: p.name,
-        description: p.description,
-        price: p.price,
-      }));
-      setVuelos(vuelosData);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-  loadVuelos();
-}, []);
+
+  useEffect(() => {
+    const loadVuelos = async () => {
+      setLoading(true);
+      try {
+        const data = await productService.getAllProducts();
+        // Mapear si es necesario para la UI
+        const vuelosData = data.map(p => ({
+          ...p,
+          image: p.imageUrl || "default.jpg",  // coincide con la propiedad usada en el <img>
+          name: p.name,
+          description: p.description,
+          price: p.price,
+        }));
+        setVuelos(vuelosData);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadVuelos();
+  }, []);
 
 
   // 🔹 Cargar favoritos reales desde backend cuando hay usuario logueado
   useEffect(() => {
-    if (!user) return;
+    if (!user || (!localStorage.getItem("token") && !user.token)) return;
 
-    fetch(`http://localhost:8080/api/auth/${user.id}/favorites`)
-      .then((res) => res.json())
+    import("../../services/favoritesApi.js")
+      .then(({ getUserFavorites }) => getUserFavorites())
       .then((data) => {
-        const favoritesIds = data.map((f) => f.id);
+        const favoritesIds = data.map((f) => f.id || f.productId);
         const updatedUser = { ...user, favorites: favoritesIds };
         setUser(updatedUser);
-        localStorage.setItem("user", JSON.stringify(updatedUser));
+        localStorage.setItem("user", JSON.stringify(updatedUser)); // Actualizar para que otras vistas lo vean
       })
       .catch((err) => console.error("Error al cargar favoritos:", err));
   }, []);
@@ -50,14 +51,14 @@ useEffect(() => {
     if (!user) return alert("Inicia sesión para agregar favoritos");
 
     const isFav = user.favorites?.includes(vueloId);
-    const method = isFav ? "DELETE" : "POST";
 
     try {
-      const res = await fetch(
-        `http://localhost:8080/api/auth/${user.id}/favorites/${vueloId}`,
-        { method }
-      );
-      if (!res.ok) throw new Error("Error al actualizar favorito");
+      const { addFavorite, removeFavorite } = await import("../../services/favoritesApi.js");
+      if (isFav) {
+        await removeFavorite(vueloId);
+      } else {
+        await addFavorite(vueloId);
+      }
 
       const updatedUser = { ...user };
       if (isFav) {
@@ -70,7 +71,7 @@ useEffect(() => {
       localStorage.setItem("user", JSON.stringify(updatedUser));
     } catch (err) {
       console.error(err);
-      alert("No se pudo actualizar el favorito");
+      alert("No se pudo actualizar el favorito: " + err.message);
     }
   };
 
@@ -96,11 +97,10 @@ useEffect(() => {
 
                 {user && (
                   <button
-                    className={`btn ${
-                      user.favorites?.includes(vuelo.id)
+                    className={`btn ${user.favorites?.includes(vuelo.id)
                         ? "btn-danger"
                         : "btn-outline-danger"
-                    } w-100 mt-2`}
+                      } w-100 mt-2`}
                     onClick={() => toggleFavorite(vuelo.id)}
                   >
                     {user.favorites?.includes(vuelo.id)

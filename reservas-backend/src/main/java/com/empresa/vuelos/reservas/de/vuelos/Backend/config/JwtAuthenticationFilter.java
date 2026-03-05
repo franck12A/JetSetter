@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -71,13 +72,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 boolean isValid = jwtService.isTokenValid(token, email);
 
                 if (isValid) {
-                    List<String> roles = jwtService.getRoles(token);
-                    List<SimpleGrantedAuthority> authorities = roles.stream()
-                            .map(SimpleGrantedAuthority::new)
-                            .toList();
-
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(email, null, authorities);
+                    UsernamePasswordAuthenticationToken authToken;
+                    try {
+                        // Camino principal: authorities desde BD
+                        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                        authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+                    } catch (Exception userLoadEx) {
+                        // Fallback: no romper autenticación si falla carga de usuario
+                        authToken = new UsernamePasswordAuthenticationToken(
+                                email,
+                                null,
+                                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+                        );
+                        System.out.println("⚠️ [" + requestId + "] Fallback auth aplicado para email: " + email);
+                        userLoadEx.printStackTrace();
+                    }
 
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);

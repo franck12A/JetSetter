@@ -52,10 +52,16 @@ const normalizeVuelo = (data) => {
   const duracion = caracteristicas.find((c) => /duracion|duración/i.test(c)) || "Duracion: N/D";
   const clase = caracteristicas.find((c) => /clase/i.test(c)) || "Clase: N/D";
   const equipaje = caracteristicas.find((c) => /equipaje/i.test(c)) || "Equipaje: N/D";
+  const rawProductId = data.productId ?? data.id;
+  const parsedProductId = Number(rawProductId);
+  const localProductId = Number.isInteger(parsedProductId) && parsedProductId > 0
+    ? parsedProductId
+    : null;
 
   return {
     ...data,
-    id: Number(data.id ?? data.productId ?? 0),
+    id: data.id ?? data.productId ?? null,
+    localProductId,
     aerolinea: data.aerolinea || primerSegmento.aerolinea || "Desconocida",
     numeroVuelo: data.numeroVuelo || primerSegmento.numeroVuelo || "000",
     origen: data.origen || route.origen,
@@ -115,26 +121,27 @@ export default function DetalleVuelo() {
 
   useEffect(() => {
     const loadFavs = async () => {
-      if (!user || !vuelo?.id) return;
+      if (!user || !vuelo?.localProductId) return;
       try {
         const favs = await getUserFavorites();
-        setIsFavorite(favs.some((f) => Number(f.id) === Number(vuelo.id)));
+        setIsFavorite(favs.some((f) => Number(f.id) === Number(vuelo.localProductId)));
       } catch (err) {
         console.error("Error cargando favoritos:", err);
       }
     };
 
     loadFavs();
-  }, [user, vuelo?.id]);
+  }, [user, vuelo?.localProductId]);
 
   const handleFavorite = async () => {
-    if (!user || !vuelo?.id) return alert("Debes iniciar sesion para agregar favoritos");
+    if (!user) return alert("Debes iniciar sesion para agregar favoritos");
+    if (!vuelo?.localProductId) return alert("Este vuelo de Amadeus no esta guardado en la BD.");
     try {
       if (isFavorite) {
-        await removeFavorite(vuelo.id);
+        await removeFavorite(vuelo.localProductId);
         setIsFavorite(false);
       } else {
-        await addFavorite(vuelo.id);
+        await addFavorite(vuelo.localProductId);
         setIsFavorite(true);
       }
     } catch (err) {
@@ -144,13 +151,14 @@ export default function DetalleVuelo() {
   };
 
   const handleBooking = async () => {
-    if (!user || !vuelo?.id) return alert("Debes iniciar sesion para reservar");
+    if (!user) return alert("Debes iniciar sesion para reservar");
+    if (!vuelo?.localProductId) return alert("Este vuelo de Amadeus no esta guardado en la BD.");
     if (!vuelo.fechaSalidaRaw) return alert("No se puede reservar: fecha de salida no disponible");
 
     try {
       const booking = await createBooking({
         userId: user.id,
-        productId: vuelo.id,
+        productId: vuelo.localProductId,
         dateStr: vuelo.fechaSalidaRaw,
         passengers: 1,
       });

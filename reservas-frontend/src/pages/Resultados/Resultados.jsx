@@ -168,7 +168,7 @@ const coincideDestino =
           },
           body: JSON.stringify({
             userId: user.id,
-            productId: vuelo.id,
+            productId: vuelo.productId ?? vuelo.id,
             dateStr: new Date().toISOString().split("T")[0],
             passengers: 1,
           }),

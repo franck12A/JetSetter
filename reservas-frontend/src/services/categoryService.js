@@ -5,8 +5,19 @@ const API_URL = "http://localhost:8080";
 
 // ---------------- TOKEN ----------------
 const obtenerToken = () => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  return user?.token || null;
+  try {
+    const directToken = localStorage.getItem("token");
+    if (directToken && directToken !== "null" && directToken !== "undefined") {
+      return directToken.startsWith("Bearer ") ? directToken.slice(7) : directToken;
+    }
+
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const userToken = user?.token;
+    if (!userToken || userToken === "null" || userToken === "undefined") return null;
+    return userToken.startsWith("Bearer ") ? userToken.slice(7) : userToken;
+  } catch {
+    return null;
+  }
 };
 
 // ---------------- CATEGORY SERVICE ----------------

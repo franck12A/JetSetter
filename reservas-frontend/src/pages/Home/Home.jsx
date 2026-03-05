@@ -11,6 +11,8 @@ import Paginacion from "../../components/Paginacion/Paginacion";
 import "./Home.css";
 
 import productService from "../../services/productService";
+import { getUserFavorites, addFavorite as addFavApi, removeFavorite as removeFavApi } from "../../services/favoritesApi";
+import { createBooking } from "../../services/bookingsApi";
 
 const splitRoute = (name = "") => {
   const clean = name.replace(/^Vuelo\s+/i, "");
@@ -19,6 +21,11 @@ const splitRoute = (name = "") => {
     return { origen: parts[0], destino: parts[1] };
   }
   return { origen: clean || "N/A", destino: "N/A" };
+};
+const resolveLocalProductId = (vuelo) => {
+  const raw = vuelo?.productId ?? vuelo?.id;
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 };
 export default function Home() {
   const [vuelos, setVuelos] = useState([]);
@@ -30,25 +37,45 @@ export default function Home() {
   // 🔹 Traer vuelos desde la API real
   const fetchVuelos = async () => {
     try {
-      const productos = await productService.getAllProducts();
-      if (Array.isArray(productos) && productos.length > 0) {
-        const vuelosData = productos.map(p => ({
-          ...p,
-          ...splitRoute(p.name),
-          fechaSalida: p.departureDate,
-          fechaLlegada: null,
-          categorias: [p.category?.name || "Otros"],
-          caracteristicas: p.features?.map(f => f.title || f.name) || [],
-          imagenPrincipal: p.image || "/assets/default.jpg",
-          precioTotal: p.price,
-        }));
-        setVuelos(vuelosData);
-        return;
+      const [productos, amadeusVuelos] = await Promise.all([
+        productService.getAllProducts(),
+        productService.obtenerVuelosAPI(null, null, null, 20),
+      ]);
+
+      const productosLocales = (Array.isArray(productos) ? productos : [])
+        .filter((p) => !p.externalId);
+
+      const vuelosBd = productosLocales.map((p) => ({
+        ...p,
+        productId: p.id,
+        ...splitRoute(p.name),
+        fechaSalida: p.departureDate,
+        fechaLlegada: null,
+        categorias: [p.category?.name || "Otros"],
+        caracteristicas: p.features?.map((f) => f.title || f.name) || [],
+        imagenPrincipal: p.image || "/assets/default.jpg",
+        precioTotal: p.price,
+      }));
+
+      const vuelosAmadeus = Array.isArray(amadeusVuelos) ? amadeusVuelos : [];
+      const merged = [...vuelosBd, ...vuelosAmadeus];
+      const dedup = [];
+      const seen = new Set();
+
+      for (const vuelo of merged) {
+        const fechaBase = String(vuelo.fechaSalida || vuelo.departureDate || "").slice(0, 10);
+        const key = [
+          (vuelo.origen || "").toUpperCase(),
+          (vuelo.destino || "").toUpperCase(),
+          (vuelo.aerolinea || "").toUpperCase(),
+          fechaBase,
+        ].join("|");
+        if (seen.has(key)) continue;
+        seen.add(key);
+        dedup.push(vuelo);
       }
 
-      // Fallback: si la BD está vacía, mostrar vuelos de Amadeus.
-      const amadeusVuelos = await productService.obtenerVuelosAPI(null, null, null, 20);
-      setVuelos(amadeusVuelos || []);
+      setVuelos(dedup);
     } catch (err) {
       console.error("Error al obtener vuelos desde productService:", err);
     }
@@ -131,19 +158,32 @@ export default function Home() {
           <div className="vuelos-paginados-grid">
             {vuelosPaginados.map((vuelo) => {
               const user = JSON.parse(localStorage.getItem("user"));
-              const isFavorite = user?.favorites?.includes(vuelo.id);
+              const token = localStorage.getItem("token");
+              const localProductId = resolveLocalProductId(vuelo);
+              const isFavorite = localProductId ? user?.favorites?.includes(localProductId) : false;
 
               const toggleFavorite = async () => {
-                if (!user) return alert("Debes iniciar sesión para agregar favoritos");
+                if (!user || !token) return alert("Debes iniciar sesión para agregar favoritos");
+                if (!localProductId) return alert("Este vuelo de Amadeus no está guardado en la BD.");
                 try {
-                  const res = await fetch(
-                    `http://localhost:8080/api/favorites/toggle/${user.id}/${vuelo.id}`,
-                    { method: "POST" }
-                  );
-                  if (!res.ok) throw new Error("Error al actualizar favoritos");
-                  const updatedUser = await res.json();
-                  localStorage.setItem("user", JSON.stringify(updatedUser));
-                  // actualizar el estado para que se refleje sin recargar
+                  if (isFavorite) {
+                    await removeFavApi(localProductId);
+                  } else {
+                    await addFavApi(localProductId);
+                  }
+
+                  // refrescar favoritos desde backend y actualizar localStorage
+                  try {
+                    const favs = await getUserFavorites();
+                    const favIds = (favs || []).map((p) => p.id);
+                    const stored = JSON.parse(localStorage.getItem("user") || "{}");
+                    stored.favorites = favIds;
+                    localStorage.setItem("user", JSON.stringify(stored));
+                  } catch (refreshErr) {
+                    console.error("No se pudieron actualizar favoritos localmente:", refreshErr);
+                  }
+
+                  // actualizar estado de vuelos para re-render
                   setVuelos((prevVuelos) =>
                     prevVuelos.map((v) =>
                       v.id === vuelo.id ? { ...v, favorito: !v.favorito } : v
@@ -151,22 +191,20 @@ export default function Home() {
                   );
                 } catch (err) {
                   console.error("Error al actualizar favorito:", err);
+                  alert("Tu sesión expiró o no es válida. Iniciá sesión nuevamente.");
                 }
               };
 
               const reservarVuelo = async () => {
-                if (!user) return alert("Debes iniciar sesión para reservar un vuelo");
+                if (!user || !token) return alert("Debes iniciar sesión para reservar un vuelo");
+                if (!localProductId) return alert("Este vuelo de Amadeus no está guardado en la BD.");
                 try {
-                  const res = await fetch("http://localhost:8080/api/bookings", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      userId: user.id,
-                      productId: vuelo.id,
-                      date: new Date().toISOString().split("T")[0],
-                    }),
+                  await createBooking({
+                    userId: user.id,
+                    productId: localProductId,
+                    dateStr: new Date().toISOString(),
+                    passengers: 1,
                   });
-                  if (!res.ok) throw new Error("Error al reservar vuelo");
                   alert("Reserva realizada correctamente ✈️");
                 } catch (err) {
                   console.error("Error al reservar:", err);
