@@ -42,11 +42,15 @@ public class ProductService {
     }
 
     public List<Product> getAllProducts() {
-        return productRepository.findAll();
+        List<Product> products = productRepository.findAll();
+        products.forEach(this::normalizeProductRouteNameInMemory);
+        return products;
     }
 
     public Product getProductById(Long id) {
-        return productRepository.findById(id).orElse(null);
+        Product product = productRepository.findById(id).orElse(null);
+        normalizeProductRouteNameInMemory(product);
+        return product;
     }
 
     public Product updateProduct(Long id, Product updatedProduct) {
@@ -72,10 +76,14 @@ public class ProductService {
     }
     public Product findById(Long id) {
         Optional<Product> productOpt = productRepository.findById(id);
-        return productOpt.orElse(null);
+        Product product = productOpt.orElse(null);
+        normalizeProductRouteNameInMemory(product);
+        return product;
     }
     public List<Product> findAll() {
-        return productRepository.findAll();
+        List<Product> products = productRepository.findAll();
+        products.forEach(this::normalizeProductRouteNameInMemory);
+        return products;
     }
 
     public Page<Product> getSimulatedProductsPage(int page, int size) {
@@ -112,7 +120,9 @@ public class ProductService {
     public List<Product> getRandomProducts(int count) {
         List<Product> allProducts = productRepository.findAll();
         Collections.shuffle(allProducts);
-        return allProducts.stream().limit(count).toList();
+        List<Product> randomProducts = allProducts.stream().limit(count).toList();
+        randomProducts.forEach(this::normalizeProductRouteNameInMemory);
+        return randomProducts;
     }
 
     // Filtrado por nombre y categoría
@@ -311,7 +321,14 @@ public class ProductService {
         Optional<Product> existing = productRepository.findByExternalId(dto.getId());
 
         if (existing.isPresent()) {
-            return existing.get(); // ya existe
+            Product product = existing.get();
+            String normalizedName = normalizeRouteLabel("Vuelo " + dto.getOrigen() + " → " + dto.getDestino());
+            if (normalizedName != null && !normalizedName.equals(product.getName())) {
+                product.setName(normalizedName);
+                product.setUpdatedAt(LocalDateTime.now());
+                return productRepository.save(product);
+            }
+            return product; // ya existe
         }
 
         // Si no existe → crearlo
@@ -328,6 +345,12 @@ public class ProductService {
             Product p;
             if (existente.isPresent()) {
                 p = existente.get();
+                String normalizedName = normalizeRouteLabel("Vuelo " + dto.getOrigen() + " → " + dto.getDestino());
+                if (normalizedName != null && !normalizedName.equals(p.getName())) {
+                    p.setName(normalizedName);
+                    p.setUpdatedAt(LocalDateTime.now());
+                    p = productRepository.save(p);
+                }
             } else {
                 p = fromFlightOfferDTO(dto);
                 productRepository.save(p);
@@ -346,4 +369,48 @@ public class ProductService {
 
 
 
+
+    private void normalizeProductRouteNameInMemory(Product product) {
+        if (product == null) return;
+        String normalized = normalizeRouteLabel(product.getName());
+        if (normalized != null && !normalized.equals(product.getName())) {
+            product.setName(normalized);
+        }
+    }
+
+    private String normalizeRouteLabel(String rawName) {
+        if (rawName == null || rawName.isBlank()) return rawName;
+
+        String clean = rawName.replaceFirst("(?i)^Vuelo\\s+", "").trim();
+        String[] parts = clean.split("\\s*(?:→|->|-)\\s*");
+        if (parts.length < 2) return rawName;
+
+        String origen = toDisplayLocation(parts[0]);
+        String destino = toDisplayLocation(parts[1]);
+        return "Vuelo " + origen + " → " + destino;
+    }
+
+    private String toDisplayLocation(String token) {
+        if (token == null || token.isBlank()) return "Desconocido";
+
+        String trimmed = token.trim();
+        String upper = trimmed.toUpperCase();
+        if (AEROPUERTOS.containsKey(upper)) {
+            Object city = AEROPUERTOS.get(upper).get("ciudad");
+            if (city != null && !String.valueOf(city).isBlank()) {
+                return String.valueOf(city);
+            }
+            return upper;
+        }
+
+        return AEROPUERTOS.values().stream()
+                .filter(v -> {
+                    String city = String.valueOf(v.getOrDefault("ciudad", ""));
+                    String airport = String.valueOf(v.getOrDefault("nombre", ""));
+                    return city.equalsIgnoreCase(trimmed) || airport.equalsIgnoreCase(trimmed);
+                })
+                .map(v -> String.valueOf(v.getOrDefault("ciudad", trimmed)))
+                .findFirst()
+                .orElse(trimmed);
+    }
 }
