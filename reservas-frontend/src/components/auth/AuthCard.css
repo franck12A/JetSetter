@@ -2,9 +2,9 @@
   max-width: 420px;
   margin: 4rem auto;
   padding: 2.5rem;
-  background: #ffffff;
+  background: linear-gradient() #ffffff41;
   border-radius: 18px;
-  box-shadow: 0px 10px 30px rgba(0,0,0,0.08);
+  box-shadow: 0px 10px 30px rgba(0, 0, 0, 0);
   animation: fadeIn .4s ease;
   font-family: 'Inter', sans-serif;
 }

@@ -1,32 +1,21 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { FaPlaneDeparture } from "react-icons/fa";
 
-export default function AuthCard({ title, children }) {
+export default function AuthCard({ title, subtitle, children }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, ease: "easeOut" }}
-      style={{
-        width: "100%",
-        maxWidth: "420px",
-        background: "#ffffff",
-        padding: "2rem 2.5rem",
-        borderRadius: "18px",
-        boxShadow: "0 15px 35px rgba(0,0,0,0.08)",
-      }}
+      className="auth-card"
+      initial={{ opacity: 0, y: 32, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
     >
-      <h2
-        style={{
-          textAlign: "center",
-          fontSize: "2rem",
-          marginBottom: "1.5rem",
-          color: "#1e3a8a",
-          fontWeight: "700",
-        }}
-      >
-        {title}
-      </h2>
+      <div className="auth-brand-badge" aria-hidden="true">
+        <FaPlaneDeparture />
+      </div>
+
+      <h2 className="auth-title">{title}</h2>
+      {subtitle && <p className="auth-subtitle">{subtitle}</p>}
 
       {children}
     </motion.div>

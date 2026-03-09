@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import AuthLayout from "../../components/auth/AuthLayout";
 import AuthCard from "../../components/auth/AuthCard";
@@ -33,17 +33,17 @@ export default function Login() {
 
       if (!res.ok) {
         const msg = await res.text();
-        setError(msg || "Usuario o contraseña incorrectos");
+        setError(msg || "Usuario o contrasena incorrectos");
         setLoading(false);
         return;
       }
 
       const data = await res.json();
-      login(data.user, data.token); // actualiza context y localStorage
-      navigate("/"); // redirige al home
+      login(data.user, data.token);
+      navigate("/");
     } catch (err) {
       console.error("Error login:", err);
-      setError("Error de conexión con el servidor");
+      setError("Error de conexion con el servidor");
     }
 
     setLoading(false);
@@ -51,10 +51,10 @@ export default function Login() {
 
   return (
     <AuthLayout>
-      <AuthCard title="Iniciar sesión">
+      <AuthCard title="JetSetter" subtitle="Bienvenido de nuevo">
         <form onSubmit={handleSubmit}>
           <InputField
-            label="Correo electrónico"
+            label="Email"
             name="email"
             type="email"
             placeholder="tuemail@gmail.com"
@@ -62,26 +62,38 @@ export default function Login() {
             onChange={handleChange}
           />
           <InputField
-            label="Contraseña"
+            label="Contrasena"
             name="password"
             type="password"
-            placeholder="••••••••"
+            placeholder="********"
             value={form.password}
             onChange={handleChange}
           />
 
-          <PrimaryButton loading={loading}>Iniciar sesión</PrimaryButton>
+          <div className="auth-helper-row">
+            <a href="#" className="auth-link" onClick={(e) => e.preventDefault()}>
+              Olvidaste tu contrasena?
+            </a>
+          </div>
+
+          <PrimaryButton loading={loading}>Iniciar sesion</PrimaryButton>
 
           {error && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              style={{ marginTop: "1rem", color: "#dc2626", textAlign: "center" }}
-            >
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="auth-message error">
               {error}
             </motion.p>
           )}
         </form>
+
+        <div className="auth-divider">o continua con</div>
+        <div className="auth-socials">
+          <button type="button" className="auth-social-btn">Google</button>
+          <button type="button" className="auth-social-btn">Apple</button>
+        </div>
+
+        <p className="auth-switch">
+          No tienes cuenta? <Link to="/register">Registrate</Link>
+        </p>
       </AuthCard>
     </AuthLayout>
   );
