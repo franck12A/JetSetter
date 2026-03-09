@@ -1,5 +1,5 @@
 // src/pages/AdminPanel/AdminPanel.jsx
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "./AdminPanel.css";
 import AdminProductsList from "../../components/AdminProductsList/AdminProductsList";
@@ -7,61 +7,56 @@ import IconPicker from "../../components/IconPicker/IconPicker";
 import { ICON_REGISTRY } from "../../utils/iconRegistry";
 import productService from "../../services/productService";
 import categoryService from "../../services/categoryService";
+import { getFeatures, createFeature, updateFeature, deleteFeature } from "../../services/featureService";
 
-// --- LocalStorage helpers para features y categorías ---
-const FEATURES_KEY = "features_local";
 const CATEGORIES_KEY = "categories_local";
+const PAGE_SIZE = 8;
 
-function readLocalFeatures() {
-  try {
-    const raw = localStorage.getItem(FEATURES_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch (err) {
-    console.error("Error parseando features:", err);
-    return [];
-  }
-}
-function writeLocalFeatures(features) {
-  try {
-    localStorage.setItem(FEATURES_KEY, JSON.stringify(features));
-  } catch (err) {
-    console.error("Error guardando features:", err);
-  }
-}
 function writeLocalCategories(categories) {
-  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories || []));
+}
+
+function toInputDate(value) {
+  if (!value) return "";
+  const str = String(value);
+  if (str.length >= 10) return str.slice(0, 10);
+  return "";
+}
+
+function toBackendDate(value) {
+  if (!value) return "";
+  if (String(value).includes("T")) return value;
+  return `${value}T00:00`;
 }
 
 export default function AdminPanel() {
+  const location = useLocation();
+  const fileInputRef = useRef(null);
+
   const [vuelos, setVuelos] = useState([]);
+  const [categories, setCategories] = useState(() => {
+    try {
+      const raw = localStorage.getItem(CATEGORIES_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [availableFeatures, setAvailableFeatures] = useState([]);
+
   const [query, setQuery] = useState("");
-  const PAGE_SIZE = 8;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [editingId, setEditingId] = useState(null);
   const [backendError, setBackendError] = useState("");
   const [isMobile, setIsMobile] = useState(false);
-  const location = useLocation();
 
-  // --- Features ---
-  const [availableFeatures, setAvailableFeatures] = useState(() => {
-    const features = readLocalFeatures();
-    return Array.from(new Map(features.map(f => [f.id, f])).values());
-  });
   const [showFeatureModal, setShowFeatureModal] = useState(false);
   const [editingFeature, setEditingFeature] = useState(null);
-  const [newFeature, setNewFeature] = useState({ title: "", description: "", type: "" });
+  const [newFeature, setNewFeature] = useState({ title: "", icon: "" });
 
-  // --- Categories ---
-  const [categories, setCategories] = useState(() => {
-    const raw = localStorage.getItem(CATEGORIES_KEY);
-    return raw ? JSON.parse(raw) : [];
-  });
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(null);
   const [newCategory, setNewCategory] = useState({ title: "", description: "", imageUrl: "", icon: "" });
 
-  // --- Formulario vuelo ---
-  const fileInputRef = useRef(null);
   const [form, setForm] = useState({
     id: null,
     name: "",
@@ -73,10 +68,8 @@ export default function AdminPanel() {
     imageUrl: "",
     imageFilesDataUrls: [],
     features: [],
-    images: []
   });
 
-  // --- Detectar pantalla móvil ---
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
@@ -84,42 +77,66 @@ export default function AdminPanel() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-// --- Cargar vuelos desde backend ---
-useEffect(() => {
-  const loadVuelos = async () => {
-    try {
-      const data = await productService.getRandomProducts(20);
-      setVuelos(data);
-    } catch (err) {
-      console.error("Error cargando vuelos:", err);
-      setBackendError("No se pudieron cargar los vuelos desde el backend.");
-    }
-  };
-  loadVuelos();
-}, []);
-// --- Cargar categorías desde backend ---
-useEffect(() => {
-  const loadCategories = async () => {
-    try {
-      const data = await categoryService.getAll(); // <- método que definimos en categoryService
-      setCategories(data);
-      writeLocalCategories(data);
-    } catch (err) {
-      console.error("Error cargando categorías:", err);
-    }
-  };
-  loadCategories();
-}, []);
+  useEffect(() => {
+    const loadVuelos = async () => {
+      try {
+        const data = await productService.getRandomProducts(20);
+        setVuelos(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Error cargando vuelos:", err);
+        setBackendError("No se pudieron cargar los vuelos desde el backend.");
+      }
+    };
 
-  // --- Manejo de edición desde query string ---
+    const loadCategories = async () => {
+      try {
+        const data = await categoryService.getAll();
+        const safe = Array.isArray(data) ? data : [];
+        setCategories(safe);
+        writeLocalCategories(safe);
+      } catch (err) {
+        console.error("Error cargando categorias:", err);
+      }
+    };
+
+    const loadFeatures = async () => {
+      try {
+        const res = await getFeatures();
+        const safe = Array.isArray(res?.data) ? res.data : [];
+        setAvailableFeatures(safe);
+      } catch (err) {
+        console.error("Error cargando features:", err);
+      }
+    };
+
+    loadVuelos();
+    loadCategories();
+    loadFeatures();
+  }, []);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const editId = params.get("edit");
-    if (editId && vuelos.length > 0) {
-      const vuelo = vuelos.find((v) => String(v.id) === String(editId));
-      if (vuelo) handleEdit(vuelo);
-    }
+    if (!editId || vuelos.length === 0) return;
+    const vuelo = vuelos.find((v) => String(v.id) === String(editId));
+    if (vuelo) handleEdit(vuelo);
   }, [location.search, vuelos]);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [query]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return vuelos.filter((v) => {
+      if (!q) return true;
+      return String(v.id || "").toLowerCase().includes(q) ||
+        String(v.name || "").toLowerCase().includes(q) ||
+        String(v.country || "").toLowerCase().includes(q);
+    });
+  }, [vuelos, query]);
+
+  const visibleVuelos = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
   const resetForm = () => {
     setForm({
@@ -143,21 +160,22 @@ useEffect(() => {
     if (!files.length) return;
 
     Promise.all(
-      files.map(
-        (file) =>
-          new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (ev) => resolve(ev.target.result);
-            reader.readAsDataURL(file);
-          })
+      files.map((file) =>
+        new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => resolve(ev.target.result);
+          reader.readAsDataURL(file);
+        })
       )
-    ).then((results) => setForm((f) => ({ ...f, imageFilesDataUrls: results, imageUrl: "" })));
+    ).then((results) => {
+      setForm((f) => ({ ...f, imageFilesDataUrls: results, imageUrl: "" }));
+    });
   };
 
-  // --- Crear o actualizar vuelo usando productService ---
   const handleCreateOrUpdate = async (product) => {
     if (!product.name.trim() || !product.country.trim() || !product.price || !product.departureDate || !product.categoryId) {
-      return alert("Faltan campos obligatorios.");
+      alert("Faltan campos obligatorios.");
+      return;
     }
 
     try {
@@ -167,27 +185,24 @@ useEffect(() => {
 
       setVuelos((prev) => {
         if (product.id) return prev.map((v) => (v.id === product.id ? data : v));
-        return [...prev, data];
+        return [data, ...prev];
       });
 
       resetForm();
-      alert("✅ Vuelo guardado correctamente");
+      alert("Vuelo guardado correctamente");
     } catch (err) {
       console.error(err);
-      alert("❌ Error al guardar el vuelo: " + err.message);
+      alert("Error al guardar el vuelo: " + (err?.message || "Error desconocido"));
     }
   };
 
-  // --- Borrar vuelo usando productService ---
   const handleDelete = async (id) => {
-    if (!window.confirm("¿Seguro que querés eliminar este vuelo?")) return;
+    if (!window.confirm("Seguro que queres eliminar este vuelo?")) return;
     try {
       await productService.deleteProduct(id);
       setVuelos((prev) => prev.filter((v) => v.id !== id));
-      alert("✅ Vuelo eliminado correctamente");
     } catch (err) {
-      console.error(err);
-      alert("❌ Error borrando vuelo: " + err.message);
+      alert("Error borrando vuelo: " + (err?.message || "Error"));
     }
   };
 
@@ -198,646 +213,469 @@ useEffect(() => {
       name: vuelo.name || "",
       country: vuelo.country || "",
       price: vuelo.price || "",
-      departureDate: vuelo.departureDate || "",
-      category: vuelo.categoryId || "",
+      departureDate: toInputDate(vuelo.departureDate),
+      category: vuelo.category?.id || vuelo.categoryId || "",
       description: vuelo.description || "",
-      imageUrl: vuelo.imageUrl || "",
-      imageFilesDataUrls: vuelo.imagesBase64 || [],
-      features: vuelo.features || [],
-      images: vuelo.images || [],
+      imageUrl: vuelo.image || vuelo.imageUrl || "",
+      imageFilesDataUrls: Array.isArray(vuelo.imagesBase64) ? vuelo.imagesBase64 : [],
+      features: Array.isArray(vuelo.features)
+        ? vuelo.features.map((f) => ({ id: f.id, name: f.name, type: f.type || "text", value: "" }))
+        : [],
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // --- Filtrado y paginación ---
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return vuelos.filter((v) => {
-      if (!q) return true;
-      return String(v.id).toLowerCase().includes(q) ||
-        (v.name || "").toLowerCase().includes(q) ||
-        (v.country || "").toLowerCase().includes(q);
-    });
-  }, [vuelos, query]);
+  const openNewFeatureModal = () => {
+    setEditingFeature(null);
+    setNewFeature({ title: "", icon: "" });
+    setShowFeatureModal(true);
+  };
 
-  const visibleVuelos = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const handleSaveFeature = async () => {
+    if (!newFeature.title.trim()) {
+      alert("El titulo de la caracteristica es obligatorio.");
+      return;
+    }
+    if (!newFeature.icon) {
+      alert("Selecciona un icono para la caracteristica.");
+      return;
+    }
 
-  useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [query]);
+    try {
+      if (editingFeature?.id) {
+        const res = await updateFeature(editingFeature.id, {
+          name: newFeature.title.trim(),
+          icon: newFeature.icon,
+        });
+        const updated = res?.data;
+        setAvailableFeatures((prev) => prev.map((f) => (f.id === updated.id ? updated : f)));
+      } else {
+        const res = await createFeature({
+          name: newFeature.title.trim(),
+          icon: newFeature.icon,
+        });
+        const created = res?.data;
+        setAvailableFeatures((prev) => [created, ...prev]);
+      }
 
-  if (isMobile) return (
-    <div className="admin-mobile-warning">
-      <h2>⚠️ Panel no disponible en dispositivos móviles</h2>
-      <p>Por favor, accedé desde una computadora o tablet.</p>
-    </div>
-  );
+      setShowFeatureModal(false);
+      setEditingFeature(null);
+      setNewFeature({ title: "", icon: "" });
+    } catch (err) {
+      console.error("Error guardando feature:", err);
+      alert("No se pudo guardar la caracteristica.");
+    }
+  };
 
- return (
-   <>
+  const handleDeleteFeature = async (featureId) => {
+    if (!window.confirm("Eliminar caracteristica?")) return;
+    try {
+      await deleteFeature(featureId);
+      setAvailableFeatures((prev) => prev.filter((f) => f.id !== featureId));
+      setForm((prev) => ({
+        ...prev,
+        features: (prev.features || []).filter((f) => f.id !== featureId),
+      }));
+    } catch (err) {
+      console.error("Error eliminando feature:", err);
+      alert("No se pudo eliminar la caracteristica.");
+    }
+  };
 
-     {/* CONTENEDOR GENERAL */}
-     <div className="admin-container">
-       {/* TOP NAVIGATION BAR */}
-       <div className="admin-top-bar">
-         <div className="admin-logo">
-          <img src="/assets/logoJettSeter.png" alt="JetSetter Logo" className="admin-logo-img" />
-          <span style={{color: '#3b82f6', fontWeight: '700'}}>JetSetter</span> <span style={{color: '#000', fontWeight: '700'}}>Admin</span>
-         </div>
-         <div className="admin-top-actions">
-           <Link to="/" className="btn-top-action btn-view">Ver sitio</Link>
-           <button
-             className="btn-top-action btn-clear"
-             onClick={() => {
-               if (window.confirm("¿Limpiar localStorage?")) {
-                 localStorage.removeItem("features_local");
-                 localStorage.removeItem("categories_local");
-                 setVuelos([]);
-                 setAvailableFeatures([]);
-                 setCategories([]);
-                 alert("✅ LocalStorage limpiado");
-               }
-             }}
-           >
-             Limpiar
-           </button>
-         </div>
-       </div>
+  const handleSaveCategory = async () => {
+    if (!newCategory.title.trim()) {
+      alert("El titulo de la categoria es obligatorio.");
+      return;
+    }
 
-       {/* HEADER PRINCIPAL */}
-       <header className="admin-header">
-         <div className="admin-header-main">
-           <div className="admin-title-section">
-             <h1>Administración de Vuelos</h1>
-             <p>Gestiona el inventario de vuelos y características.</p>
-           </div>
-         </div>
-
-         {backendError && <div className="form-error">{backendError}</div>}
-       </header>
-
-       {/* LISTA DE FEATURES */}
-       <section className="admin-features-section">
-         <div className="features-section-header">
-           <h2>Características registradas</h2>
-           <div className="features-header-right">
-             <span className="features-count">{availableFeatures.length} total</span>
-             <button className="btn-new-feature" onClick={() => {
-               setEditingFeature(null);
-               setNewFeature({ title: "", description: "", type: "" });
-               setShowFeatureModal(true);
-             }}>+ Nueva</button>
-           </div>
-         </div>
-
-         {availableFeatures.length === 0 && <p className="no-data">No hay características aún.</p>}
-
-         {availableFeatures.length > 0 && (
-           <table className="admin-table">
-             <thead>
-               <tr>
-                 <th>Nombre</th>
-                 <th>Descripción</th>
-                 <th style={{ textAlign: "center" }}>Acciones</th>
-               </tr>
-             </thead>
-
-             <tbody>
-              {availableFeatures.map((feat, index) => (
-                <tr key={`feat-${feat.id}-${feat.name}-${index}`}>
-
-
-                   <td>{feat.name}</td>
-                   <td>{feat.description}</td>
-                   <td style={{ textAlign: "center" }}>
-                     <button
-                       onClick={() => {
-                         setEditingFeature(feat);
-                         setNewFeature({
-                           title: feat.name,
-                           description: feat.description,
-                           type: feat.type || "text",
-                         });
-                         setShowFeatureModal(true);
-                       }}
-                       className="btn-edit"
-                     >
-                       Editar
-                     </button>
-
-                  <button
-                    onClick={() => {
-                      if (confirm("¿Eliminar característica?")) {
-                        // Filtrar la característica eliminada
-                        const filtered = availableFeatures.filter((x) => x.id !== feat.id);
-                        setAvailableFeatures(filtered);
-                        writeLocalFeatures(filtered);
-
-
-                     // Quitar la característica de todos los vuelos
-                     setVuelos((prev) =>
-                       prev.map((v) => ({
-                         ...v,
-                         features: Array.isArray(v.features)
-                           ? v.features.filter((id) => id !== feat.id)
-                           : [], // si no existe features, se inicializa vacío
-                       }))
-                     );
-
-                      }
-                    }}
-                    className="btn-delete"
-                  >
-                    Eliminar
-                  </button>
-
-                   </td>
-                 </tr>
-               ))}
-             </tbody>
-           </table>
-         )}
-       </section>
-
-       {/* FORM Y LISTA DE PRODUCTOS */}
-       <main className="container">
-         <section className="admin-form">
-           <h2>{editingId ? "Editar vuelo" : "Crear nuevo vuelo"}</h2>
-           <p>Completa todos los campos para publicar un nuevo destino.</p>
-
-           <form
-             onSubmit={(e) => {
-               e.preventDefault(); // evita recarga de página
-               handleCreateOrUpdate({
-                 id: form.id,
-                 name: form.name,
-                 country: form.country,
-                 price: Number(form.price),
-                 departureDate: form.departureDate,
-                 categoryId: form.category,
-                 description: form.description,
-                 features: form.features || [],
-                 imageUrl: form.imageUrl || null,
-                 imagesBase64: form.imageFilesDataUrls || [],
-               });
-             }}
-           >
-
-             <div className="grid-2">
-               <label>
-                 Nombre del Vuelo
-                 <input
-                   placeholder="Ej. Vuelo Madrid - Tokyo"
-                   value={form.name}
-                   onChange={(e) =>
-                     setForm({ ...form, name: e.target.value })
-                   }
-                   required
-                 />
-               </label>
-
-               <label>
-                 País de Destino
-                 <input
-                   placeholder="Ej. España"
-                   value={form.country}
-                   onChange={(e) =>
-                     setForm({ ...form, country: e.target.value })
-                   }
-                   required
-                 />
-               </label>
-
-               <label>
-                 Precio (USD)
-                 <input
-                   type="number"
-                   min="0"
-                   step="0.01"
-                   placeholder="$ 0.00"
-                   value={form.price}
-                   onChange={(e) =>
-                     setForm({ ...form, price: e.target.value })
-                   }
-                   required
-                 />
-               </label>
-
-               <label>
-                 Fecha de salida
-                 <input
-                   type="date"
-                   value={form.departureDate}
-                   onChange={(e) =>
-                     setForm({ ...form, departureDate: e.target.value })
-                   }
-                   required
-                 />
-               </label>
-
-             <label>
-               Categoría
-         <select
-           value={Number(form.category)}
-           onChange={(e) => setForm({ ...form, category: Number(e.target.value) })}
-         >
-           <option value="">Seleccionar categoría...</option>
-           {categories.map(c => (
-             <option key={`cat-${c.id}`} value={Number(c.id)}>
-               {c.name} {/* <-- antes era c.title */}
-             </option>
-           ))}
-         </select>
-
-
-
-
-
-             </label>
-
-               <label>
-                 Descripción del Vuelo
-                 <textarea
-                   rows="3"
-                   placeholder="Detalles del trayecto y servicios..."
-                   value={form.description}
-                   onChange={(e) =>
-                     setForm({ ...form, description: e.target.value })
-                   }
-                 />
-               </label>
-
-               {/* NUEVO BLOQUE DINÁMICO DE CARACTERÍSTICAS */}
-               <label>
-                 Características del vuelo
-                 <div className="features-list">
-                   {availableFeatures.length === 0 && (
-                     <p style={{ fontSize: "0.9rem", opacity: 0.7 }}>
-                       No hay características creadas. Crealas desde el botón
-                       “Agregar característica”.
-                     </p>
-                   )}
-
- {availableFeatures.map((feat, index) => { // <--- agregamos index aquí
-   const selected = (form.features || []).find((f) => f.id === feat.id);
-
-   return (
- <div key={`feat-item-${feat.id || index}-${feat.name}`} className="feature-item">
-
-                         <label>
-                           <input
-                             type="checkbox"
-                             checked={!!selected}
-                             onChange={(e) => {
-                               if (e.target.checked) {
-                                 setForm((f) => ({
-                                   ...f,
-                                   features: [
-                                     ...f.features,
-                                     {
-                                       id: feat.id,
-                                       name: feat.name,
-                                       type: feat.type || "text",
-                                       value: "",
-                                     },
-                                   ],
-                                 }));
-                               } else {
-                                 setForm((f) => ({
-                                   ...f,
-                                   features: f.features.filter(
-                                     (x) => x.id !== feat.id
-                                   ),
-                                 }));
-                               }
-                             }}
-                           />
-                           {feat.name} ({feat.type})
-                         </label>
-
-                         {selected && (
-                           <div className="feature-input">
-                             {feat.type === "text" && (
-                               <input
-                                 type="text"
-                                 placeholder="Texto"
-                                 value={selected.value || ""}
-                                 onChange={(e) => {
-                                   setForm((f) => ({
-                                     ...f,
-                                     features: f.features.map((x) =>
-                                       x.id === feat.id
-                                         ? { ...x, value: e.target.value }
-                                         : x
-                                     ),
-                                   }));
-                                 }}
-                               />
-                             )}
-                             {feat.type === "number" && (
-                               <input
-                                 type="number"
-                                 placeholder="Número"
-                                 value={selected.value || ""}
-                                 onChange={(e) => {
-                                   setForm((f) => ({
-                                     ...f,
-                                     features: f.features.map((x) =>
-                                       x.id === feat.id
-                                         ? { ...x, value: e.target.value }
-                                         : x
-                                     ),
-                                   }));
-                                 }}
-                               />
-                             )}
-                             {feat.type === "date" && (
-                               <input
-                                 type="date"
-                                 value={selected.value || ""}
-                                 onChange={(e) => {
-                                   setForm((f) => ({
-                                     ...f,
-                                     features: f.features.map((x) =>
-                                       x.id === feat.id
-                                         ? { ...x, value: e.target.value }
-                                         : x
-                                     ),
-                                   }));
-                                 }}
-                               />
-                             )}
-                             {feat.type === "textarea" && (
-                               <textarea
-                                 placeholder="Descripción"
-                                 value={selected.value || ""}
-                                 onChange={(e) => {
-                                   setForm((f) => ({
-                                     ...f,
-                                     features: f.features.map((x) =>
-                                       x.id === feat.id
-                                         ? { ...x, value: e.target.value }
-                                         : x
-                                     ),
-                                   }));
-                                 }}
-                               />
-                             )}
-                             {feat.type === "boolean" && (
-                               <select
-                                 value={selected.value || ""}
-                                 onChange={(e) => {
-                                   setForm((f) => ({
-                                     ...f,
-                                     features: f.features.map((x) =>
-                                       x.id === feat.id
-                                         ? { ...x, value: e.target.value }
-                                         : x
-                                     ),
-                                   }));
-                                 }}
-                               >
-                                 <option value="">Seleccionar</option>
-                                 <option value="true">Sí</option>
-                                 <option value="false">No</option>
-                               </select>
-                             )}
-                           </div>
-                         )}
-                       </div>
-                     );
-                   })}
-                 </div>
-               </label>
-
-               <label>
-                 Imagen (URL)
-                 <input
-                   value={form.imageUrl}
-                   onChange={(e) =>
-                     setForm({
-                       ...form,
-                       imageUrl: e.target.value,
-                       imageFilesDataUrls: [],
-                     })
-                   }
-                   placeholder="https://url-de-la-imagen.com"
-                 />
-               </label>
-
-               <label>
-                 Subir imagen
-                 <input
-                   ref={fileInputRef}
-                   onChange={handleFilesChange}
-                   type="file"
-                   accept="image/*"
-                   multiple
-                 />
-               </label>
-             </div>
-
-             <div className="preview">
-               {form.imageFilesDataUrls.length > 0 ? (
-                 form.imageFilesDataUrls.map((src, i) => (
-                   <img key={i} src={src} alt={`preview-${i}`} />
-                 ))
-               ) : form.imageUrl ? (
-                 <img src={form.imageUrl} alt="url-preview" />
-               ) : (
-                 <div>Sin imagen</div>
-               )}
-             </div>
-
-             <div
-               style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}
-             >
-               <button type="submit" className="btn btn-primary">
-                 {editingId ? "Guardar cambios" : "Crear vuelo"}
-               </button>
-
-               {editingId && (
-                 <button
-                   type="button"
-                   className="btn btn-secondary"
-                   onClick={resetForm}
-                 >
-                   Cancelar
-                 </button>
-               )}
-             </div>
-           </form>
-         </section>
-
-         <section className="admin-list">
-           <AdminProductsList
-             vuelos={visibleVuelos}
-             onEdit={handleEdit}
-             onDelete={handleDelete}
-           />
-           <div className="admin-list-footer">
-             <span className="admin-list-counter">
-               Mostrando {visibleVuelos.length} de {filtered.length} vuelos
-             </span>
-             {visibleCount < filtered.length && (
-               <button
-                 className="admin-btn-load-more"
-                 onClick={() => setVisibleCount((prev) => Math.min(filtered.length, prev + PAGE_SIZE))}
-               >
-                 Ver mas
-               </button>
-             )}
-           </div>
-         </section>
-       </main>
-
-       {/* MODAL DE FEATURES */}
-       {showFeatureModal && (
-         <div className="feature-modal-overlay">
-           <div className="feature-modal">
-             <h2>{editingFeature ? "Editar característica" : "Nueva característica"}</h2>
-
-             <input
-               type="text"
-               placeholder="Título"
-               value={newFeature.title}
-               onChange={(e) =>
-                 setNewFeature({ ...newFeature, title: e.target.value })
-               }
-             />
-
-             <textarea
-               placeholder="Descripción"
-               value={newFeature.description}
-               onChange={(e) =>
-                 setNewFeature({ ...newFeature, description: e.target.value })
-               }
-             />
-
-             <select
-               value={newFeature.type || ""}
-               onChange={(e) =>
-                 setNewFeature({ ...newFeature, type: e.target.value })
-               }
-             >
-               <option value="">Tipo...</option>
-               <option value="text">Texto</option>
-               <option value="number">Número</option>
-               <option value="date">Fecha</option>
-               <option value="textarea">Descripción</option>
-               <option value="boolean">Sí/No</option>
-             </select>
-
-             <div className="modal-buttons">
-               <button onClick={handleCloseFeatureModal}>Cancelar</button>
-             <button onClick={handleSaveFeature}>Guardar</button>
-             </div>
-           </div>
-
-
-
-         </div>
-       )}
-
-    {showCategoryModal && (
-      <div className="feature-modal-overlay">
-        <div className="feature-modal">
-          <h2>{editingCategory ? "Editar categoría" : "Nueva categoría"}</h2>
-
-          <input
-            type="text"
-            placeholder="Título"
-            value={newCategory.title}
-            onChange={(e) => setNewCategory({ ...newCategory, title: e.target.value })}
-          />
-
-          <textarea
-            placeholder="Descripción"
-            value={newCategory.description}
-            onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
-          />
-
-          <div style={{ marginTop: 8 }}>
-            <label style={{ display: "block", marginBottom: 6 }}>Elegir ícono (en lugar de subir imagen)</label>
-
-            {/* Muestra el icono actualmente seleccionado */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-              <div style={{
-                width: 56, height: 56, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
-                background: "#fff", border: "1px solid #eee"
-              }}>
-                {newCategory.icon ? React.createElement(ICON_REGISTRY[newCategory.icon]) : <span style={{opacity:0.6}}>—</span>}
-              </div>
-              <div style={{ fontSize: 14, color: "#444" }}>
-                {newCategory.icon || "Ningún ícono seleccionado"}
-              </div>
-            </div>
-
-            {/* IconPicker */}
-            <IconPicker
-              value={newCategory.icon}
-              onChange={(iconName) => setNewCategory({ ...newCategory, icon: iconName })}
-              columns={6}
-            />
-          </div>
-
-          <div style={{ marginTop: 12 }}>
-            <label>URL de imagen (opcional)</label>
-            <input
-              type="text"
-              placeholder="URL de imagen (si querés override)"
-              value={newCategory.imageUrl}
-              onChange={(e) => setNewCategory({ ...newCategory, imageUrl: e.target.value })}
-            />
-          </div>
-
-          <div className="modal-buttons" style={{ marginTop: 12 }}>
-  <button
-    onClick={async () => {
-      if (!newCategory.title.trim())
-        return alert("El título es obligatorio.");
-
-    const categoryObj = {
-      id: editingCategory?.id || null,
-      name: newCategory.title, // aquí cambiamos title a name
-      description: newCategory.description,
-      imageUrl: newCategory.imageUrl,
+    const payload = {
+      name: newCategory.title.trim(),
+      description: newCategory.description.trim(),
+      imageUrl: newCategory.imageUrl || "",
       icon: newCategory.icon || "",
     };
 
+    const saved = await categoryService.createCategory(payload);
+    if (!saved) {
+      alert("No se pudo crear la categoria.");
+      return;
+    }
 
-      // Guardar en backend
-       const savedCategory = await categoryService.saveCategory(categoryObj, token);
-      if (!savedCategory) return; // si falla, salimos
+    const updated = [saved, ...categories];
+    setCategories(updated);
+    writeLocalCategories(updated);
+    setForm((f) => ({ ...f, category: saved.id }));
 
-      // Actualizar estado local de categorías
-      const updatedCategories = editingCategory
-        ? categories.map((c) =>
-            c.id === editingCategory.id ? savedCategory : c
-          )
-        : [...categories, savedCategory];
+    setShowCategoryModal(false);
+    setNewCategory({ title: "", description: "", imageUrl: "", icon: "" });
+  };
 
-      setCategories(updatedCategories);
-      writeLocalCategories(updatedCategories); // opcional si querés localStorage
+  const clearLocalData = () => {
+    if (!window.confirm("Limpiar datos locales (categorias cache)?")) return;
+    localStorage.removeItem(CATEGORIES_KEY);
+    setCategories([]);
+  };
 
-      // 🔹 Actualizar el vuelo actualmente en edición para que seleccione la nueva categoría
-      setForm((f) => ({ ...f, category: savedCategory.id }));
+  if (isMobile) {
+    return (
+      <div className="admin-mobile-warning">
+        <h2>Panel no disponible en dispositivos moviles</h2>
+        <p>Accede desde computadora o tablet.</p>
+      </div>
+    );
+  }
 
-      // Cerrar modal y reset
-      setShowCategoryModal(false);
-      setEditingCategory(null);
-      setNewCategory({ title: "", description: "", imageUrl: "", imageFile: null, icon: "" });
-    }}
-  >
-    Guardar
-  </button>
-
-
-          </div>
+  return (
+    <div className="admin-container">
+      <div className="admin-top-bar">
+        <div className="admin-logo">
+          <img src="/assets/logoJettSeter.png" alt="JetSetter Logo" className="admin-logo-img" />
+          <span style={{ color: "#3b82f6", fontWeight: 700 }}>JetSetter</span>
+          <span style={{ color: "#000", fontWeight: 700 }}>Admin</span>
+        </div>
+        <div className="admin-top-actions">
+          <Link to="/" className="btn-top-action btn-view">Ver sitio</Link>
+          <button className="btn-top-action btn-clear" onClick={clearLocalData}>Limpiar</button>
         </div>
       </div>
-    )}
-     </div>
-   </>
+
+      <header className="admin-header">
+        <div className="admin-header-main">
+          <div className="admin-title-section">
+            <h1>Administracion de Vuelos</h1>
+            <p>Gestiona inventario, categorias y caracteristicas.</p>
+          </div>
+        </div>
+        {backendError && <div className="form-error">{backendError}</div>}
+      </header>
+
+      <section className="admin-features-section">
+        <div className="features-section-header">
+          <h2>Caracteristicas registradas</h2>
+          <div className="features-header-right">
+            <span className="features-count">{availableFeatures.length} total</span>
+            <button className="btn-new-feature" onClick={openNewFeatureModal}>+ Nueva</button>
+          </div>
+        </div>
+
+        {availableFeatures.length === 0 ? (
+          <p className="no-data">No hay caracteristicas aun.</p>
+        ) : (
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Icono</th>
+                <th>ID</th>
+                <th style={{ textAlign: "center" }}>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {availableFeatures.map((feat) => (
+                <tr key={feat.id}>
+                  <td>{feat.name}</td>
+                  <td>{feat.icon || "-"}</td>
+                  <td>{feat.id || "-"}</td>
+                  <td style={{ textAlign: "center" }}>
+                    <button
+                      className="btn-edit"
+                      onClick={() => {
+                        setEditingFeature(feat);
+                        setNewFeature({ title: feat.name || "", icon: feat.icon || "" });
+                        setShowFeatureModal(true);
+                      }}
+                    >
+                      Editar
+                    </button>
+                    <button className="btn-delete" onClick={() => handleDeleteFeature(feat.id)}>Eliminar</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      <section className="admin-features-section">
+        <div className="features-section-header">
+          <h2>Categorias registradas</h2>
+          <div className="features-header-right">
+            <span className="features-count">{categories.length} total</span>
+            <button
+              className="btn-new-feature"
+              onClick={() => {
+                setNewCategory({ title: "", description: "", imageUrl: "", icon: "" });
+                setShowCategoryModal(true);
+              }}
+            >
+              + Nueva
+            </button>
+          </div>
+        </div>
+
+        {categories.length === 0 ? (
+          <p className="no-data">No hay categorias aun.</p>
+        ) : (
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Icono</th>
+                <th>Nombre</th>
+                <th>Descripcion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map((cat) => {
+                const Icon = ICON_REGISTRY[cat.icon] || null;
+                return (
+                  <tr key={cat.id || cat.name}>
+                    <td>{Icon ? <Icon /> : "-"}</td>
+                    <td>{cat.name}</td>
+                    <td>{cat.description || "-"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      <main className="container">
+        <section className="admin-form">
+          <h2>{editingId ? "Editar vuelo" : "Crear nuevo vuelo"}</h2>
+          <p>Completa todos los campos para publicar un nuevo destino.</p>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleCreateOrUpdate({
+                id: form.id,
+                name: form.name,
+                country: form.country,
+                price: Number(form.price),
+                departureDate: toBackendDate(form.departureDate),
+                categoryId: Number(form.category),
+                description: form.description,
+                features: (form.features || []).map((f) => ({ id: f.id, name: f.name })),
+                image: form.imageUrl || null,
+                imagesBase64: form.imageFilesDataUrls || [],
+              });
+            }}
+          >
+            <div className="grid-2">
+              <label>
+                Nombre del Vuelo
+                <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              </label>
+
+              <label>
+                Pais de Destino
+                <input required value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} />
+              </label>
+
+              <label>
+                Precio (USD)
+                <input type="number" min="0" step="0.01" required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+              </label>
+
+              <label>
+                Fecha de salida
+                <input type="date" required value={form.departureDate} onChange={(e) => setForm({ ...form, departureDate: e.target.value })} />
+              </label>
+
+              <label>
+                Categoria
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <select
+                    required
+                    value={form.category || ""}
+                    onChange={(e) => setForm({ ...form, category: Number(e.target.value) })}
+                  >
+                    <option value="">Seleccionar categoria...</option>
+                    {categories.map((c) => (
+                      <option key={`cat-${c.id}`} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowCategoryModal(true)}>
+                    +
+                  </button>
+                </div>
+              </label>
+
+              <label>
+                Descripcion del Vuelo
+                <textarea rows="3" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+              </label>
+
+              <label>
+                Caracteristicas del vuelo
+                <div className="features-list">
+                  {availableFeatures.length === 0 && (
+                    <p style={{ fontSize: "0.9rem", opacity: 0.7 }}>No hay caracteristicas creadas.</p>
+                  )}
+
+                  {availableFeatures.map((feat) => {
+                    const selected = (form.features || []).find((f) => f.id === feat.id);
+                    return (
+                      <div key={`feat-item-${feat.id}`} className="feature-item">
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={!!selected}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setForm((f) => ({
+                                  ...f,
+                                  features: [...(f.features || []), { id: feat.id, name: feat.name }],
+                                }));
+                              } else {
+                                setForm((f) => ({
+                                  ...f,
+                                  features: (f.features || []).filter((x) => x.id !== feat.id),
+                                }));
+                              }
+                            }}
+                          />
+                          {feat.name}
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
+              </label>
+
+              <label>
+                Imagen (URL)
+                <input value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value, imageFilesDataUrls: [] })} />
+              </label>
+
+              <label>
+                Subir imagen
+                <input ref={fileInputRef} onChange={handleFilesChange} type="file" accept="image/*" multiple />
+              </label>
+            </div>
+
+            <div className="preview">
+              {form.imageFilesDataUrls.length > 0 ? (
+                form.imageFilesDataUrls.map((src, i) => <img key={i} src={src} alt={`preview-${i}`} />)
+              ) : form.imageUrl ? (
+                <img src={form.imageUrl} alt="url-preview" />
+              ) : (
+                <div>Sin imagen</div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+              <button type="submit" className="btn btn-primary">{editingId ? "Guardar cambios" : "Crear vuelo"}</button>
+              {editingId && (
+                <button type="button" className="btn btn-secondary" onClick={resetForm}>Cancelar</button>
+              )}
+            </div>
+          </form>
+        </section>
+
+        <section className="admin-list">
+          <input
+            className="search-input"
+            placeholder="Buscar por id, nombre o pais..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+
+          <AdminProductsList vuelos={visibleVuelos} onEdit={handleEdit} onDelete={handleDelete} />
+
+          <div className="admin-list-footer">
+            <span className="admin-list-counter">Mostrando {visibleVuelos.length} de {filtered.length} vuelos</span>
+            {visibleCount < filtered.length && (
+              <button className="admin-btn-load-more" onClick={() => setVisibleCount((prev) => Math.min(filtered.length, prev + PAGE_SIZE))}>
+                Ver mas
+              </button>
+            )}
+          </div>
+        </section>
+      </main>
+
+      {showFeatureModal && (
+        <div className="feature-modal-overlay">
+          <div className="feature-modal">
+            <h2>{editingFeature ? "Editar caracteristica" : "Nueva caracteristica"}</h2>
+
+            <input
+              type="text"
+              placeholder="Titulo"
+              value={newFeature.title}
+              onChange={(e) => setNewFeature({ ...newFeature, title: e.target.value })}
+            />
+
+            <label style={{ display: "block", marginBottom: 6 }}>Icono</label>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+              <div style={{ width: 56, height: 56, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff", border: "1px solid #eee" }}>
+                {newFeature.icon && ICON_REGISTRY[newFeature.icon]
+                  ? React.createElement(ICON_REGISTRY[newFeature.icon])
+                  : <span style={{ opacity: 0.6 }}>-</span>}
+              </div>
+              <div style={{ fontSize: 14, color: "#444" }}>{newFeature.icon || "Ningun icono seleccionado"}</div>
+            </div>
+            <IconPicker value={newFeature.icon} onChange={(iconName) => setNewFeature({ ...newFeature, icon: iconName })} columns={6} />
+
+            <div className="modal-buttons">
+              <button onClick={() => setShowFeatureModal(false)}>Cancelar</button>
+              <button onClick={handleSaveFeature}>Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCategoryModal && (
+        <div className="feature-modal-overlay">
+          <div className="feature-modal">
+            <h2>Nueva categoria</h2>
+
+            <input
+              type="text"
+              placeholder="Titulo"
+              value={newCategory.title}
+              onChange={(e) => setNewCategory({ ...newCategory, title: e.target.value })}
+            />
+
+            <textarea
+              placeholder="Descripcion"
+              value={newCategory.description}
+              onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+            />
+
+            <div>
+              <label style={{ display: "block", marginBottom: 6 }}>Icono</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                <div style={{ width: 56, height: 56, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff", border: "1px solid #eee" }}>
+                  {newCategory.icon && ICON_REGISTRY[newCategory.icon]
+                    ? React.createElement(ICON_REGISTRY[newCategory.icon])
+                    : <span style={{ opacity: 0.6 }}>-</span>}
+                </div>
+                <div style={{ fontSize: 14, color: "#444" }}>{newCategory.icon || "Ningun icono seleccionado"}</div>
+              </div>
+
+              <IconPicker
+                value={newCategory.icon}
+                onChange={(iconName) => setNewCategory({ ...newCategory, icon: iconName })}
+                columns={6}
+              />
+            </div>
+
+            <input
+              type="text"
+              placeholder="URL de imagen (opcional)"
+              value={newCategory.imageUrl}
+              onChange={(e) => setNewCategory({ ...newCategory, imageUrl: e.target.value })}
+            />
+
+            <div className="modal-buttons">
+              <button onClick={() => setShowCategoryModal(false)}>Cancelar</button>
+              <button onClick={handleSaveCategory}>Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

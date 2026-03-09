@@ -7,15 +7,25 @@ import {
 } from "react-icons/fa";
 import { addFavorite, removeFavorite, getUserFavorites } from "../../services/favoritesApi";
 import { getUserBookings, cancelBooking, createBooking } from "../../services/bookingsApi";
+import productService from "../../services/productService";
+import { getVueloImage } from "../../utils/images";
 import "./Profile.css";
 
-function normalizeImage(src) {
-  if (!src) return "/assets/placeholder.jpg";
-  if (src.startsWith("http") || src.startsWith("/")) return src;
-  return `/products/images/${src}`;
-}
-
 const icons = { FaPlane, FaClock, FaCar };
+const hasImageData = (item) =>
+  Boolean(
+    item?.imagenUrl ||
+    item?.imagenPrincipal ||
+    item?.image ||
+    (Array.isArray(item?.imagenesPais) && item.imagenesPais.length > 0) ||
+    (Array.isArray(item?.imagesBase64) && item.imagesBase64.length > 0)
+  );
+
+const resolveProductId = (item) => {
+  const raw = item?.productId ?? item?.id;
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
 
 export default function Profile() {
   const [favorites, setFavorites] = useState([]);
@@ -39,9 +49,38 @@ export default function Profile() {
     Promise.all([
       getUserFavorites().catch(err => { console.error("Error fetching favorites:", err); return []; }),
       getUserBookings(storedUser.id).catch(err => { console.error("Error fetching bookings:", err); return []; })
-    ]).then(([favsData, booksData]) => {
-      setFavorites(favsData);
-      setBookings(booksData);
+    ]).then(async ([favsData, booksData]) => {
+      const enrichedFavs = await Promise.all(
+        (favsData || []).map(async (fav) => {
+          if (hasImageData(fav)) return fav;
+          const productId = resolveProductId(fav);
+          if (!productId) return fav;
+          try {
+            const full = await productService.getById(productId);
+            return full ? { ...fav, ...full } : fav;
+          } catch {
+            return fav;
+          }
+        })
+      );
+
+      const enrichedBookings = await Promise.all(
+        (booksData || []).map(async (booking) => {
+          const currentProduct = booking?.product || {};
+          if (hasImageData(currentProduct) || hasImageData(booking)) return booking;
+          const productId = resolveProductId(currentProduct) || resolveProductId(booking);
+          if (!productId) return booking;
+          try {
+            const full = await productService.getById(productId);
+            return full ? { ...booking, product: { ...currentProduct, ...full } } : booking;
+          } catch {
+            return booking;
+          }
+        })
+      );
+
+      setFavorites(enrichedFavs);
+      setBookings(enrichedBookings);
     }).finally(() => setLoading(false));
   }, []); // 🔑 vacía: solo se ejecuta 1 vez
 
@@ -159,7 +198,15 @@ export default function Profile() {
                   <div key={`fav-${vuelo.id}-${idx}`} className="card flight-card">
                     <div className="flight-card-header">
                       <span className="badge badge-next">Favorito</span>
-                      <img src={normalizeImage(vuelo.image)} alt={vuelo.name} className="flight-img" />
+                      <img
+                        src={getVueloImage(vuelo)}
+                        alt={vuelo.name}
+                        className="flight-img"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = "/assets/avionsito.png";
+                        }}
+                      />
                     </div>
                     <div className="flight-card-body">
                       <h5 className="flight-title">{vuelo.name}</h5>
@@ -197,7 +244,15 @@ export default function Profile() {
                       <span className={`badge ${esFuturo ? "badge-next" : "badge-past"}`}>
                         {esFuturo ? "Próximo vuelo" : "Completado"}
                       </span>
-                      <img src={normalizeImage(vuelo.image)} alt={vuelo.name} className="flight-img" />
+                      <img
+                        src={getVueloImage(vuelo)}
+                        alt={vuelo.name}
+                        className="flight-img"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = "/assets/avionsito.png";
+                        }}
+                      />
                     </div>
                     <div className="flight-card-body">
                       <h5 className="flight-title">{vuelo.name}</h5>

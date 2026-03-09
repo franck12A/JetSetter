@@ -87,7 +87,11 @@ export default function Recomendaciones({ vuelos = [], origen, destino, fecha })
         >
           {recomendaciones.map((v, index) => (
             <SwiperSlide key={v.id || index}>
-              <Link to={`/vuelo/${v.id}`} className="reco-link" state={{ vuelo: v }}>
+              <Link
+                to={`/vuelo/${v.productId || v.id}`}
+                className="reco-link"
+                state={{ vuelo: { ...v, productId: v.productId || v.id } }}
+              >
                 <CarouselCard
                   image={v.imagenPrincipal}
                   subtitle={`${v.origen} → ${v.destino}`}

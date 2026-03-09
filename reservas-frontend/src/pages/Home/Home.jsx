@@ -15,6 +15,7 @@ import { getUserFavorites, addFavorite as addFavApi, removeFavorite as removeFav
 import { createBooking } from "../../services/bookingsApi";
 import { getSafeIcon } from "../../utils/iconRegistry";
 import { inferFlightCategories } from "../../utils/flightCategories";
+import { getVueloImage } from "../../utils/images";
 
 const splitRoute = (name = "") => {
   const clean = name.replace(/^Vuelo\s+/i, "");
@@ -55,7 +56,7 @@ export default function Home() {
         fechaLlegada: null,
         categorias: [p.category?.name || "Otros"],
         caracteristicas: p.features?.map((f) => f.title || f.name) || [],
-        imagenPrincipal: p.image || "/assets/default.jpg",
+        imagenPrincipal: p.image || p.imagesBase64?.[0] || "/assets/default.jpg",
         precioTotal: p.price,
       }));
 
@@ -229,7 +230,7 @@ export default function Home() {
                 <div key={vuelo.id} className="vuelo-nuevo-card">
                   <div className="vnc-img-wrapper">
                     <img
-                      src={vuelo.imagenPrincipal || "/assets/default.jpg"}
+                      src={getVueloImage(vuelo)}
                       alt={vuelo.destino || "Vuelo"}
                     />
                     <div className="vnc-price-overlay">
@@ -259,7 +260,11 @@ export default function Home() {
                       <button className="vnc-btn-reservar" onClick={reservarVuelo}>
                         Reservar
                       </button>
-                      <Link to={`/vuelo/${vuelo.id}`} className="vnc-link-detalle">
+                      <Link
+                        to={`/vuelo/${localProductId || vuelo.id}`}
+                        state={{ vuelo: { ...vuelo, productId: localProductId || vuelo.productId || vuelo.id } }}
+                        className="vnc-link-detalle"
+                      >
                         <button className="vnc-btn-detalle">Ver detalle</button>
                       </Link>
                     </div>
