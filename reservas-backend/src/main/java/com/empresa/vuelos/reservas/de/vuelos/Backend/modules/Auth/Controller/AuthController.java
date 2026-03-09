@@ -8,7 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -37,7 +39,7 @@ public class AuthController {
         // 3. Devolver respuesta al frontend
         Map<String, Object> res = new HashMap<>();
         res.put("message", "Registro exitoso, email enviado");
-        res.put("user", newUser);
+        res.put("user", toSafeUser(newUser));
 
         return ResponseEntity.ok(res);
     }
@@ -51,8 +53,12 @@ public class AuthController {
             String password = credentials.get("password");
             Map<String, Object> response = authService.loginWithToken(email, password);
             User user = (User) response.get("user");
-            user.setPassword(null); // por seguridad
-            return ResponseEntity.ok(response);
+
+            Map<String, Object> safeResponse = new HashMap<>();
+            safeResponse.put("token", response.get("token"));
+            safeResponse.put("user", toSafeUser(user));
+
+            return ResponseEntity.ok(safeResponse);
         } catch (Exception e) {
             return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
         }
@@ -69,8 +75,7 @@ public class AuthController {
     ) {
         try {
             User updatedUser = authService.updateUserRole(userId, role.toUpperCase());
-            updatedUser.setPassword(null);
-            return ResponseEntity.ok(updatedUser);
+            return ResponseEntity.ok(toSafeUser(updatedUser));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -83,7 +88,14 @@ public class AuthController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getAllUsers() {
         try {
-            return ResponseEntity.ok(authService.getAllUsers());
+            List<User> users = authService.getAllUsers();
+            List<Map<String, Object>> safeUsers = new ArrayList<>();
+
+            for (User user : users) {
+                safeUsers.add(toSafeUser(user));
+            }
+
+            return ResponseEntity.ok(safeUsers);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -102,14 +114,13 @@ public class AuthController {
     }
 
 
-    // Otorgar rol ADMIN a un usuario mediante email y password
-
-
-
-
-
-
-
-
-
+    private Map<String, Object> toSafeUser(User user) {
+        Map<String, Object> safe = new HashMap<>();
+        safe.put("id", user.getId());
+        safe.put("firstName", user.getFirstName());
+        safe.put("lastName", user.getLastName());
+        safe.put("email", user.getEmail());
+        safe.put("role", user.getRole() != null ? user.getRole().name() : null);
+        return safe;
+    }
 }
