@@ -4,6 +4,7 @@ import { FaPlane, FaClock, FaCalendarAlt, FaHeart, FaRegHeart } from "react-icon
 import Paginacion from "../../components/Paginacion/Paginacion";
 import productService from "../../services/productService";
 import { getVueloImage } from "../../utils/images";
+import { inferFlightCategories, hasCategoryMatch } from "../../utils/flightCategories";
 import "./Resultados.css";
 
 const normalizeText = (value = "") =>
@@ -49,14 +50,11 @@ const normalizeVuelo = (vuelo = {}) => {
     origen,
     destino,
     displayName: nombre || routeLabel || "Vuelo sin nombre",
+    categorias: inferFlightCategories({ ...vuelo, origen, destino }),
     fechaISO: toISODate(vuelo.fechaSalida || vuelo.departureDate || vuelo.date),
     fechaRaw: vuelo.fechaSalida || vuelo.departureDate || vuelo.date || null,
     precio: Number(vuelo.precioTotal ?? vuelo.price ?? 0),
-    categoria:
-      vuelo.category?.name ||
-      vuelo.category ||
-      (Array.isArray(vuelo.categorias) ? vuelo.categorias[0] : "") ||
-      "Sin categoria",
+    categoria: inferFlightCategories({ ...vuelo, origen, destino })[0] || "Sin categoria",
     duracion: getDuration(vuelo),
   };
 };
@@ -144,7 +142,7 @@ export default function Resultados() {
         const coincideOrigen = !filtroOrigen || normalizeText(v.origen) === normalizeText(filtroOrigen);
         const coincideDestino = !filtroDestino || normalizeText(v.destino) === normalizeText(filtroDestino);
         const coincideFecha = !filtroFecha || v.fechaISO === filtroFecha;
-        const coincideCategoria = !filtroCategoria || normalizeText(v.categoria) === normalizeText(filtroCategoria);
+        const coincideCategoria = hasCategoryMatch(v.categorias, filtroCategoria);
         return coincideOrigen && coincideDestino && coincideFecha && coincideCategoria;
       })
       .sort((a, b) => {

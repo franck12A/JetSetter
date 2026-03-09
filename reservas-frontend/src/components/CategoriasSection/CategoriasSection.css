@@ -20,8 +20,14 @@
 }
 
 .ver-todas {
-  display: none;
-  /* Hidden in mockup */
+  color: #93c5fd;
+  font-size: 0.9rem;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.ver-todas:hover {
+  color: #dbeafe;
 }
 
 /* === Contenedor de botones de categoría === */
@@ -44,6 +50,7 @@
   flex-direction: column;
   align-items: center;
   box-shadow: none;
+  text-decoration: none;
 }
 
 .categoria-card:hover {
@@ -77,4 +84,10 @@
   font-size: 0.8rem;
   font-weight: 600;
   color: #F3F4F6;
+}
+
+.categoria-card:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 4px;
+  border-radius: 8px;
 }
