@@ -42,6 +42,8 @@ function normalizeUser(raw) {
   const firstName = raw?.firstName || raw?.nombre || "";
   const lastName = raw?.lastName || raw?.apellido || "";
   const username = raw?.username || raw?.userName || "";
+  const roleRaw = String(raw?.role || raw?.rol || "ROLE_USER").toUpperCase();
+  const role = roleRaw.startsWith("ROLE_") ? roleRaw : `ROLE_${roleRaw}`;
 
   return {
     id: raw?.id,
@@ -50,7 +52,7 @@ function normalizeUser(raw) {
     username,
     fullName: `${firstName} ${lastName}`.trim() || username || "Usuario sin nombre",
     email: raw?.email || raw?.mail || "sin correo",
-    role: raw?.role || raw?.rol || "ROLE_USER",
+    role,
   };
 }
 
