@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import AuthLayout from "../../components/auth/AuthLayout";
 import AuthCard from "../../components/auth/AuthCard";
 import InputField from "../../components/auth/InputField";
@@ -24,17 +25,18 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
 
     if (!form.firstName || !form.lastName || !form.email || !form.password) {
       return setError("Completa todos los campos.");
     }
 
     if (!form.email.includes("@")) {
-      return setError("El correo electrónico no es válido.");
+      return setError("El correo electronico no es valido.");
     }
 
     if (form.password.length < 6) {
-      return setError("La contraseña debe tener al menos 6 caracteres.");
+      return setError("La contrasena debe tener al menos 6 caracteres.");
     }
 
     setLoading(true);
@@ -52,9 +54,10 @@ export default function Register() {
         return setError(msg || "No se pudo registrar.");
       }
 
-      setSuccess("Registro exitoso. Revisá tu correo ☑️");
+      setSuccess("Registro exitoso. Ya puedes iniciar sesion.");
+      setForm({ firstName: "", lastName: "", email: "", password: "" });
     } catch (err) {
-      setError("Error de conexión con el servidor.");
+      setError("Error de conexion con el servidor.");
     }
 
     setLoading(false);
@@ -62,7 +65,7 @@ export default function Register() {
 
   return (
     <AuthLayout>
-      <AuthCard title="Crear cuenta">
+      <AuthCard title="JetSetter" subtitle="Crea tu cuenta para empezar a viajar">
         <form onSubmit={handleSubmit}>
           <InputField
             label="Nombre"
@@ -77,13 +80,13 @@ export default function Register() {
             label="Apellido"
             name="lastName"
             type="text"
-            placeholder="Pérez"
+            placeholder="Perez"
             value={form.lastName}
             onChange={handleChange}
           />
 
           <InputField
-            label="Correo electrónico"
+            label="Email"
             name="email"
             type="email"
             placeholder="tuemail@gmail.com"
@@ -92,42 +95,31 @@ export default function Register() {
           />
 
           <InputField
-            label="Contraseña"
+            label="Contrasena"
             name="password"
             type="password"
-            placeholder="••••••••"
+            placeholder="********"
             value={form.password}
             onChange={handleChange}
           />
 
-          <PrimaryButton loading={loading}>Registrarme</PrimaryButton>
+          <PrimaryButton loading={loading}>Crear cuenta</PrimaryButton>
 
           {error && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              style={{ marginTop: "1rem", color: "#dc2626", textAlign: "center" }}
-            >
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="auth-message error">
               {error}
             </motion.p>
           )}
 
           {success && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              style={{ marginTop: "1rem", color: "#16a34a", textAlign: "center" }}
-            >
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="auth-message success">
               {success}
             </motion.p>
           )}
         </form>
 
-        <p style={{ marginTop: "1rem", textAlign: "center" }}>
-          ¿Ya tenés cuenta?
-          <a href="/login" style={{ color: "#2563eb", marginLeft: "5px" }}>
-            Iniciar sesión
-          </a>
+        <p className="auth-switch">
+          Ya tienes cuenta? <Link to="/login">Iniciar sesion</Link>
         </p>
       </AuthCard>
     </AuthLayout>

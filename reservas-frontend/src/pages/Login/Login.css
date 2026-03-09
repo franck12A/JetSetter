@@ -63,9 +63,9 @@
 
 .login-form button:hover,
 .register-form button:hover {
-  background-color: #1d4ed8;
+  background-color: #1d4fd870;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 4px 12px rgba(37, 100, 235, 0.164);
 }
 
 /* Mensajes de error o éxito */

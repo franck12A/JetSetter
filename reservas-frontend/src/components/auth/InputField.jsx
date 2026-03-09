@@ -2,51 +2,30 @@ import React from "react";
 
 export default function InputField({
   label,
-  name,       // ← NECESARIO
+  name,
   type,
   value,
   onChange,
   error,
-  placeholder
+  placeholder,
 }) {
   return (
-    <div style={{ marginBottom: "1.1rem" }}>
-      <label
-        htmlFor={name}
-        style={{
-          fontSize: "0.9rem",
-          fontWeight: "500",
-          display: "block",
-          marginBottom: "0.3rem",
-          color: "#374151",
-        }}
-      >
+    <div className="auth-input-wrapper">
+      <label htmlFor={name} className="auth-label">
         {label}
       </label>
 
       <input
         id={name}
-        name={name}   // ← CLAVE
+        name={name}
         type={type}
         value={value}
         placeholder={placeholder}
         onChange={onChange}
-        style={{
-          width: "100%",
-          padding: "0.8rem 1rem",
-          borderRadius: "10px",
-          border: error ? "2px solid #dc2626" : "2px solid #d1d5db",
-          fontSize: "1rem",
-          background: "#f9fafb",
-          transition: "0.25s",
-        }}
+        className={`auth-input ${error ? "is-error" : ""}`}
       />
 
-      {error && (
-        <p style={{ color: "#dc2626", marginTop: "0.3rem", fontSize: "0.85rem" }}>
-          {error}
-        </p>
-      )}
+      {error && <p className="auth-inline-error">{error}</p>}
     </div>
   );
 }
