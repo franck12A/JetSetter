@@ -13,6 +13,8 @@ import "./Home.css";
 import productService from "../../services/productService";
 import { getUserFavorites, addFavorite as addFavApi, removeFavorite as removeFavApi } from "../../services/favoritesApi";
 import { createBooking } from "../../services/bookingsApi";
+import { getSafeIcon } from "../../utils/iconRegistry";
+import { inferFlightCategories } from "../../utils/flightCategories";
 
 const splitRoute = (name = "") => {
   const clean = name.replace(/^Vuelo\s+/i, "");
@@ -58,7 +60,10 @@ export default function Home() {
       }));
 
       const vuelosAmadeus = Array.isArray(amadeusVuelos) ? amadeusVuelos : [];
-      const merged = [...vuelosBd, ...vuelosAmadeus];
+      const merged = [...vuelosBd, ...vuelosAmadeus].map((vuelo) => ({
+        ...vuelo,
+        categorias: inferFlightCategories(vuelo),
+      }));
       const dedup = [];
       const seen = new Set();
 
@@ -92,7 +97,8 @@ export default function Home() {
       // el backend puede enviar { id, name, icon } u otros campos
       const mapped = (data || []).map((c) => {
         const name = c.name || c;
-        const Icon = getSafeIcon(name);
+        const iconToken = c?.icon || c?.iconName || c?.Icon || name;
+        const Icon = getSafeIcon(iconToken);
         return { ...c, name, Icon };
       });
       setCategorias(mapped);
