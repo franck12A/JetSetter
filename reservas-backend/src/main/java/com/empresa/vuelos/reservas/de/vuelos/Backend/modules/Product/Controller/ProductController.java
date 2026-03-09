@@ -70,6 +70,7 @@ public class ProductController {
         product.setName(productDTO.getName());
         product.setDescription(productDTO.getDescription());
         product.setPrice(productDTO.getPrice());
+        product.setImage(productDTO.getImage());
         // Categoría
         if (productDTO.getCategoryId() != null) {
             var category = categoryService.getById(productDTO.getCategoryId());
@@ -145,6 +146,7 @@ public ResponseEntity<Product> updateProduct(
     updatedProduct.setName(productDTO.getName());
     updatedProduct.setDescription(productDTO.getDescription());
     updatedProduct.setPrice(productDTO.getPrice());
+    updatedProduct.setImage(productDTO.getImage());
     if (productDTO.getCategoryId() != null) {
         var category = categoryService.getById(productDTO.getCategoryId());
         updatedProduct.setCategory(category);

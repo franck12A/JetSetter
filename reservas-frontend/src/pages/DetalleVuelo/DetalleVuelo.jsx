@@ -5,6 +5,7 @@ import { FaChevronLeft, FaRegCalendarAlt, FaRegClock, FaMoneyBillWave, FaPlane, 
 import productService from "../../services/productService";
 import { getUserFavorites, addFavorite, removeFavorite } from "../../services/favoritesApi";
 import { createBooking } from "../../services/bookingsApi";
+import { getVueloImage } from "../../utils/images";
 import "./DetalleVuelo.css";
 import Recomendaciones from "../../components/Recomendaciones/Recomendaciones";
 
@@ -68,7 +69,7 @@ const normalizeVuelo = (data) => {
     destino: data.destino || route.destino,
     paisDestino: data.paisDestino || data.country || route.destino || "-",
     segmentos,
-    imagenPrincipal: data.imagenPrincipal || data.image || "/assets/default.jpg",
+    imagenPrincipal: getVueloImage(data),
     precioTotal: data.precioTotal ?? data.price ?? 0,
     fechaSalidaRaw,
     fechaLlegadaRaw,
@@ -95,20 +96,35 @@ export default function DetalleVuelo() {
     const loadVuelo = async () => {
       setLoading(true);
       let data = null;
+      const stateVuelo = location.state?.vuelo || null;
+      const stateLocalId = Number(stateVuelo?.productId ?? stateVuelo?.id);
+      const detailId = Number(id);
 
-      // Priorizamos endpoint de detalle porque trae informacion de vuelo enriquecida.
-      try {
-        data = await productService.obtenerVueloPorIdAPI(id);
-      } catch {
-        data = null;
-      }
+      // 1) Priorizar producto local (BD) para respetar imagen/campos editados en admin.
+      const localIdCandidate = Number.isInteger(stateLocalId) && stateLocalId > 0
+        ? stateLocalId
+        : (Number.isInteger(detailId) && detailId > 0 ? detailId : null);
 
-      if (!data) {
+      if (localIdCandidate) {
         try {
-          data = await productService.getById(id);
+          data = await productService.getById(localIdCandidate);
         } catch {
           data = null;
         }
+      }
+
+      // 2) Si no existe en BD, fallback a endpoint Amadeus.
+      if (!data) {
+        try {
+          data = await productService.obtenerVueloPorIdAPI(id);
+        } catch {
+          data = null;
+        }
+      }
+
+      // 3) Ultimo fallback: lo que venia por navigation state.
+      if (!data && stateVuelo) {
+        data = stateVuelo;
       }
 
       const normalizado = normalizeVuelo(data);
@@ -117,7 +133,7 @@ export default function DetalleVuelo() {
     };
 
     loadVuelo();
-  }, [id]);
+  }, [id, location.state]);
 
   useEffect(() => {
     const loadFavs = async () => {
@@ -194,7 +210,7 @@ export default function DetalleVuelo() {
 
           {/* LADO IZQ: IMAGEN */}
           <div className="dv-image-side">
-            <img src={vuelo.imagenPrincipal} alt={`Destino ${vuelo.destino}`} />
+            <img src={getVueloImage(vuelo)} alt={`Destino ${vuelo.destino}`} />
           </div>
 
           {/* LADO DER: INFO */}

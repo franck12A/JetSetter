@@ -3,6 +3,7 @@ import { useLocation, Link } from "react-router-dom";
 import { FaPlane, FaClock, FaCalendarAlt, FaHeart, FaRegHeart } from "react-icons/fa";
 import Paginacion from "../../components/Paginacion/Paginacion";
 import productService from "../../services/productService";
+import { addFavorite as addFavApi, removeFavorite as removeFavApi, getUserFavorites } from "../../services/favoritesApi";
 import { getVueloImage } from "../../utils/images";
 import { inferFlightCategories, hasCategoryMatch } from "../../utils/flightCategories";
 import "./Resultados.css";
@@ -165,7 +166,7 @@ export default function Resultados() {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
 
-  const toggleFavorite = (vuelo) => {
+  const toggleFavorite = async (vuelo) => {
     const user = JSON.parse(localStorage.getItem("user") || "null");
     if (!user) {
       alert("Debes iniciar sesion para agregar favoritos.");
@@ -173,13 +174,39 @@ export default function Resultados() {
       return;
     }
 
-    const exists = favorites.some((f) => f.uid === vuelo.uid && f.userId === user.id);
-    const updated = exists
-      ? favorites.filter((f) => !(f.uid === vuelo.uid && f.userId === user.id))
-      : [...favorites, { uid: vuelo.uid, userId: user.id }];
+    if (!vuelo.localProductId) {
+      alert("Este vuelo no esta guardado en la BD para favoritos.");
+      return;
+    }
 
-    setFavorites(updated);
-    localStorage.setItem("favorites", JSON.stringify(updated));
+    const exists = favorites.some((f) => f.uid === vuelo.uid && f.userId === user.id);
+    try {
+      if (exists) {
+        await removeFavApi(vuelo.localProductId);
+      } else {
+        await addFavApi(vuelo.localProductId);
+      }
+
+      const updated = exists
+        ? favorites.filter((f) => !(f.uid === vuelo.uid && f.userId === user.id))
+        : [...favorites, { uid: vuelo.uid, userId: user.id }];
+
+      setFavorites(updated);
+      localStorage.setItem("favorites", JSON.stringify(updated));
+
+      try {
+        const favs = await getUserFavorites();
+        const favIds = (favs || []).map((p) => p.id);
+        const stored = JSON.parse(localStorage.getItem("user") || "{}");
+        stored.favorites = favIds;
+        localStorage.setItem("user", JSON.stringify(stored));
+      } catch (refreshErr) {
+        console.error("No se pudieron actualizar favoritos localmente:", refreshErr);
+      }
+    } catch (err) {
+      console.error("Error al actualizar favorito:", err);
+      alert("No se pudo actualizar el favorito.");
+    }
   };
 
   const reservarVuelo = async (vuelo) => {
@@ -304,7 +331,7 @@ export default function Resultados() {
                     Reservar
                   </button>
 
-                  <Link to={`/vuelo/${vuelo.id || vuelo.productId}`} state={{ vuelo }}>
+                  <Link to={`/vuelo/${vuelo.localProductId || vuelo.id || vuelo.productId}`} state={{ vuelo: { ...vuelo, productId: vuelo.localProductId || vuelo.productId || vuelo.id } }}>
                     <button className="btn-detalle">Ver detalle</button>
                   </Link>
                 </div>
