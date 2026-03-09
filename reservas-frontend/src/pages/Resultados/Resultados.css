@@ -1,17 +1,25 @@
 .resultados-content {
+  --res-text: #e7eef9;
+  --res-text-soft: #8ea5c4;
+  --res-border: #2c4a73;
+  --res-panel: #162946;
+  --res-panel-2: #102038;
+  --res-accent: #2f7bf6;
+
   max-width: 1100px;
   margin: 0 auto;
   padding-bottom: 2rem;
 }
 
 .resultados-title {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
+  color: #5db7ff;
 }
 
 .resultados-subtitle {
   margin-top: 0;
   margin-bottom: 1rem;
-  color: #4b5563;
+  color: var(--res-text-soft);
 }
 
 .resultados-filtros {
@@ -27,12 +35,12 @@
   border-radius: 999px;
   padding: 0.35rem 0.75rem;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .resultados-empty {
   text-align: center;
-  color: #6b7280;
+  color: var(--res-text-soft);
   margin: 2rem 0;
 }
 
@@ -46,11 +54,11 @@
   display: grid;
   grid-template-columns: 180px 1fr 190px;
   gap: 1rem;
-  background: var(--surface-card);
-  border: 1px solid #e5e7eb;
+  background: linear-gradient(180deg, var(--res-panel), var(--res-panel-2));
+  border: 1px solid var(--res-border);
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 10px 25px rgba(2, 10, 24, 0.3);
 }
 
 .resultados-img {
@@ -64,13 +72,21 @@
   padding: 1rem 0;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.45rem;
 }
 
 .resultados-info h3 {
-  margin: 0 0 0.25rem;
-  font-size: 1.2rem;
-  color: #0f172a;
+  margin: 0;
+  font-size: 1.14rem;
+  color: var(--res-text);
+  font-weight: 700;
+}
+
+.resultados-route {
+  margin: 0 0 0.2rem;
+  color: #b8c9df;
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 
 .resultados-info p {
@@ -78,18 +94,19 @@
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  color: #334155;
+  color: #9cb4d3;
 }
 
 .resultados-category {
   margin-top: 0.35rem;
   width: fit-content;
-  padding: 0.3rem 0.6rem;
+  padding: 0.28rem 0.6rem;
   border-radius: 8px;
-  background: #f1f5f9;
-  color: #334155;
+  background: rgba(226, 232, 240, 0.12);
+  color: #d7e4f5;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.83rem;
+  border: 1px solid rgba(203, 213, 225, 0.22);
 }
 
 .resultados-side {
@@ -98,12 +115,12 @@
   flex-direction: column;
   justify-content: center;
   gap: 0.55rem;
-  border-left: 1px solid #f1f5f9;
+  border-left: 1px solid rgba(203, 213, 225, 0.22);
 }
 
 .resultados-price {
   font-size: 1.45rem;
-  color: #0f172a;
+  color: #eaf1ff;
 }
 
 .btn-fav,
@@ -112,14 +129,14 @@
   border: none;
   border-radius: 9px;
   padding: 0.55rem 0.8rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: filter 0.2s ease;
 }
 
 .btn-fav {
-  background: #f3f4f6;
-  color: #111827;
+  background: #eef2f7;
+  color: #0f172a;
 }
 
 .btn-fav.activo {
@@ -128,14 +145,14 @@
 }
 
 .btn-reservar {
-  background: #2563eb;
+  background: var(--res-accent);
   color: #ffffff;
 }
 
 .btn-detalle {
   width: 100%;
-  background: #e2e8f0;
-  color: #1e293b;
+  background: #dce5f0;
+  color: #0f172a;
 }
 
 .btn-fav:hover,
@@ -160,7 +177,6 @@
 
   .resultados-side {
     border-left: none;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid rgba(203, 213, 225, 0.22);
   }
 }
-

@@ -37,13 +37,18 @@ const normalizeVuelo = (vuelo = {}) => {
   const route = splitRoute(vuelo.name);
   const rawProductId = vuelo.productId ?? vuelo.id;
   const parsedProductId = Number(rawProductId);
+  const origen = vuelo.origen || vuelo.origin || route.origen;
+  const destino = vuelo.destino || vuelo.destination || route.destino;
+  const routeLabel = [origen, destino].filter(Boolean).join(" -> ");
+  const nombre = String(vuelo.name || vuelo.nombre || "").trim();
 
   return {
     ...vuelo,
     uid: `${vuelo.externalId || "local"}-${vuelo.id || vuelo.productId || vuelo.name || Math.random()}`,
     localProductId: Number.isInteger(parsedProductId) && parsedProductId > 0 ? parsedProductId : null,
-    origen: vuelo.origen || vuelo.origin || route.origen,
-    destino: vuelo.destino || vuelo.destination || route.destino,
+    origen,
+    destino,
+    displayName: nombre || routeLabel || "Vuelo sin nombre",
     fechaISO: toISODate(vuelo.fechaSalida || vuelo.departureDate || vuelo.date),
     fechaRaw: vuelo.fechaSalida || vuelo.departureDate || vuelo.date || null,
     precio: Number(vuelo.precioTotal ?? vuelo.price ?? 0),
@@ -271,7 +276,8 @@ export default function Resultados() {
                 />
 
                 <div className="resultados-info">
-                  <h3>{vuelo.origen} {"->"} {vuelo.destino}</h3>
+                  <h3>{vuelo.displayName}</h3>
+                  <p className="resultados-route">{vuelo.origen} {"->"} {vuelo.destino}</p>
 
                   <p>
                     <FaPlane /> {vuelo.aerolinea || "Aerolinea no disponible"}
