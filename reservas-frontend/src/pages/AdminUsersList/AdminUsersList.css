@@ -1,173 +1,210 @@
 .au-list {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 0.95rem;
   width: 100%;
 }
 
 .au-empty {
+  margin: 0;
+  padding: 2rem 1rem;
   text-align: center;
-  color: #94a3b8;
-  font-style: italic;
-  margin-top: 2rem;
+  color: #93abca;
+  border: 1px dashed #31517d;
+  border-radius: 14px;
+  background: rgba(14, 30, 53, 0.45);
 }
 
-/* CARDS */
 .au-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #1e293b;
-  /* Fondo azul oscuro del mockup */
-  border-radius: 12px;
-  padding: 1.2rem 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border: 1px solid #334155;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  gap: 1rem;
+  padding: 1.05rem 1.15rem;
+  border-radius: 14px;
+  border: 1px solid #2a486f;
+  background:
+    linear-gradient(180deg, rgba(25, 49, 82, 0.9), rgba(20, 40, 68, 0.95));
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .au-card:hover {
-  border-color: #475569;
   transform: translateY(-2px);
+  border-color: #39659a;
+  box-shadow: 0 10px 20px rgba(3, 12, 26, 0.35);
 }
 
-/* LADO IZQUIERDO: AVATAR Y DATOS */
 .au-card-left {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.7rem;
 }
 
 .au-avatar-info-row {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 0.9rem;
+  min-width: 0;
 }
 
-/* AVATAR INICIALES */
 .au-avatar {
   width: 48px;
   height: 48px;
-  border-radius: 50%;
-  background-color: #0f172a;
-  /* Círculo más oscuro */
-  color: #38bdf8;
-  /* Texto cyan */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 1.1rem;
-  letter-spacing: 1px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 1.03rem;
+  letter-spacing: 0.6px;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
-/* DATOS DE USUARIO */
 .au-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  min-width: 0;
 }
 
 .au-info h3 {
   margin: 0;
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: #f1f5f9;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #f2f7ff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .au-info p {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #94a3b8;
+  margin: 0.2rem 0 0;
+  font-size: 0.84rem;
+  color: #9bb2ce;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .au-id {
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-top: 0.4rem;
-  font-family: monospace;
+  display: inline-block;
+  width: fit-content;
+  font-family: Consolas, monospace;
+  font-size: 0.72rem;
+  color: #7d96b8;
+  padding: 0.2rem 0.45rem;
+  background: rgba(7, 20, 39, 0.35);
+  border-radius: 6px;
 }
 
-/* LADO DERECHO: ROL Y BOTONES */
 .au-card-right {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
-/* ROLES */
 .au-role {
-  font-size: 0.65rem;
-  font-weight: 700;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.7px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 0.35rem 0.8rem;
   border-radius: 999px;
+  padding: 0.32rem 0.65rem;
+  border: 1px solid transparent;
 }
 
 .au-role-admin {
-  background-color: rgba(56, 189, 248, 0.1);
-  /* Fondo translúcido */
-  color: #38bdf8;
-  /* Azul brillante como mockup */
+  color: #60e7ff;
+  border-color: rgba(96, 231, 255, 0.38);
+  background: rgba(7, 87, 109, 0.3);
 }
 
 .au-role-editor {
-  background-color: rgba(148, 163, 184, 0.1);
-  color: #94a3b8;
+  color: #a5b4fc;
+  border-color: rgba(165, 180, 252, 0.4);
+  background: rgba(67, 56, 202, 0.2);
 }
 
 .au-role-user {
-  background-color: rgba(100, 116, 139, 0.1);
-  color: #64748b;
-  /* Gris */
+  color: #b5c8df;
+  border-color: rgba(148, 163, 184, 0.34);
+  background: rgba(51, 65, 85, 0.3);
 }
 
-/* BOTONES DE ACCION */
 .au-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.55rem;
+}
+
+.au-btn-role,
+.au-btn-delete {
+  border-radius: 10px;
+  border: 1px solid #355b89;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .au-btn-role {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  background-color: rgba(255, 255, 255, 0.05);
-  color: #cbd5e1;
-  border: 1px solid #334155;
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
+  gap: 0.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: #dbe8f8;
   font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
+  font-weight: 700;
+  padding: 0.45rem 0.7rem;
 }
 
 .au-btn-role:hover {
-  background-color: #334155;
-  color: white;
+  background: rgba(14, 165, 233, 0.2);
+  border-color: #3f8dc8;
 }
 
 .au-btn-delete {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(239, 68, 68, 0.05);
-  /* Efecto tenue red */
-  color: #ef4444;
-  /* Borde y texto rojo */
-  border: 1px solid rgba(239, 68, 68, 0.5);
-  padding: 0.4rem;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: #fb7185;
+  background: rgba(251, 113, 133, 0.08);
+  border-color: rgba(251, 113, 133, 0.45);
 }
 
 .au-btn-delete:hover {
-  background-color: #ef4444;
-  color: white;
-  border-color: #ef4444;
+  color: #fff;
+  background: rgba(239, 68, 68, 0.75);
+  border-color: rgba(248, 113, 113, 0.95);
+}
+
+@media (max-width: 860px) {
+  .au-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .au-card-right {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 560px) {
+  .au-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .au-btn-role {
+    font-size: 0.72rem;
+    padding: 0.42rem 0.62rem;
+  }
+
+  .au-avatar {
+    width: 42px;
+    height: 42px;
+    font-size: 0.9rem;
+  }
 }

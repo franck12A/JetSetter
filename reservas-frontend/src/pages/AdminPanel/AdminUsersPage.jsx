@@ -1,10 +1,11 @@
 // src/pages/AdminPanel/AdminUsersPage.jsx
 import React, { useEffect, useState, useContext, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaChevronLeft, FaRegBell, FaSearch, FaUserPlus } from "react-icons/fa";
+import { FaChevronLeft, FaRegBell, FaSearch, FaUserPlus, FaTimes } from "react-icons/fa";
 import AdminUsersList from "../AdminUsersList/AdminUsersList";
 import { AuthContext } from "../../context/AuthContext";
 import { listUsers, updateUserRole, deleteUser } from "../../services/adminUsersService";
+import "./AdminUsersPage.css";
 
 export default function AdminUsersPage() {
   const [usuarios, setUsuarios] = useState([]);
@@ -84,6 +85,13 @@ export default function AdminUsersPage() {
     [usuarios, searchTerm, filterRole]
   );
 
+  const summary = useMemo(() => {
+    const admin = usuarios.filter((u) => u.role === "ROLE_ADMIN").length;
+    const editor = usuarios.filter((u) => u.role === "ROLE_EDITOR").length;
+    const user = usuarios.filter((u) => u.role === "ROLE_USER").length;
+    return { total: usuarios.length, admin, editor, user };
+  }, [usuarios]);
+
   if (loading) return <p className="loading">Cargando usuarios...</p>;
   if (error) return <p className="error">{error}</p>;
 
@@ -113,6 +121,11 @@ export default function AdminUsersPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+          {searchTerm && (
+            <button className="au-clear-search" onClick={() => setSearchTerm("")} type="button" aria-label="Limpiar busqueda">
+              <FaTimes />
+            </button>
+          )}
         </div>
 
         <div className="au-filter-pills">
@@ -126,6 +139,31 @@ export default function AdminUsersPage() {
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="au-summary-grid">
+        <div className="au-summary-card">
+          <span>Total</span>
+          <strong>{summary.total}</strong>
+        </div>
+        <div className="au-summary-card">
+          <span>Admins</span>
+          <strong>{summary.admin}</strong>
+        </div>
+        <div className="au-summary-card">
+          <span>Editors</span>
+          <strong>{summary.editor}</strong>
+        </div>
+        <div className="au-summary-card">
+          <span>Users</span>
+          <strong>{summary.user}</strong>
+        </div>
+      </div>
+
+      <div className="au-results-head">
+        <p>
+          Mostrando <strong>{filteredUsers.length}</strong> de <strong>{usuarios.length}</strong> usuarios
+        </p>
       </div>
 
       <AdminUsersList usuarios={filteredUsers} onEditRole={handleEditRole} onDelete={handleDeleteUser} />
