@@ -1,22 +1,23 @@
-.hero-section {
-  padding: 0 1rem;
-  max-width: 1200px;
-  margin: 0 auto 1.5rem;
+﻿.hero-section {
+  padding: 0;
+  max-width: 100%;
+  margin: 0 auto 2rem;
 }
 
 .search-wrapper {
-  background-color: #f7f9fd;
-  /* Light lavender/grey */
+  background-color: #1B2333;
+  /* Dark card bg */
   border-radius: 24px;
   padding: 2rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
-  border: 1px solid #eef2f6;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: none;
 }
 
 .hero-title {
   font-size: 1.6rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #F3F4F6;
+  /* White text */
   margin-top: 0;
   margin-bottom: 1.5rem;
   text-align: left;
@@ -30,51 +31,192 @@
 }
 
 .search-row-auto {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
 
 .search-pill {
+  position: relative;
   display: flex;
   align-items: center;
-  background-color: #ffffff;
-  border: 1px solid #ffffff;
-  border-radius: 12px;
+  gap: 0.55rem;
+  background-color: #121826;
+  /* Darker input bg */
+  border: none;
+  border-radius: 14px;
   padding: 0.85rem 1rem;
-  cursor: pointer;
-  transition: box-shadow 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.01);
+  transition: box-shadow 0.2s, border-color 0.2s;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .search-pill:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.search-pill:focus-within {
+  box-shadow: inset 0 0 0 2px #3b82f6;
+}
+
+.search-pill-control {
+  min-height: 74px;
 }
 
 .pill-icon {
-  color: #94a3b8;
-  margin-right: 0.75rem;
-  font-size: 1.1rem;
+  color: #9CA3AF;
+  font-size: 1.05rem;
   flex-shrink: 0;
+  margin-top: 2px;
 }
 
-.search-select {
+.control-stack {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.control-label {
+  display: none;
+  /* Hide labels matching mockup where they are inside */
+}
+
+.control-trigger {
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #D1D5DB;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.control-trigger:focus {
+  outline: none;
+}
+
+.dropdown-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  border: 1px solid #dbe5f3;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 20px 30px rgba(15, 23, 42, 0.16);
+  padding: 0.6rem;
+}
+
+.dropdown-search {
+  width: 100%;
+  border: 1px solid #d1d9e6;
+  border-radius: 9px;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.92rem;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+}
+
+.dropdown-search:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+}
+
+.dropdown-list {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.dropdown-item {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background: #ffffff;
+  text-align: left;
+  padding: 0.5rem 0.55rem;
+  cursor: pointer;
+  color: #1e293b;
+  font-size: 0.92rem;
+}
+
+.dropdown-item:hover {
+  background: #eff6ff;
+}
+
+.dropdown-item.is-active {
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.date-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  background: #ffffff;
+  border: 1px solid #dbe5f3;
+  border-radius: 14px;
+  box-shadow: 0 20px 30px rgba(15, 23, 42, 0.16);
+  overflow: hidden;
+}
+
+.date-panel .rdrCalendarWrapper {
+  font-size: 12px;
+}
+
+.date-panel .rdrMonthAndYearPickers select {
+  font-size: 0.9rem;
+}
+
+.date-clear-btn {
+  width: 100%;
+  border: none;
+  border-top: 1px solid #eef2f8;
+  background: #f8fafc;
+  padding: 0.65rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+.date-clear-btn:hover {
+  background: #eef4ff;
+}
+
+.search-select,
+.search-input-number,
+.control-input {
   border: none;
   background: transparent;
   width: 100%;
-  font-size: 0.95rem;
-  color: #334155;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #D1D5DB;
   outline: none;
-  cursor: pointer;
 }
 
-/* Solo para pasajeros y fechas si no usan un select */
-.search-pill-text {
-  font-size: 0.95rem;
-  color: #334155;
-  flex-grow: 1;
+.search-select {
+  appearance: none;
+}
+
+.search-select option {
+  background-color: #121826;
+  color: white;
+}
+
+.search-input-number {
+  max-width: 84px;
   text-align: left;
+  padding: 0;
 }
 
 .search-btn {
@@ -105,27 +247,22 @@
   margin-right: 0.5rem;
 }
 
-/* Date Range Picker position fix */
-.date-range-wrapper {
-  position: absolute;
-  z-index: 100;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  overflow: hidden;
-  margin-top: 5px;
-}
-
-/* Responsive */
 @media (max-width: 768px) {
   .search-row-full {
     grid-template-columns: 1fr;
   }
 
-  .search-row-auto {
-    flex-direction: column;
-  }
-
   .search-wrapper {
     padding: 1.5rem;
+  }
+
+  .date-panel {
+    left: 0;
+    right: auto;
+    max-width: 100%;
+  }
+
+  .date-panel .rdrCalendarWrapper {
+    width: min(100vw - 3rem, 330px);
   }
 }

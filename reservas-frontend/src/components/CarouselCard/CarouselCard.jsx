@@ -1,18 +1,16 @@
 import React from "react";
 import "./CarouselCard.css";
 
-import { FaStar } from "react-icons/fa";
+import { FaStar, FaClock, FaUtensils } from "react-icons/fa";
 
-// Basic card used inside carousels
-// props:
-// - image: url for the top picture
-// - title: main text
-// - subtitle: secondary text (optional)
-// - price: number (optional)
-// - rating: string/number (optional)
-export default function CarouselCard({ image, title, subtitle, price, rating }) {
-  // Generate random rating for UI if not provided
+export default function CarouselCard({ image, title, subtitle, price, rating, duration, tag, included }) {
   const displayRating = rating || (Math.random() * (5.0 - 4.5) + 4.5).toFixed(1);
+  const displayDur = duration || "12h 00m";
+  const displayTag = tag || "DIRECT FLIGHT";
+  const displayInc = included || "Meals included";
+
+  // price formatting
+  const formattedPrice = price ? (price % 1 === 0 ? price : price.toFixed(2)) : "0";
 
   return (
     <div className="carousel-card">
@@ -25,12 +23,20 @@ export default function CarouselCard({ image, title, subtitle, price, rating }) 
         <div className="carousel-badge">
           <FaStar className="badge-icon" /> {displayRating}
         </div>
+        <div className="carousel-flight-tag">
+          {displayTag}
+        </div>
       </div>
       <div className="carousel-info">
-        {subtitle && <p className="carousel-subtitle">{subtitle}</p>}
-        <div className="carousel-footer">
+        <div className="carousel-info-header">
           {title && <h4 className="carousel-title">{title}</h4>}
-          {price != null && <p className="carousel-price">${price.toFixed(2)}</p>}
+          {price != null && <p className="carousel-price">${formattedPrice}</p>}
+        </div>
+        {subtitle && <p className="carousel-subtitle">{subtitle}</p>}
+
+        <div className="carousel-footer">
+          <span className="carousel-dur"><FaClock className="footer-icon" /> {displayDur}</span>
+          <span className="carousel-inc"><FaUtensils className="footer-icon" /> {displayInc}</span>
         </div>
       </div>
     </div>

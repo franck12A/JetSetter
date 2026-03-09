@@ -63,11 +63,8 @@ export default function Recomendaciones({ vuelos = [], origen, destino, fecha })
   return (
     <section className="recomendaciones-section">
       <div className="reco-header">
-        <h2 className="titulo-reco">Recomendaciones</h2>
-        <div className="reco-nav-buttons">
-          <button className="reco-nav-btn prev-btn">&lt;</button>
-          <button className="reco-nav-btn next-btn">&gt;</button>
-        </div>
+        <h2 className="titulo-reco">Popular Destinations</h2>
+        <a href="#/resultados" className="ver-todas-reco">See all</a>
       </div>
       <div className="reco-wrapper">
         <Swiper

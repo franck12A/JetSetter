@@ -12,39 +12,18 @@
 }
 
 .titulo-reco {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  color: #0f172a;
+  color: #F3F4F6;
   margin: 0;
 }
 
-/* Nav Buttons */
-.reco-nav-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.reco-nav-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1px solid #e2e8f0;
-  background-color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.ver-todas-reco {
+  color: #3b82f6;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
-  color: #64748b;
-  font-weight: bold;
-  font-size: 1.25rem;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-}
-
-.reco-nav-btn:hover {
-  background-color: #f1f5f9;
-  color: #0f172a;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 /* Swiper overrides */

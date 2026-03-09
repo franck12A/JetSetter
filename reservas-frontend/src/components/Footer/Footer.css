@@ -1,7 +1,10 @@
 .footer-container {
   width: 100%;
-  background-color: #1d4ed8;
-  color: white;
+  background-color: #121826;
+  /* Dark background matching the page */
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  color: #9CA3AF;
+  /* Light gray text */
   padding: 1.5rem 2rem;
   font-size: 14px;
   display: flex;

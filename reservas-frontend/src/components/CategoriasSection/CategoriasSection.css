@@ -15,76 +15,58 @@
 .categorias-header h2 {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #0f172a;
+  color: #F3F4F6;
   margin: 0;
 }
 
 .ver-todas {
-  color: #1d4ed8;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
+  display: none;
+  /* Hidden in mockup */
 }
 
 /* === Contenedor de botones de categoría === */
 .categorias-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 2rem;
 }
 
 .categoria-card {
-  background: #ffffff;
-  border: 1px solid #f1f5f9;
-  border-radius: 16px;
-  padding: 1.5rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
   cursor: pointer;
   text-align: center;
   transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  box-shadow: none;
 }
 
 .categoria-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
-  border-color: #cbd5e1;
+  box-shadow: none;
 }
 
 .categoria-icono-wrapper {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: #1F2937 !important;
+  color: #9CA3AF !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
+  transition: background-color 0.2s, color 0.2s;
 }
 
-/* Colores específicos de iconos como en la imagen */
-.categoria-card:nth-child(3n+1) .categoria-icono-wrapper {
-  background-color: #e0f2fe;
-  /* Celeste claro */
-  color: #0284c7;
-  /* Celeste fuerte */
-}
-
-.categoria-card:nth-child(3n+2) .categoria-icono-wrapper {
-  background-color: #dcfce7;
-  /* Verde claro */
-  color: #059669;
-  /* Verde fuerte */
-}
-
-.categoria-card:nth-child(3n) .categoria-icono-wrapper {
-  background-color: #ffedd5;
-  /* Naranja claro */
-  color: #d97706;
-  /* Naranja fuerte */
+.categoria-card:hover .categoria-icono-wrapper {
+  background-color: #374151 !important;
+  color: #F3F4F6 !important;
 }
 
 .categoria-icono {
@@ -92,7 +74,7 @@
 }
 
 .categoria-nombre {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  color: #0f172a;
+  color: #F3F4F6;
 }
