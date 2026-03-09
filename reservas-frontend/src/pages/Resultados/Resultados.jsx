@@ -1,240 +1,315 @@
-// src/pages/Resultados.jsx
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
-import { FaPlane, FaClock } from "react-icons/fa";
+import { FaPlane, FaClock, FaCalendarAlt, FaHeart, FaRegHeart } from "react-icons/fa";
 import Paginacion from "../../components/Paginacion/Paginacion";
+import productService from "../../services/productService";
 import { getVueloImage } from "../../utils/images";
 import "./Resultados.css";
 
+const normalizeText = (value = "") =>
+  String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+
+const toISODate = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+};
+
 const splitRoute = (name = "") => {
-  const clean = name.replace(/^Vuelo\s+/i, "");
-  const parts = clean.split(/→|->/).map((p) => p.trim()).filter(Boolean);
+  const clean = String(name || "").replace(/^Vuelo\s+/i, "").trim();
+  const parts = clean.split(/->|\u2192/).map((p) => p.trim()).filter(Boolean);
   if (parts.length >= 2) return { origen: parts[0], destino: parts[1] };
   return { origen: clean || "N/A", destino: "N/A" };
 };
 
+const getDuration = (vuelo) => {
+  if (vuelo.duration) return vuelo.duration;
+  const featureDuration = (vuelo.caracteristicas || []).find((f) => /duraci[oó]n/i.test(String(f)));
+  return featureDuration || "N/D";
+};
+
+const normalizeVuelo = (vuelo = {}) => {
+  const route = splitRoute(vuelo.name);
+  const rawProductId = vuelo.productId ?? vuelo.id;
+  const parsedProductId = Number(rawProductId);
+
+  return {
+    ...vuelo,
+    uid: `${vuelo.externalId || "local"}-${vuelo.id || vuelo.productId || vuelo.name || Math.random()}`,
+    localProductId: Number.isInteger(parsedProductId) && parsedProductId > 0 ? parsedProductId : null,
+    origen: vuelo.origen || vuelo.origin || route.origen,
+    destino: vuelo.destino || vuelo.destination || route.destino,
+    fechaISO: toISODate(vuelo.fechaSalida || vuelo.departureDate || vuelo.date),
+    fechaRaw: vuelo.fechaSalida || vuelo.departureDate || vuelo.date || null,
+    precio: Number(vuelo.precioTotal ?? vuelo.price ?? 0),
+    categoria:
+      vuelo.category?.name ||
+      vuelo.category ||
+      (Array.isArray(vuelo.categorias) ? vuelo.categorias[0] : "") ||
+      "Sin categoria",
+    duracion: getDuration(vuelo),
+  };
+};
+
+const formatFecha = (value) => {
+  if (!value) return "Fecha no disponible";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Fecha no disponible";
+  return date.toLocaleDateString("es-AR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const getStoredFavorites = () => {
+  try {
+    return JSON.parse(localStorage.getItem("favorites") || "[]");
+  } catch {
+    return [];
+  }
+};
+
 export default function Resultados() {
   const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
+  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
-  // 🔹 Filtros desde query params
   const filtroOrigen = queryParams.get("origen") || "";
   const filtroDestino = queryParams.get("destino") || "";
   const filtroFecha = queryParams.get("fecha") || "";
   const filtroCategoria = queryParams.get("categoria") || "";
 
   const [vuelos, setVuelos] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [favorites, setFavorites] = useState(getStoredFavorites());
+  const itemsPerPage = 8;
 
-  // 🔹 Traer vuelos (backend + mock)
   useEffect(() => {
     const fetchVuelos = async () => {
+      setLoading(true);
       try {
-        const resBackend = await fetch("http://localhost:8080/api/products");
-        const backendDataRaw = await resBackend.json();
-        const backendData = (backendDataRaw || []).map((p) => ({
-          ...p,
-          ...splitRoute(p.name),
-          date: p.departureDate,
-          price: p.price,
-          category: p.category,
-        }));
+        const [localResult, apiResult] = await Promise.allSettled([
+          productService.getAllProducts(),
+          productService.obtenerVuelosAPI(null, null, null, 40),
+        ]);
 
-        const resMock = await fetch("/mockVuelos.json");
-        const mockData = await resMock.json();
+        const localVuelos = localResult.status === "fulfilled" ? localResult.value || [] : [];
+        const apiVuelos = apiResult.status === "fulfilled" ? apiResult.value || [] : [];
 
-        // Combinar y eliminar duplicados por ID
-        const todos = [...backendData, ...mockData];
-        const unicos = [];
-        const ids = new Set();
-        for (const vuelo of todos) {
-          if (!ids.has(vuelo.id)) {
-            ids.add(vuelo.id);
-            unicos.push(vuelo);
+        const all = [...localVuelos, ...apiVuelos].map(normalizeVuelo);
+
+        const unique = [];
+        const seen = new Set();
+        all.forEach((vuelo) => {
+          const dedupKey = [
+            normalizeText(vuelo.origen),
+            normalizeText(vuelo.destino),
+            vuelo.fechaISO,
+            vuelo.precio,
+            normalizeText(vuelo.aerolinea || ""),
+          ].join("|");
+
+          if (!seen.has(dedupKey)) {
+            seen.add(dedupKey);
+            unique.push(vuelo);
           }
-        }
+        });
 
-        setVuelos(unicos);
+        setVuelos(unique);
       } catch (err) {
         console.error("Error cargando vuelos:", err);
+        setVuelos([]);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchVuelos();
   }, []);
 
-  // 🔹 Filtrar vuelos
-  const resultadosFiltrados = vuelos.filter((v) => {
-const normalize = (str) =>
-  (str || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, ""); // saca tildes
-
-const coincideOrigen =
-  filtroOrigen.trim() === "" ||
-  normalize(v.origen || v.origin).includes(normalize(filtroOrigen));
-
-const coincideDestino =
-  filtroDestino.trim() === "" ||
-  normalize(v.destino || v.destination).includes(normalize(filtroDestino));
-    const coincideCategoria =
-      filtroCategoria === "" ||
-      (v.category?.name || v.category || "").toLowerCase() ===
-        filtroCategoria.toLowerCase();
-    const formatearFecha = (f) => {
-      if (!f) return "";
-      const d = new Date(f);
-      if (isNaN(d)) return "";
-      return d.toISOString().split("T")[0]; // devuelve YYYY-MM-DD
-    };
-
-    const coincideFecha =
-      filtroFecha.trim() === "" ||
-      formatearFecha(v.date) === filtroFecha;
-
-
-    return coincideOrigen && coincideDestino && coincideCategoria && coincideFecha;
-  });
-
-  // 🔹 Paginación
-  const totalPages = Math.ceil(resultadosFiltrados.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const vuelosPaginados = resultadosFiltrados.slice(startIndex, endIndex);
+  const resultadosFiltrados = useMemo(() => {
+    return vuelos
+      .filter((v) => {
+        const coincideOrigen = !filtroOrigen || normalizeText(v.origen) === normalizeText(filtroOrigen);
+        const coincideDestino = !filtroDestino || normalizeText(v.destino) === normalizeText(filtroDestino);
+        const coincideFecha = !filtroFecha || v.fechaISO === filtroFecha;
+        const coincideCategoria = !filtroCategoria || normalizeText(v.categoria) === normalizeText(filtroCategoria);
+        return coincideOrigen && coincideDestino && coincideFecha && coincideCategoria;
+      })
+      .sort((a, b) => {
+        const dateA = a.fechaISO || "9999-12-31";
+        const dateB = b.fechaISO || "9999-12-31";
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        return a.precio - b.precio;
+      });
+  }, [vuelos, filtroOrigen, filtroDestino, filtroFecha, filtroCategoria]);
 
   useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(totalPages > 0 ? totalPages : 1);
-  }, [totalPages, currentPage]);
+    setCurrentPage(1);
+  }, [filtroOrigen, filtroDestino, filtroFecha, filtroCategoria]);
 
-  // 🔹 Botón de favorito
+  const totalPages = Math.max(1, Math.ceil(resultadosFiltrados.length / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const vuelosPaginados = resultadosFiltrados.slice(startIndex, startIndex + itemsPerPage);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
   const toggleFavorite = (vuelo) => {
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = JSON.parse(localStorage.getItem("user") || "null");
     if (!user) {
-      alert("Debes iniciar sesión para agregar favoritos.");
+      alert("Debes iniciar sesion para agregar favoritos.");
       window.location.href = "/login";
       return;
     }
 
-    const localFavs = JSON.parse(localStorage.getItem("favorites")) || [];
-    const existe = localFavs.some(f => f.id === vuelo.id && f.userId === user.id);
+    const exists = favorites.some((f) => f.uid === vuelo.uid && f.userId === user.id);
+    const updated = exists
+      ? favorites.filter((f) => !(f.uid === vuelo.uid && f.userId === user.id))
+      : [...favorites, { uid: vuelo.uid, userId: user.id }];
 
-    if (existe) {
-      const updated = localFavs.filter(f => !(f.id === vuelo.id && f.userId === user.id));
-      localStorage.setItem("favorites", JSON.stringify(updated));
-    } else {
-      localStorage.setItem("favorites", JSON.stringify([...localFavs, { ...vuelo, userId: user.id }]));
-    }
-
-    setVuelos(prev => prev.map(v => v.id === vuelo.id ? { ...v } : v));
+    setFavorites(updated);
+    localStorage.setItem("favorites", JSON.stringify(updated));
   };
 
-  // 🔹 Botón de reservar
   const reservarVuelo = async (vuelo) => {
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = JSON.parse(localStorage.getItem("user") || "null");
     if (!user) {
-      alert("Debes iniciar sesión para reservar un vuelo.");
+      alert("Debes iniciar sesion para reservar un vuelo.");
       window.location.href = "/login";
       return;
     }
 
-    const isLocalVuelo = !vuelo.backendId;
+    if (!vuelo.localProductId) {
+      alert("Este vuelo no esta disponible para reserva directa desde resultados.");
+      return;
+    }
 
-    if (isLocalVuelo) {
-      const reservas = JSON.parse(localStorage.getItem("reservas")) || [];
-      reservas.push({
-        ...vuelo,
-        userId: user.id,
-        dateStr: new Date().toISOString().split("T")[0],
-        passengers: 1,
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Debes iniciar sesion para reservar un vuelo.");
+      window.location.href = "/login";
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:8080/api/bookings/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          productId: vuelo.localProductId,
+          dateStr: vuelo.fechaISO || new Date().toISOString().slice(0, 10),
+          passengers: 1,
+        }),
       });
-      localStorage.setItem("reservas", JSON.stringify(reservas));
-      alert(`✅ Reserva guardada localmente para: ${vuelo.name}`);
-    } else {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("Debes iniciar sesión para reservar un vuelo.");
-        window.location.href = "/login";
-        return;
-      }
 
-      try {
-        const res = await fetch("http://localhost:8080/api/bookings/create", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            userId: user.id,
-            productId: vuelo.productId ?? vuelo.id,
-            dateStr: new Date().toISOString().split("T")[0],
-            passengers: 1,
-          }),
-        });
-
-        if (!res.ok) throw new Error("Error al crear la reserva");
-        alert(`✅ Reserva creada para: ${vuelo.name}`);
-      } catch (err) {
-        console.error("Error reservando vuelo:", err);
-        alert("Hubo un error al reservar el vuelo.");
-      }
+      if (!res.ok) throw new Error("Error al crear la reserva");
+      alert(`Reserva creada para: ${vuelo.name || `${vuelo.origen} -> ${vuelo.destino}`}`);
+    } catch (err) {
+      console.error("Error reservando vuelo:", err);
+      alert("Hubo un error al reservar el vuelo.");
     }
   };
+
+  const filtrosActivos = [
+    filtroOrigen ? `Origen: ${filtroOrigen}` : null,
+    filtroDestino ? `Destino: ${filtroDestino}` : null,
+    filtroFecha ? `Fecha: ${filtroFecha}` : null,
+    filtroCategoria ? `Categoria: ${filtroCategoria}` : null,
+  ].filter(Boolean);
 
   return (
     <div className="main-bg resultados-page">
-      <div className="main-content">
-        <h1>Resultados de búsqueda</h1>
-        <p>
-          Mostrando {resultadosFiltrados.length} vuelo(s) filtrados de {vuelos.length}
+      <div className="main-content resultados-content">
+        <h1 className="resultados-title">Resultados de busqueda</h1>
+        <p className="resultados-subtitle">
+          Mostrando {resultadosFiltrados.length} vuelo(s) de {vuelos.length} disponibles.
         </p>
 
-        {vuelosPaginados.length === 0 && (
-          <p>No se encontraron vuelos con esos filtros.</p>
+        {filtrosActivos.length > 0 && (
+          <div className="resultados-filtros">
+            {filtrosActivos.map((filtro) => (
+              <span key={filtro} className="resultados-chip">
+                {filtro}
+              </span>
+            ))}
+          </div>
         )}
 
-        <div className="vuelos-paginados-grid">
+        {loading && <p className="resultados-empty">Cargando vuelos...</p>}
+
+        {!loading && vuelosPaginados.length === 0 && (
+          <p className="resultados-empty">No se encontraron vuelos con esos filtros.</p>
+        )}
+
+        <div className="resultados-grid">
           {vuelosPaginados.map((vuelo) => {
-            const user = JSON.parse(localStorage.getItem("user"));
-            const isFavorite = user?.favorites?.includes(vuelo.id) ||
-              JSON.parse(localStorage.getItem("favorites") || "[]").some(f => f.id === vuelo.id && f.userId === user?.id);
+            const user = JSON.parse(localStorage.getItem("user") || "null");
+            const isFavorite = favorites.some((f) => f.uid === vuelo.uid && f.userId === user?.id);
 
             return (
-              <div key={vuelo.id} className="vuelo-paginado-card">
-                  <img src={getVueloImage(vuelo)} alt={vuelo.name} />
-                <div className="vuelo-paginado-info">
-                  <h3>{vuelo.name}</h3>
-                  <p><FaPlane /> {vuelo.origen || vuelo.origin} → {vuelo.destino || vuelo.destination}</p>
-                  <p><FaClock /> Duración: {vuelo.duration || "N/A"}</p>
-                  <p>{vuelo.category?.name || vuelo.category || "—"}</p>
-                  <p>${vuelo.price}</p>
+              <article key={vuelo.uid} className="resultados-card">
+                <img
+                  src={getVueloImage(vuelo)}
+                  alt={vuelo.name || `${vuelo.origen} ${vuelo.destino}`}
+                  className="resultados-img"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "/assets/avionsito.png";
+                  }}
+                />
 
-                  <div className="botones-vuelo">
-                    <button
-                      className={`btn-fav ${isFavorite ? "activo" : ""}`}
-                      onClick={() => toggleFavorite(vuelo)}
-                    >
-                      {isFavorite ? "❤️ Favorito" : "🤍 Agregar"}
-                    </button>
-                    <button className="btn-reservar" onClick={() => reservarVuelo(vuelo)}>
-                      <span style={{color: 'red', marginRight: '4px'}}>❤️</span>
-                      <span style={{color: 'black'}}>Reservar</span>
-                    </button>
-                  </div>
+                <div className="resultados-info">
+                  <h3>{vuelo.origen} {"->"} {vuelo.destino}</h3>
 
-                 <Link to={`/vuelo/${vuelo.id}`} state={{ vuelo }}>
-                   <button className="btn-detalle">Ver detalle</button>
-                 </Link>
+                  <p>
+                    <FaPlane /> {vuelo.aerolinea || "Aerolinea no disponible"}
+                  </p>
+                  <p>
+                    <FaCalendarAlt /> {formatFecha(vuelo.fechaRaw || vuelo.fechaISO)}
+                  </p>
+                  <p>
+                    <FaClock /> {vuelo.duracion}
+                  </p>
 
+                  <span className="resultados-category">{vuelo.categoria}</span>
                 </div>
-              </div>
+
+                <div className="resultados-side">
+                  <strong className="resultados-price">${vuelo.precio}</strong>
+
+                  <button
+                    className={`btn-fav ${isFavorite ? "activo" : ""}`}
+                    onClick={() => toggleFavorite(vuelo)}
+                  >
+                    {isFavorite ? <FaHeart /> : <FaRegHeart />} {isFavorite ? "Favorito" : "Agregar"}
+                  </button>
+
+                  <button className="btn-reservar" onClick={() => reservarVuelo(vuelo)}>
+                    Reservar
+                  </button>
+
+                  <Link to={`/vuelo/${vuelo.id || vuelo.productId}`} state={{ vuelo }}>
+                    <button className="btn-detalle">Ver detalle</button>
+                  </Link>
+                </div>
+              </article>
             );
           })}
         </div>
 
-        {resultadosFiltrados.length > 0 && (
+        {!loading && resultadosFiltrados.length > 0 && (
           <Paginacion
             totalItems={resultadosFiltrados.length}
             itemsPerPage={itemsPerPage}

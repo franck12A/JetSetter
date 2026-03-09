@@ -1,16 +1,9 @@
 /* Navbar fijo */
 :root {
-  /* color palette - mantenemos azules/celeste */
-  --blue-primary: #0069d9;
-  --blue-light: #cce5ff;
-  --blue-dark: #0056b3;
-  --cyan-light: #e0f7fa;
-  --surface-page: #f1f5f9;
-  --surface-card: #ffffff;
-  --ink-strong: #1f2937;
-  --accent: #ff6b00;
-  --accent-dark: #e55b00;
-  --transition-fast: 0.2s;
+  --home-bg: #121826;
+  --home-card-bg: #1B2333;
+  --home-text: #F3F4F6;
+  --home-blue: #2563EB;
 }
 
 .header-wrapper {
@@ -19,72 +12,63 @@
   left: 0;
   width: 100%;
   z-index: 100;
-  background: var(--surface-card);
-  /* Solid white */
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  background: var(--home-bg);
+  box-shadow: none;
 }
 
 /* Fondo general */
 .main-bg {
   flex: 1;
   display: block;
-  /* El color background base lo toma global.css (#f8f9fa) */
-}
-
-
-/* Contenido principal separado del navbar y footer */
-body {
-  font-family: "Poppins", sans-serif;
-  color: var(--ink-strong);
-  line-height: 1.6;
+  background-color: var(--home-bg);
+  min-height: 100vh;
+  color: var(--home-text);
 }
 
 .main-content {
   padding-top: 75px;
-  /* Solo el espacio exacto del navbar */
-  padding-bottom: 2rem;
+  padding-bottom: 5rem;
+  /* space for promo and bottomnav */
   position: relative;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 2rem;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5 {
-  font-family: "Poppins", sans-serif;
-  color: var(--blue-dark);
+/* Banner Promotional */
+.home-promo-banner {
+  margin: 0 1rem 2rem;
+  background: linear-gradient(90deg, #1d4ed8 0%, #3b82f6 100%);
+  border-radius: 16px;
+  padding: 1.5rem;
+  color: white;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-/* reusable button style */
-.btn {
-  display: inline-block;
-  padding: 0.6rem 1.2rem;
-  border-radius: 6px;
-  font-weight: 600;
-  text-align: center;
-  cursor: pointer;
-  transition: background var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
+.home-promo-banner h3 {
+  margin: 0;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
 }
 
-.btn-primary {
-  background: var(--blue-primary);
-  color: #fff;
-  border: none;
+.home-promo-banner p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
 }
 
-.btn-primary:hover {
-  background: var(--blue-dark);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.btn-accent {
-  background: var(--accent);
-  color: #fff;
-  border: none;
-}
-
-.btn-accent:hover {
-  background: var(--accent-dark);
+.home-promo-subtitle {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
 }
 
 /* ======================================== */
@@ -92,9 +76,7 @@ h5 {
 /* ======================================== */
 .vuelos-paginados-section {
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto 3rem;
-  padding: 0 1rem;
+  margin: 0 auto;
   text-align: left;
 }
 
@@ -102,34 +84,33 @@ h5 {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: 2rem;
   margin-bottom: 1.5rem;
 }
 
 .vp-header h2 {
   font-size: 1.5rem;
-  color: #2563eb;
-  /* Azul primary del mockup */
+  color: #F3F4F6;
   margin: 0;
   font-weight: 700;
 }
 
 .vp-filter-btn {
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: #1B2333;
+  border: none;
   border-radius: 50%;
   width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #64748b;
+  color: #9CA3AF;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .vp-filter-btn:hover {
-  background: #f1f5f9;
+  background: #374151;
 }
 
 /* Grid vertical solo para paginación */
@@ -141,11 +122,11 @@ h5 {
 
 /* Card nueva horizontal con imagen full top */
 .vuelo-nuevo-card {
-  background: var(--surface-card);
+  background: #1B2333;
   border-radius: 16px;
   overflow: hidden;
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
@@ -153,7 +134,7 @@ h5 {
 
 .vuelo-nuevo-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .vnc-img-wrapper {
@@ -208,9 +189,9 @@ h5 {
   position: absolute;
   bottom: 1.25rem;
   right: 1.25rem;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: none;
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -223,7 +204,7 @@ h5 {
 }
 
 .vnc-fav-btn:hover {
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .vnc-fav-btn.activo svg {
@@ -245,22 +226,22 @@ h5 {
   margin: 0;
   font-size: 1.15rem;
   font-weight: 700;
-  color: #0f172a;
+  color: #F3F4F6;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .vnc-plane-icon {
-  color: #2563eb;
+  color: #3b82f6;
   font-size: 0.9rem;
 }
 
 .vnc-category {
   font-size: 0.7rem;
   font-weight: 700;
-  color: #2563eb;
-  background: #eff6ff;
+  color: #F3F4F6;
+  background: #374151;
   padding: 0.3rem 0.7rem;
   border-radius: 999px;
   letter-spacing: 0.5px;
@@ -271,7 +252,7 @@ h5 {
   display: flex;
   gap: 1.5rem;
   font-size: 0.85rem;
-  color: #64748b;
+  color: #9CA3AF;
   margin-bottom: 1.5rem;
 }
 
@@ -288,7 +269,7 @@ h5 {
 
 .vnc-btn-reservar {
   flex: 1;
-  background: #2563eb;
+  background: #3b82f6;
   color: white;
   border: none;
   padding: 0.9rem;
@@ -303,7 +284,7 @@ h5 {
 }
 
 .vnc-btn-reservar:hover {
-  background: #1d4ed8;
+  background: #2563eb;
 }
 
 .vnc-link-detalle {
@@ -313,9 +294,9 @@ h5 {
 
 .vnc-btn-detalle {
   width: 100%;
-  background: #f8fafc;
-  color: #334155;
-  border: 1px solid #e2e8f0;
+  background: #374151;
+  color: #F3F4F6;
+  border: none;
   padding: 0.9rem;
   border-radius: 8px;
   font-weight: 600;
@@ -325,7 +306,7 @@ h5 {
 }
 
 .vnc-btn-detalle:hover {
-  background: #f1f5f9;
+  background: #4B5563;
 }
 
 /* ======================================== */
@@ -336,118 +317,41 @@ h5 {
   justify-content: center;
   align-items: center;
   margin-top: 2rem;
-  background: var(--surface-card);
+  background: #1B2333;
   padding: 1rem 1.5rem;
   border-radius: 12px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   gap: 0.75rem;
 }
 
 .paginacion-container button {
-  background: linear-gradient(180deg, var(--blue-primary) 0%, var(--blue-dark) 100%);
-  color: #fff;
+  background: #374151;
+  color: #F3F4F6;
   border: none;
   padding: 0.5rem 0.9rem;
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.95rem;
-  box-shadow: 0 4px 10px rgba(0, 86, 179, 0.2);
   transition: filter 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .paginacion-container button:hover:not(:disabled) {
-  filter: brightness(1.04);
+  filter: brightness(1.1);
   transform: translateY(-2px);
-  box-shadow: 0 7px 14px rgba(0, 86, 179, 0.28);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .paginacion-container button:disabled {
-  background: #c0c0c0;
+  background: #1F2937;
+  color: #6B7280;
   cursor: not-allowed;
 }
 
 .paginacion-container span {
   font-weight: 600;
-  color: #007bff;
-  background: #e6f0ff;
+  color: #F3F4F6;
+  background: #3b82f6;
   padding: 0.3rem 0.7rem;
   border-radius: 6px;
-}
-
-/* ======================================== */
-/* Mantener intactos grids de Categorías/Recomendaciones */
-.productos-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1.5rem;
-}
-
-.producto-card {
-  background: #fff;
-  border-radius: 12px;
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-  padding: 1rem;
-  width: 220px;
-  text-align: center;
-}
-
-.producto-card img {
-  width: 100%;
-  height: 140px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 0.5rem;
-}
-
-.botones-vuelo {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-  gap: 8px;
-}
-
-.btn-fav,
-.btn-reservar,
-.btn-detalle {
-  border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: filter 0.2s ease-in-out, box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
-}
-
-.btn-fav {
-  background: linear-gradient(180deg, #f5f5f5 0%, #e9ecef 100%);
-  color: #374151;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
-}
-
-.btn-fav.activo {
-  background: linear-gradient(180deg, #ff6b6b 0%, #e55353 100%);
-  color: white;
-  box-shadow: 0 4px 10px rgba(229, 83, 83, 0.24);
-}
-
-.btn-reservar {
-  background: linear-gradient(180deg, var(--blue-primary) 0%, var(--blue-dark) 100%);
-  color: black;
-  /* texto negro */
-  box-shadow: 0 4px 10px rgba(0, 86, 179, 0.25);
-}
-
-.btn-reservar:hover {
-  filter: brightness(1.04);
-  box-shadow: 0 7px 14px rgba(0, 86, 179, 0.3);
-}
-
-.btn-detalle {
-  width: 100%;
-  margin-top: 10px;
-  background: linear-gradient(180deg, #f5f5f5 0%, #e9ecef 100%);
-  color: #1f2937;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
 }

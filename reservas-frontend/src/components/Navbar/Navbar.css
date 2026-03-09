@@ -15,8 +15,10 @@
   justify-content: space-between;
   width: 100%;
   padding: 1rem 2rem;
-  background: #fff;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: #121826;
+  /* Dark theme background */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  /* Subtle border */
   position: sticky;
   top: 0;
   z-index: 100;
@@ -49,7 +51,8 @@
 .navbar-lema {
   font-weight: bold;
   font-size: 1.2rem;
-  color: #000000;
+  color: #F3F4F6;
+  /* White text for logo */
   letter-spacing: 0.2px;
 }
 
@@ -136,7 +139,8 @@
 
 .navbar-bell-icon {
   font-size: 1.3rem;
-  color: #333;
+  color: #F3F4F6;
+  /* White text */
   margin-right: 0.5rem;
   cursor: pointer;
   transition: transform 0.2s;

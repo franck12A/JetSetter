@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaPlane, FaClock, FaFilter, FaChair, FaHeart, FaRegHeart } from "react-icons/fa";
 
@@ -16,7 +16,7 @@ import { createBooking } from "../../services/bookingsApi";
 
 const splitRoute = (name = "") => {
   const clean = name.replace(/^Vuelo\s+/i, "");
-  const parts = clean.split(/→|->/).map((p) => p.trim()).filter(Boolean);
+  const parts = clean.split(/->|\u2192/).map((p) => p.trim()).filter(Boolean);
   if (parts.length >= 2) {
     return { origen: parts[0], destino: parts[1] };
   }
@@ -34,7 +34,7 @@ export default function Home() {
   const itemsPerPage = 10;
   const [vuelosFiltrados, setVuelosFiltrados] = useState([]);
 
-  // 🔹 Traer vuelos desde la API real
+  // ðŸ”¹ Traer vuelos desde la API real
   const fetchVuelos = async () => {
     try {
       const [productos, amadeusVuelos] = await Promise.all([
@@ -83,11 +83,11 @@ export default function Home() {
 
 
 
-  // 🔹 Traer categorías desde la API
+  // ðŸ”¹ Traer categorÃ­as desde la API
   const fetchCategorias = async () => {
     try {
       const res = await fetch("http://localhost:8080/api/categories");
-      if (!res.ok) throw new Error("Error al cargar categorías");
+      if (!res.ok) throw new Error("Error al cargar categorÃ­as");
       const data = await res.json();
       // el backend puede enviar { id, name, icon } u otros campos
       const mapped = (data || []).map((c) => {
@@ -97,7 +97,7 @@ export default function Home() {
       });
       setCategorias(mapped);
     } catch (err) {
-      console.error("Error cargando categorías:", err);
+      console.error("Error cargando categorÃ­as:", err);
     }
   };
 
@@ -114,7 +114,7 @@ export default function Home() {
       window.removeEventListener("vuelosActualizados", handleVuelosActualizados);
   }, []);
 
-  // Paginación
+  // PaginaciÃ³n
   const totalPages = Math.ceil(vuelos.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -149,6 +149,14 @@ export default function Home() {
           onSelectCategoria={handleSelectCategoria}
         />
         <Recomendaciones vuelos={vuelos} />
+
+        <div className="home-promo-banner">
+          <div className="home-promo-content">
+            <span className="home-promo-subtitle">Limited Time</span>
+            <h3>30% Off to Paris!</h3>
+            <p>Book your winter getaway in European style</p>
+          </div>
+        </div>
 
         <div className="vuelos-paginados-section">
           <div className="vp-header">
@@ -268,3 +276,4 @@ export default function Home() {
     </div>
   );
 }
+
