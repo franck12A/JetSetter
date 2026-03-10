@@ -26,11 +26,31 @@
   cursor: pointer;
 }
 
-/* Swiper overrides */
+/* Swiper controls */
 .recomendaciones-section .swiper-button-next,
 .recomendaciones-section .swiper-button-prev {
-  display: none !important;
-  /* Hide old swiper default buttons */
+  color: #e2e8f0;
+  width: 40px;
+  height: 40px;
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 50%;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+}
+
+.recomendaciones-section .swiper-button-next::after,
+.recomendaciones-section .swiper-button-prev::after {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.recomendaciones-section .swiper-pagination-bullet {
+  background: #94a3b8;
+  opacity: 0.7;
+}
+
+.recomendaciones-section .swiper-pagination-bullet-active {
+  background: #3b82f6;
+  opacity: 1;
 }
 
 /* Wrapper paddings for cards */
@@ -39,8 +59,58 @@
   /* Espacio para que el hover effect shadow no se corte */
 }
 
+.reco-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.reco-grid .carousel-card {
+  max-width: 100%;
+}
+
+.reco-grid .carousel-img-wrapper {
+  height: 220px;
+}
+
+.reco-grid .carousel-info {
+  padding: 1.5rem;
+}
+
 /* Link Wrapper fix */
 .reco-link {
   text-decoration: none;
   display: block;
+}
+
+@media (max-width: 900px) {
+  .recomendaciones-section {
+    margin: 0.5rem auto 1.5rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .reco-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .titulo-reco {
+    font-size: 1.1rem;
+  }
+
+  .reco-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .recomendaciones-section {
+    padding: 0 0.75rem;
+  }
+
+  .ver-todas-reco {
+    font-size: 0.8rem;
+  }
 }
