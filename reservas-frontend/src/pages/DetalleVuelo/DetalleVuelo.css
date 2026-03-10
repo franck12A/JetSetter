@@ -26,6 +26,23 @@
   margin-bottom: 2rem;
 }
 
+.dv-left-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.dv-home-logo-link {
+  display: inline-flex;
+  align-items: center;
+}
+
+.dv-home-logo {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+}
+
 .dv-back-btn {
   background: #f8fafc;
   border: 1px solid #e2e8f0;

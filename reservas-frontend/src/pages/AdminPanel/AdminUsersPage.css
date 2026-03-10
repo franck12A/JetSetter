@@ -42,6 +42,17 @@
   gap: 0.9rem;
 }
 
+.au-home-logo-link {
+  display: inline-flex;
+  align-items: center;
+}
+
+.au-home-logo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
 .au-back-btn {
   width: 34px;
   height: 34px;

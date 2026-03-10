@@ -1,6 +1,6 @@
 // src/pages/AdminPanel/AdminUsersPage.jsx
 import React, { useEffect, useState, useContext, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaChevronLeft, FaRegBell, FaSearch, FaUserPlus, FaTimes } from "react-icons/fa";
 import AdminUsersList from "../AdminUsersList/AdminUsersList";
 import { AuthContext } from "../../context/AuthContext";
@@ -100,6 +100,9 @@ export default function AdminUsersPage() {
       {/* HEADER TOP */}
       <div className="au-header-top">
         <div className="au-header-left">
+          <Link to="/" className="au-home-logo-link" aria-label="Ir al inicio">
+            <img src="/assets/logoJettSeter.png" alt="JetSetter" className="au-home-logo" />
+          </Link>
           <button className="au-back-btn" onClick={() => navigate(-1)}>
             <FaChevronLeft />
           </button>

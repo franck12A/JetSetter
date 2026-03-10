@@ -355,3 +355,82 @@
   padding: 0.3rem 0.7rem;
   border-radius: 6px;
 }
+
+@media (max-width: 1024px) {
+  .main-content {
+    padding: 0 1.5rem;
+    padding-top: 75px;
+    padding-bottom: 4.5rem;
+  }
+
+  .home-promo-banner {
+    margin: 0 0.5rem 1.5rem;
+  }
+
+  .vnc-img-wrapper {
+    height: 220px;
+  }
+
+  .vnc-info {
+    padding: 1.25rem;
+  }
+
+  .vnc-details-row {
+    gap: 1rem;
+  }
+
+  .vp-header h2 {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 0 1rem;
+    padding-top: 88px;
+    padding-bottom: 4rem;
+  }
+
+  .home-promo-banner {
+    margin: 0 0 1.25rem;
+    padding: 1.25rem;
+    text-align: center;
+  }
+
+  .vp-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .vnc-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .vnc-details-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .vnc-actions {
+    flex-direction: column;
+  }
+
+  .paginacion-container {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-promo-banner h3 {
+    font-size: 1.2rem;
+  }
+
+  .vnc-img-wrapper {
+    height: 200px;
+  }
+}

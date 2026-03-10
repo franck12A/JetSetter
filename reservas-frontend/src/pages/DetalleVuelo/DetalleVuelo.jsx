@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { FaChevronLeft, FaRegCalendarAlt, FaRegClock, FaMoneyBillWave, FaPlane, FaRegHeart, FaHeart, FaInfoCircle } from "react-icons/fa";
 
 import productService from "../../services/productService";
@@ -196,9 +196,14 @@ export default function DetalleVuelo() {
 
         {/* HEADER: Volver + Titulo */}
         <div className="dv-header">
-          <button className="dv-back-btn" onClick={() => navigate(-1)}>
-            <FaChevronLeft />
-          </button>
+          <div className="dv-left-actions">
+            <Link to="/" className="dv-home-logo-link" aria-label="Ir al inicio">
+              <img src="/assets/logoJettSeter.png" alt="JetSetter" className="dv-home-logo" />
+            </Link>
+            <button className="dv-back-btn" onClick={() => navigate(-1)}>
+              <FaChevronLeft />
+            </button>
+          </div>
           <div className="dv-title-center">
             <h1>{vuelo.origen} → {vuelo.destino}</h1>
             <p>{vuelo.aerolinea} | VUELO {vuelo.numeroVuelo}</p>

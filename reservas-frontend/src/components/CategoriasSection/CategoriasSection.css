@@ -91,3 +91,34 @@
   outline-offset: 4px;
   border-radius: 8px;
 }
+
+@media (max-width: 900px) {
+  .categorias-grid {
+    gap: 1.25rem;
+    justify-content: center;
+  }
+
+  .categorias-header {
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .categorias-section {
+    padding: 0 0.75rem;
+  }
+
+  .categorias-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .categoria-icono-wrapper {
+    width: 56px;
+    height: 56px;
+  }
+
+  .categoria-nombre {
+    font-size: 0.75rem;
+  }
+}

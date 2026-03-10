@@ -80,7 +80,7 @@ export default function AdminPanel() {
   useEffect(() => {
     const loadVuelos = async () => {
       try {
-        const data = await productService.getRandomProducts(20);
+        const data = await productService.getAllProducts();
         setVuelos(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Error cargando vuelos:", err);
@@ -192,7 +192,12 @@ export default function AdminPanel() {
       alert("Vuelo guardado correctamente");
     } catch (err) {
       console.error(err);
-      alert("Error al guardar el vuelo: " + (err?.message || "Error desconocido"));
+      const backendMsg = err?.response?.data;
+      const message =
+        typeof backendMsg === "string" && backendMsg.trim()
+          ? backendMsg
+          : (err?.message || "Error desconocido");
+      alert("Error al guardar el vuelo: " + message);
     }
   };
 
@@ -328,11 +333,11 @@ export default function AdminPanel() {
   return (
     <div className="admin-container">
       <div className="admin-top-bar">
-        <div className="admin-logo">
+        <Link to="/" className="admin-logo" aria-label="Ir al inicio">
           <img src="/assets/logoJettSeter.png" alt="JetSetter Logo" className="admin-logo-img" />
           <span style={{ color: "#3b82f6", fontWeight: 700 }}>JetSetter</span>
           <span style={{ color: "#000", fontWeight: 700 }}>Admin</span>
-        </div>
+        </Link>
         <div className="admin-top-actions">
           <Link to="/" className="btn-top-action btn-view">Ver sitio</Link>
           <button className="btn-top-action btn-clear" onClick={clearLocalData}>Limpiar</button>
@@ -566,7 +571,7 @@ export default function AdminPanel() {
             </div>
 
             <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
-              <button type="submit" className="btn btn-primary">{editingId ? "Guardar cambios" : "Crear vuelo"}</button>
+              <button type="submit" className="btn btn-primary">{editingId ? "Guardar cambios" : "Agregar producto"}</button>
               {editingId && (
                 <button type="button" className="btn btn-secondary" onClick={resetForm}>Cancelar</button>
               )}
