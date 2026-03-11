@@ -5,6 +5,7 @@
   color: #9ca3af;
   padding: 1.5rem 2rem;
   font-size: 14px;
+  text-align: left;
 }
 
 .footer-content {
@@ -18,7 +19,7 @@
 
 .footer-left {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
 }
 
@@ -31,6 +32,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  text-align: left;
 }
 
 .footer-brand {
