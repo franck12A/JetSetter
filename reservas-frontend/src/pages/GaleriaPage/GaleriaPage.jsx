@@ -5,6 +5,7 @@ import "./GaleriaPage.css";
 
 const FALLBACK_IMAGE = "/assets/imagenespaises/argentina_1.jpg";
 const TARGET_COUNT = 5;
+const UNKNOWN_LABELS = new Set(["desconocido", "destino"]);
 
 export default function GaleriaPage() {
   const { id } = useParams();
@@ -44,11 +45,15 @@ export default function GaleriaPage() {
       const localImages = Array.isArray(vuelo?.imagenesPais) ? vuelo.imagenesPais : [];
       const uniqueLocal = Array.from(new Set(localImages.filter(Boolean)));
 
+      const normalizedName = typeof nombre === "string" ? nombre.trim().toLowerCase() : "";
+      const fallbackQuery = vuelo?.destino || vuelo?.origen || nombre;
+      const query = UNKNOWN_LABELS.has(normalizedName) ? fallbackQuery : nombre;
+
       let apiData = [];
       try {
         apiData = await productService.getCountryImages({
           country: countryCode || nombre,
-          query: nombre,
+          query,
           count: TARGET_COUNT,
         });
       } catch {

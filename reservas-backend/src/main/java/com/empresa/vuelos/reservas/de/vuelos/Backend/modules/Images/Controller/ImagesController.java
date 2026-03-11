@@ -28,14 +28,16 @@ public class ImagesController {
             @RequestParam(required = false) String query,
             @RequestParam(defaultValue = "6") int count
     ) {
-        String raw = country != null && !country.isBlank() ? country.trim() : (query == null ? "" : query.trim());
-        if (raw.isBlank()) return List.of();
+        String safeQuery = query != null && !query.isBlank() ? query.trim() : "";
+        String safeCountry = country != null && !country.isBlank() ? country.trim() : "";
 
-        String countryKey = raw.toUpperCase();
-        String searchQuery = raw;
+        String countryKey = !safeCountry.isBlank() ? safeCountry : safeQuery;
+        String searchQuery = !safeQuery.isBlank() ? safeQuery : safeCountry;
 
-        if (raw.length() == 3) {
-            String mapped = AmadeusController.PAIS_POR_IATA.get(raw.toUpperCase());
+        if (countryKey.isBlank() || searchQuery.isBlank()) return List.of();
+
+        if (searchQuery.length() == 3) {
+            String mapped = AmadeusController.PAIS_POR_IATA.get(searchQuery.toUpperCase());
             if (mapped != null && !mapped.isBlank()) {
                 searchQuery = mapped;
             }
