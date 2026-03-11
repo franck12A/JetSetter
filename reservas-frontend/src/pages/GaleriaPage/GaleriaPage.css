@@ -3,6 +3,9 @@
 .galeria-page {
   position: relative;
   min-height: 100vh;
+  margin: 0;
+  width: 100%;
+  max-width: none;
   padding: 48px 24px 80px;
   background:
     radial-gradient(circle at 15% 20%, rgba(80, 135, 255, 0.22), transparent 45%),
@@ -272,3 +275,4 @@
     max-width: 85%;
   }
 }
+
