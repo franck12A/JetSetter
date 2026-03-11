@@ -1,5 +1,6 @@
 package com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Images.Controller;
 
+import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Amadeus.Controller.AmadeusController;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Images.DTO.ImageResultDTO;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Images.Service.UnsplashImageService;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -23,10 +24,24 @@ public class ImagesController {
 
     @GetMapping("/country")
     public List<ImageResultDTO> getCountryImages(
-            @RequestParam String query,
-            @RequestParam(defaultValue = "5") int count
+            @RequestParam(required = false) String country,
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "6") int count
     ) {
+        String raw = country != null && !country.isBlank() ? country.trim() : (query == null ? "" : query.trim());
+        if (raw.isBlank()) return List.of();
+
+        String countryKey = raw.toUpperCase();
+        String searchQuery = raw;
+
+        if (raw.length() == 3) {
+            String mapped = AmadeusController.PAIS_POR_IATA.get(raw.toUpperCase());
+            if (mapped != null && !mapped.isBlank()) {
+                searchQuery = mapped;
+            }
+        }
+
         int safeCount = Math.min(Math.max(count, 1), 10);
-        return unsplashImageService.search(query, safeCount);
+        return unsplashImageService.getCountryImages(countryKey, searchQuery, safeCount);
     }
 }

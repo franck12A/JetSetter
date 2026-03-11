@@ -214,14 +214,16 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20) => {
     return data;
   },
 
-  getCountryImages: async ({ query, count = 5 }) => {
-    if (!query) return [];
-    const { data } = await axios.get(`${API_URL}/api/images/country`, {
-      params: { query, count }
-    });
+    getCountryImages: async ({ country, query, count = 6 }) => {
+    const params = {};
+    if (country) params.country = country;
+    if (query) params.query = query;
+    params.count = count;
+    const { data } = await axios.get(`${API_URL}/api/images/country`, { params });
     return Array.isArray(data) ? data : [];
   },
 };
 
 export default productService;
+
 

@@ -4,6 +4,7 @@ import productService from "../../services/productService";
 import "./GaleriaPage.css";
 
 const FALLBACK_IMAGE = "/assets/imagenespaises/argentina_1.jpg";
+const TARGET_COUNT = 5;
 
 export default function GaleriaPage() {
   const { id } = useParams();
@@ -35,30 +36,33 @@ export default function GaleriaPage() {
       }
 
       const nombre = vuelo?.paisDestino || vuelo?.country || vuelo?.destino || "Destino";
+      const countryCode = typeof vuelo?.country === "string" && vuelo.country.length === 3
+        ? vuelo.country
+        : null;
       setTitulo(nombre);
 
       const localImages = Array.isArray(vuelo?.imagenesPais) ? vuelo.imagenesPais : [];
       const uniqueLocal = Array.from(new Set(localImages.filter(Boolean)));
 
       let apiData = [];
-      const missing = Math.max(0, 5 - uniqueLocal.length);
-
-      if (missing > 0) {
-        try {
-          apiData = await productService.getCountryImages({ query: nombre, count: missing });
-        } catch {
-          apiData = [];
-        }
+      try {
+        apiData = await productService.getCountryImages({
+          country: countryCode || nombre,
+          query: nombre,
+          count: TARGET_COUNT,
+        });
+      } catch {
+        apiData = [];
       }
 
       const apiImages = apiData.map((item) => item.url).filter(Boolean);
-      const merged = [...uniqueLocal, ...apiImages].filter(Boolean);
+      const merged = [...apiImages, ...uniqueLocal].filter(Boolean);
 
-      while (merged.length < 5) {
+      while (merged.length < TARGET_COUNT) {
         merged.push(FALLBACK_IMAGE);
       }
 
-      const finalImages = merged.slice(0, 5);
+      const finalImages = merged.slice(0, TARGET_COUNT);
       setImagenes(finalImages);
 
       const usedExternal = new Set(finalImages.filter((src) => /^https?:\/\//.test(src)));
@@ -72,21 +76,15 @@ export default function GaleriaPage() {
   }, [id]);
 
   const cards = useMemo(() => {
-    const source = imagenes.length ? imagenes : [
-      FALLBACK_IMAGE,
-      FALLBACK_IMAGE,
-      FALLBACK_IMAGE,
-      FALLBACK_IMAGE,
-      FALLBACK_IMAGE,
-    ];
+    const source = imagenes.length ? imagenes : Array.from({ length: TARGET_COUNT }, () => FALLBACK_IMAGE);
 
-    return source.slice(0, 5).map((img, index) => ({
+    return source.slice(0, TARGET_COUNT).map((img, index) => ({
       id: `${index}-${img}`,
       imagen: img,
       titulo,
       destacado: index === 0,
       badge: "MAS POPULAR",
-      cta: index === 4 ? "Ver mas" : null,
+      cta: index === TARGET_COUNT - 1 ? "Ver mas" : null,
     }));
   }, [imagenes, titulo]);
 
