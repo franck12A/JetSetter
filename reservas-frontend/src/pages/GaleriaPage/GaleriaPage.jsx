@@ -1,46 +1,77 @@
-import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import React from "react";
 import "./GaleriaPage.css";
 
 export default function GaleriaPage() {
-  const { id } = useParams();
-  const [imagenes, setImagenes] = useState([]);
-  const [vuelo, setVuelo] = useState(null);
-
-
-  
+  const destinos = [
+    {
+      id: "tokio",
+      titulo: "Tokio, Japon",
+      imagen: "/assets/imagenespaises/japon_2.jpg",
+      badge: "MAS POPULAR",
+      destacado: true,
+    },
+    {
+      id: "paris",
+      titulo: "Paris, Francia",
+      imagen: "/assets/imagenespaises/france_1.webp",
+    },
+    {
+      id: "egeo",
+      titulo: "Egeo, Grecia",
+      imagen: "/assets/imagenespaises/grecia_1.jpg",
+    },
+    {
+      id: "aurora",
+      titulo: "Tromso, Noruega",
+      imagen: "/assets/imagenespaises/Norway_1.jpg",
+    },
+    {
+      id: "venecia",
+      titulo: "Venecia, Italia",
+      imagen: "/assets/imagenespaises/italy_2.jpg",
+      cta: "Ver mas",
+    },
+  ];
 
   return (
-<div className="galeria-container">
+    <section className="galeria-page">
+      <div className="galeria-shell">
+        <header className="galeria-header">
+          <span className="galeria-kicker">
+            <span className="galeria-dot" />
+            Explora el mundo
+          </span>
+          <h1>Destinos Destacados</h1>
+          <p>
+            Descubre lugares increibles y planifica tu proxima aventura con
+            nuestra seleccion curada de destinos populares.
+          </p>
+        </header>
 
-  <div className="galeria-grid">
-
-    {/* Imagen principal */}
-    <div className="img-principal">
-      <img src={imagenes[0]}  />
-      <div className="destino-info">
-        <span className="badge">MÁS POPULAR</span>
-        <h3>por ahora nada</h3>
+        <div className="galeria-grid">
+          {destinos.map((destino) => (
+            <article
+              key={destino.id}
+              className={`galeria-card${destino.destacado ? " galeria-card--featured" : ""}${
+                destino.cta ? " galeria-card--cta" : ""
+              }`}
+            >
+              <img src={destino.imagen} alt={destino.titulo} />
+              {destino.destacado && (
+                <div className="galeria-overlay">
+                  <span className="galeria-badge">{destino.badge}</span>
+                  <h3>{destino.titulo}</h3>
+                </div>
+              )}
+              {destino.cta && (
+                <button type="button" className="galeria-btn">
+                  {destino.cta}
+                </button>
+              )}
+            </article>
+          ))}
+        </div>
       </div>
-    </div>
-
-    {/* Imagen 2 */}
-    <img src={imagenes[1]} alt="" className="img-sec" />
-
-    {/* Imagen 3 */}
-    <img src={imagenes[2]} alt="" className="img-sec" />
-
-    {/* Imagen 4 */}
-    <img src={imagenes[3]} alt="" className="img-sec" />
-
-    {/* Imagen 5 con botón */}
-    <div className="img-sec ver-mas">
-      <img src={imagenes[4]} alt="" />
-      <button className="btn-vermas">Ver más</button>
-    </div>
-
-  </div>
-
-</div>
+    </section>
   );
 }
