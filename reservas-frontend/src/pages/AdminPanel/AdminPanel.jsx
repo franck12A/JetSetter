@@ -1,4 +1,4 @@
-// src/pages/AdminPanel/AdminPanel.jsx
+﻿// src/pages/AdminPanel/AdminPanel.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "./AdminPanel.css";
@@ -10,7 +10,8 @@ import categoryService from "../../services/categoryService";
 import { getFeatures, createFeature, updateFeature, deleteFeature } from "../../services/featureService";
 
 const CATEGORIES_KEY = "categories_local";
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 10;
+const MOBILE_MAX_WIDTH = 640;
 
 function writeLocalCategories(categories) {
   localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories || []));
@@ -29,6 +30,25 @@ function toBackendDate(value) {
   return `${value}T00:00`;
 }
 
+function buildPageItems(current, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+
+  const items = [];
+  const add = (value) => items.push(value);
+
+  add(1);
+
+  const start = Math.max(2, current - 2);
+  const end = Math.min(total - 1, current + 2);
+
+  if (start > 2) add("...");
+  for (let i = start; i <= end; i += 1) add(i);
+  if (end < total - 1) add("...");
+
+  add(total);
+  return items;
+}
+
 export default function AdminPanel() {
   const location = useLocation();
   const fileInputRef = useRef(null);
@@ -45,7 +65,7 @@ export default function AdminPanel() {
   const [availableFeatures, setAvailableFeatures] = useState([]);
 
   const [query, setQuery] = useState("");
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [page, setPage] = useState(1);
   const [editingId, setEditingId] = useState(null);
   const [backendError, setBackendError] = useState("");
   const [isMobile, setIsMobile] = useState(false);
@@ -71,7 +91,7 @@ export default function AdminPanel() {
   });
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    const checkMobile = () => setIsMobile(window.innerWidth <= MOBILE_MAX_WIDTH);
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
@@ -123,7 +143,7 @@ export default function AdminPanel() {
   }, [location.search, vuelos]);
 
   useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
+    setPage(1);
   }, [query]);
 
   const filtered = useMemo(() => {
@@ -136,7 +156,20 @@ export default function AdminPanel() {
     });
   }, [vuelos, query]);
 
-  const visibleVuelos = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount);
+  }, [page, pageCount]);
+
+  const pageItems = useMemo(() => buildPageItems(safePage, pageCount), [safePage, pageCount]);
+
+  const visibleVuelos = useMemo(() => {
+    const start = (safePage - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, safePage]);
+
 
   const resetForm = () => {
     setForm({
@@ -202,7 +235,7 @@ export default function AdminPanel() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Seguro que queres eliminar este vuelo?")) return;
+    if (!window.confirm("Seguro que queres eliminar este producto?")) return;
     try {
       await productService.deleteProduct(id);
       setVuelos((prev) => prev.filter((v) => v.id !== id));
@@ -316,9 +349,16 @@ export default function AdminPanel() {
   };
 
   const clearLocalData = () => {
+
     if (!window.confirm("Limpiar datos locales (categorias cache)?")) return;
     localStorage.removeItem(CATEGORIES_KEY);
     setCategories([]);
+  };
+
+  const handleJump = (sectionId) => {
+    const el = document.getElementById(sectionId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   if (isMobile) {
@@ -344,6 +384,14 @@ export default function AdminPanel() {
         </div>
       </div>
 
+      <nav className="admin-menu">
+        <button type="button" className="admin-menu-link" onClick={() => handleJump("admin-form")}>Vuelos</button>
+        <button type="button" className="admin-menu-link" onClick={() => handleJump("admin-features")}>Caracteristicas</button>
+        <button type="button" className="admin-menu-link" onClick={() => handleJump("admin-categories")}>Categorias</button>
+        <button type="button" className="admin-menu-link" onClick={() => handleJump("admin-products")}>Listado de productos</button>
+        <Link to="/administracion/usuarios" className="admin-menu-link">Usuarios</Link>
+      </nav>
+
       <header className="admin-header">
         <div className="admin-header-main">
           <div className="admin-title-section">
@@ -354,7 +402,7 @@ export default function AdminPanel() {
         {backendError && <div className="form-error">{backendError}</div>}
       </header>
 
-      <section className="admin-features-section">
+      <section id="admin-features" className="admin-features-section">
         <div className="features-section-header">
           <h2>Caracteristicas registradas</h2>
           <div className="features-header-right">
@@ -401,7 +449,7 @@ export default function AdminPanel() {
         )}
       </section>
 
-      <section className="admin-features-section">
+      <section id="admin-categories" className="admin-features-section">
         <div className="features-section-header">
           <h2>Categorias registradas</h2>
           <div className="features-header-right">
@@ -446,7 +494,7 @@ export default function AdminPanel() {
       </section>
 
       <main className="container">
-        <section className="admin-form">
+        <section id="admin-form" className="admin-form">
           <h2>{editingId ? "Editar vuelo" : "Crear nuevo vuelo"}</h2>
           <p>Completa todos los campos para publicar un nuevo destino.</p>
 
@@ -579,7 +627,7 @@ export default function AdminPanel() {
           </form>
         </section>
 
-        <section className="admin-list">
+        <section id="admin-products" className="admin-list">
           <input
             className="search-input"
             placeholder="Buscar por id, nombre o pais..."
@@ -590,12 +638,37 @@ export default function AdminPanel() {
           <AdminProductsList vuelos={visibleVuelos} onEdit={handleEdit} onDelete={handleDelete} />
 
           <div className="admin-list-footer">
-            <span className="admin-list-counter">Mostrando {visibleVuelos.length} de {filtered.length} vuelos</span>
-            {visibleCount < filtered.length && (
-              <button className="admin-btn-load-more" onClick={() => setVisibleCount((prev) => Math.min(filtered.length, prev + PAGE_SIZE))}>
-                Ver mas
-              </button>
-            )}
+            <span className="admin-list-counter">Mostrando {visibleVuelos.length} de {filtered.length} productos</span>
+            <div className="admin-pagination">
+              <span className="admin-pagination-info">Pagina {safePage} de {pageCount}</span>
+              <div className="admin-pagination-controls">
+                <button type="button" onClick={() => setPage(1)} disabled={safePage === 1}>
+                  Inicio
+                </button>
+                <button type="button" onClick={() => setPage((prev) => Math.max(1, prev - 1))} disabled={safePage === 1}>
+                  Anterior
+                </button>
+                <div className="admin-page-list">
+                  {pageItems.map((item, index) =>
+                    item === "..." ? (
+                      <span key={`page-ellipsis-${index}`} className="admin-page-ellipsis">...</span>
+                    ) : (
+                      <button
+                        key={`page-${item}`}
+                        type="button"
+                        className={`admin-page-btn ${item === safePage ? "active" : ""}`}
+                        onClick={() => setPage(item)}
+                      >
+                        {item}
+                      </button>
+                    )
+                  )}
+                </div>
+                <button type="button" onClick={() => setPage((prev) => Math.min(pageCount, prev + 1))} disabled={safePage === pageCount}>
+                  Siguiente
+                </button>
+              </div>
+            </div>
           </div>
         </section>
       </main>
@@ -684,3 +757,4 @@ export default function AdminPanel() {
     </div>
   );
 }
+

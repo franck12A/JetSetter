@@ -1,26 +1,28 @@
-import React from 'react';
+﻿import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { FaHome, FaCompass, FaSuitcase, FaUser, FaThLarge, FaUserFriends, FaPlane } from 'react-icons/fa';
 import './BottomNav.css';
 
 export default function BottomNav() {
     const location = useLocation();
-    const isAdminRoute = location.pathname.startsWith('/admin');
+    const pathname = location.pathname;
+    const isAdminRoute = pathname.startsWith('/admin') || pathname.startsWith('/administracion');
+    const adminRoot = pathname.startsWith('/administracion') ? '/administracion' : '/admin';
 
     if (isAdminRoute) {
         return (
             <nav className="bottom-nav admin-theme">
-                <NavLink to="/admin" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')} end>
+                <NavLink to={adminRoot} className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')} end>
                     <FaThLarge className="nav-icon" />
                     <span>INICIO</span>
                 </NavLink>
 
-                <NavLink to="/admin/usuarios" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
+                <NavLink to={`${adminRoot}/usuarios`} className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
                     <FaUserFriends className="nav-icon" />
                     <span>USUARIOS</span>
                 </NavLink>
 
-                <NavLink to="/admin/lista-vuelos" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
+                <NavLink to={`${adminRoot}/lista-vuelos`} className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
                     <FaPlane className="nav-icon" />
                     <span>VUELOS</span>
                 </NavLink>

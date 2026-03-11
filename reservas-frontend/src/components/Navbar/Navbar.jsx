@@ -1,4 +1,4 @@
-// src/components/Navbar/Navbar.jsx
+﻿// src/components/Navbar/Navbar.jsx
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
@@ -54,10 +54,10 @@ export default function Navbar() {
 
                 {isAdmin && (
                   <>
-                    <button className="user-menu-item" onClick={() => navigate("/admin")}>
+                    <button className="user-menu-item" onClick={() => navigate("/administracion")}>
                       Panel Admin
                     </button>
-                    <button className="user-menu-item" onClick={() => navigate("/admin/usuarios")}>
+                    <button className="user-menu-item" onClick={() => navigate("/administracion/usuarios")}>
                       Gestionar Usuarios
                     </button>
                   </>

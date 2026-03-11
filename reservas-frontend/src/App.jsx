@@ -1,9 +1,9 @@
-// src/App.jsx
+﻿// src/App.jsx
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import ProtectedAdminRoute from "./routes/ProtectedAdminRoute";
 
-// Páginas
+// PÃ¡ginas
 import Home from "./pages/Home/Home";
 import AdminPanel from "./pages/AdminPanel/AdminPanel";
 import Resultados from "./pages/Resultados/Resultados.jsx";
@@ -23,7 +23,7 @@ function App() {
   return (
     <main>
       <Routes>
-        {/* 🌍 Públicas */}
+        {/* ðŸŒ PÃºblicas */}
         <Route path="/" element={<Home />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
@@ -31,7 +31,7 @@ function App() {
         <Route path="/vuelo/:id" element={<DetalleVuelo />} />
         <Route path="/galeria/:id" element={<GaleriaPage />} />
 
-        {/* 🔒 Protegidas (requieren login) */}
+        {/* ðŸ”’ Protegidas (requieren login) */}
         <Route
           path="/profile"
           element={
@@ -41,9 +41,17 @@ function App() {
           }
         />
 
-        {/* 🔑 Solo para admins */}
+        {/* ðŸ”‘ Solo para admins */}
         <Route
           path="/admin"
+          element={
+            <ProtectedAdminRoute adminOnly>
+              <AdminPanel />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/administracion"
           element={
             <ProtectedAdminRoute adminOnly>
               <AdminPanel />
@@ -59,7 +67,23 @@ function App() {
           }
         />
         <Route
+          path="/administracion/lista-vuelos"
+          element={
+            <ProtectedAdminRoute adminOnly>
+              <AdminProductsListPage />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
           path="/admin/usuarios"
+          element={
+            <ProtectedAdminRoute adminOnly>
+              <AdminUsersPage />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/administracion/usuarios"
           element={
             <ProtectedAdminRoute adminOnly>
               <AdminUsersPage />

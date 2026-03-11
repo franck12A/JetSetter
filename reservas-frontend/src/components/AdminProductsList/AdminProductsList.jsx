@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { Link } from "react-router-dom";
 import "./AdminProductsList.css";
 
@@ -23,7 +23,7 @@ export default function AdminProductsList({ vuelos, onEdit, onDelete }) {
                 <td>{prod.name}</td>
                 <td>
                   <button className="btn-edit" onClick={() => onEdit(prod)}>Editar</button>
-                  <button className="btn-delete" onClick={() => onDelete(prod.id)}>Eliminar</button>
+                  <button className="btn-delete" onClick={() => onDelete(prod.id)}>Eliminar producto</button>
                   <Link className="btn-view" to={`/vuelo/${prod.id}`}>Ver</Link>
                 </td>
               </tr>

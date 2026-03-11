@@ -112,3 +112,68 @@
   font-weight: 600;
   margin: 0 0.5rem;
 }
+
+.admin-products-pagination {
+  flex-wrap: wrap;
+}
+
+.admin-page-list {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.admin-page-btn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  background-color: #e2e8f0;
+  color: #1f2937;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.admin-page-btn:hover {
+  background-color: #cbd5f5;
+}
+
+.admin-page-btn.active {
+  background-color: #0056b3;
+  color: #fff;
+}
+
+.admin-page-counter {
+  font-weight: 600;
+  margin-left: 0.25rem;
+}
+
+.admin-products-pagination {
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.admin-products-pagination-left {
+  font-weight: 600;
+  color: #334155;
+}
+
+.admin-products-pagination-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-page-ellipsis {
+  padding: 0 6px;
+  color: #94a3b8;
+  font-weight: 700;
+}
