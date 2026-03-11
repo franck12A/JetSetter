@@ -4,15 +4,18 @@ import productService from "../../services/productService";
 import "./GaleriaPage.css";
 
 const FALLBACK_IMAGE = "/assets/imagenespaises/argentina_1.jpg";
-const TARGET_COUNT = 5;
+const GRID_COUNT = 5;
+const FETCH_COUNT = 10;
 const UNKNOWN_LABELS = new Set(["desconocido", "destino"]);
 
 export default function GaleriaPage() {
   const { id } = useParams();
-  const [imagenes, setImagenes] = useState([]);
+  const [gridImages, setGridImages] = useState([]);
+  const [allImages, setAllImages] = useState([]);
   const [creditos, setCreditos] = useState([]);
   const [titulo, setTitulo] = useState("Destino");
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     const loadGaleria = async () => {
@@ -54,23 +57,25 @@ export default function GaleriaPage() {
         apiData = await productService.getCountryImages({
           country: countryCode || nombre,
           query,
-          count: TARGET_COUNT,
+          count: FETCH_COUNT,
         });
       } catch {
         apiData = [];
       }
 
       const apiImages = apiData.map((item) => item.url).filter(Boolean);
-      const merged = [...apiImages, ...uniqueLocal].filter(Boolean);
+      const mergedAll = [...apiImages, ...uniqueLocal].filter(Boolean);
+      const finalAll = mergedAll.length ? mergedAll : [FALLBACK_IMAGE];
 
-      while (merged.length < TARGET_COUNT) {
-        merged.push(FALLBACK_IMAGE);
+      const grid = [...finalAll];
+      while (grid.length < GRID_COUNT) {
+        grid.push(FALLBACK_IMAGE);
       }
 
-      const finalImages = merged.slice(0, TARGET_COUNT);
-      setImagenes(finalImages);
+      setAllImages(finalAll);
+      setGridImages(grid.slice(0, GRID_COUNT));
 
-      const usedExternal = new Set(finalImages.filter((src) => /^https?:\/\//.test(src)));
+      const usedExternal = new Set(finalAll.filter((src) => /^https?:\/\//.test(src)));
       const credits = apiData.filter((item) => item.url && usedExternal.has(item.url));
       setCreditos(credits);
 
@@ -81,17 +86,19 @@ export default function GaleriaPage() {
   }, [id]);
 
   const cards = useMemo(() => {
-    const source = imagenes.length ? imagenes : Array.from({ length: TARGET_COUNT }, () => FALLBACK_IMAGE);
+    const source = gridImages.length
+      ? gridImages
+      : Array.from({ length: GRID_COUNT }, () => FALLBACK_IMAGE);
 
-    return source.slice(0, TARGET_COUNT).map((img, index) => ({
+    return source.slice(0, GRID_COUNT).map((img, index) => ({
       id: `${index}-${img}`,
       imagen: img,
       titulo,
       destacado: index === 0,
       badge: "MAS POPULAR",
-      cta: index === TARGET_COUNT - 1 ? "Ver mas" : null,
+      cta: index === GRID_COUNT - 1 ? "Ver más" : null,
     }));
-  }, [imagenes, titulo]);
+  }, [gridImages, titulo]);
 
   return (
     <section className="galeria-page">
@@ -125,7 +132,7 @@ export default function GaleriaPage() {
                 </div>
               )}
               {destino.cta && (
-                <button type="button" className="galeria-btn">
+                <button type="button" className="galeria-btn" onClick={() => setShowModal(true)}>
                   {destino.cta}
                 </button>
               )}
@@ -160,6 +167,30 @@ export default function GaleriaPage() {
           </div>
         )}
       </div>
+
+      {showModal && (
+        <div className="galeria-modal" role="dialog" aria-modal="true">
+          <div className="galeria-modal__backdrop" onClick={() => setShowModal(false)} />
+          <div className="galeria-modal__content">
+            <div className="galeria-modal__header">
+              <h2>Galeria completa</h2>
+              <button
+                type="button"
+                className="galeria-modal__close"
+                onClick={() => setShowModal(false)}
+                aria-label="Cerrar"
+              >
+                ×
+              </button>
+            </div>
+            <div className="galeria-modal__grid">
+              {allImages.map((src, index) => (
+                <img key={`${index}-${src}`} src={src} alt={`${titulo} ${index + 1}`} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
