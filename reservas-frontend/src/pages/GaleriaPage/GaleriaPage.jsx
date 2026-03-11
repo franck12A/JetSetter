@@ -7,44 +7,40 @@ export default function GaleriaPage() {
   const [imagenes, setImagenes] = useState([]);
   const [vuelo, setVuelo] = useState(null);
 
-useEffect(() => {
-  const fetchGaleria = async () => {
-    try {
-      console.log("➡️ Fetch galería para vuelo ID:", id);
-      const res = await fetch(`http://localhost:8080/api/vuelos/${id}`);
-      console.log("🟦 Response status:", res.status);
 
-      if (!res.ok) throw new Error(`Vuelo no encontrado (status ${res.status})`);
-      const data = await res.json();
-      console.log("🟩 Vuelo recibido:", data);
-
-      setVuelo(data);
-      setImagenes(data.imagenesUrls || []);
-    } catch (err) {
-      console.error("❌ Error cargando galería:", err);
-    }
-  };
-
-  fetchGaleria();
-}, [id]);
-
-
-  if (!vuelo) return <p>Vuelo no encontrado</p>;
+  
 
   return (
-    <div className="galeria-page container">
-<h2>Galería de {vuelo.destino}</h2>
-{imagenes.length === 0 ? (
-  <p>No hay imágenes disponibles</p>
-) : (
-  <div className="galeria-grid">
-    {imagenes.map((img, i) => (
-      <img key={i} src={img} alt={vuelo.destino} className="galeria-img" />
-    ))}
-  </div>
-)}
-<Link to={`/vuelo/${id}`} className="btn-back mt-3">← Volver al detalle</Link>
+<div className="galeria-container">
 
+  <div className="galeria-grid">
+
+    {/* Imagen principal */}
+    <div className="img-principal">
+      <img src={imagenes[0]}  />
+      <div className="destino-info">
+        <span className="badge">MÁS POPULAR</span>
+        <h3>por ahora nada</h3>
+      </div>
     </div>
+
+    {/* Imagen 2 */}
+    <img src={imagenes[1]} alt="" className="img-sec" />
+
+    {/* Imagen 3 */}
+    <img src={imagenes[2]} alt="" className="img-sec" />
+
+    {/* Imagen 4 */}
+    <img src={imagenes[3]} alt="" className="img-sec" />
+
+    {/* Imagen 5 con botón */}
+    <div className="img-sec ver-mas">
+      <img src={imagenes[4]} alt="" />
+      <button className="btn-vermas">Ver más</button>
+    </div>
+
+  </div>
+
+</div>
   );
 }

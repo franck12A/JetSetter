@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { FaChevronLeft, FaRegCalendarAlt, FaRegClock, FaMoneyBillWave, FaPlane, FaRegHeart, FaHeart, FaInfoCircle } from "react-icons/fa";
 
 import productService from "../../services/productService";
@@ -7,8 +7,8 @@ import { getUserFavorites, addFavorite, removeFavorite } from "../../services/fa
 import { createBooking } from "../../services/bookingsApi";
 import { getVueloImage } from "../../utils/images";
 import "./DetalleVuelo.css";
-import Recomendaciones from "../../components/Recomendaciones/Recomendaciones";
-
+import Galeria from "../../components/Galeria/Galeria";
+import { Link } from "react-router-dom";
 
 const parseRouteName = (name, fallbackCountry = "-") => {
   const raw = name || "";
@@ -91,6 +91,22 @@ export default function DetalleVuelo() {
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [bookings, setBookings] = useState([]);
+  const imageList = useMemo(() => {
+    if (!vuelo) return [];
+    const items = [];
+    const pushUnique = (src) => {
+      if (!src) return;
+      if (!items.includes(src)) items.push(src);
+    };
+    if (Array.isArray(vuelo.imagesBase64)) {
+      vuelo.imagesBase64.forEach(pushUnique);
+    }
+    if (Array.isArray(vuelo.imagenesPais)) {
+      vuelo.imagenesPais.forEach(pushUnique);
+    }
+    pushUnique(vuelo.imagenPrincipal);
+    return items;
+  }, [vuelo]);
 
   useEffect(() => {
     const loadVuelo = async () => {
@@ -192,60 +208,59 @@ export default function DetalleVuelo() {
 
   return (
     <div className="detalle-page-container">
-      <div className="detalle-card-wrapper">
-
-        {/* HEADER: Volver + Titulo */}
-        <div className="dv-header">
-          <div className="dv-left-actions">
-            <Link to="/" className="dv-home-logo-link" aria-label="Ir al inicio">
-              <img src="/assets/logoJettSeter.png" alt="JetSetter" className="dv-home-logo" />
-            </Link>
-            <button className="dv-back-btn" onClick={() => navigate(-1)}>
-              <FaChevronLeft />
-            </button>
-          </div>
-          <div className="dv-title-center">
-            <h1>{vuelo.origen} → {vuelo.destino}</h1>
-            <p>{vuelo.aerolinea} | VUELO {vuelo.numeroVuelo}</p>
-          </div>
-          <button className="dv-top-volver-texto" onClick={() => navigate(-1)}>Volver</button>
+      <header className="detalle-header-bar">
+        <div className="dv-header-left">
+          <h1 className="dv-header-title">Vuelo a {vuelo.destino}</h1>
+          <p className="dv-header-subtitle">{vuelo.aerolinea} | VUELO {vuelo.numeroVuelo}</p>
         </div>
+        <button className="dv-back-btn dv-back-right" onClick={() => navigate(-1)} aria-label="Volver">
+          <FaChevronLeft />
+        </button>
+      </header>
+      <div className="detalle-card-wrapper">
+        <section className="dv-hero">
+          <div className="dv-hero-image">
+            <img src={getVueloImage(vuelo)} alt={`Destino ${vuelo.destino}`} />
+            <div className="dv-hero-overlay">
+              <span className="dv-hero-badge">DESTINO PREMIUM</span>
+              <h2 className="dv-hero-title">{vuelo.destino}</h2>
+            </div>
+          </div>
+          <div className="dv-description">
+            <h3>Descripcion</h3>
+            <p>{vuelo.description || "Sin descripcion disponible."}</p>
+          </div>
+        </section>
 
         <div className="dv-content-split">
-
-          {/* LADO IZQ: IMAGEN */}
-          <div className="dv-image-side">
-            <img src={getVueloImage(vuelo)} alt={`Destino ${vuelo.destino}`} />
-          </div>
-
-          {/* LADO DER: INFO */}
           <div className="dv-info-side">
 
             {/* KPI Rows */}
-            <div className="dv-kpi-row">
-              <div className="dv-kpi-icon-container"><FaMoneyBillWave /></div>
-              <div className="dv-kpi-text">
-                <span>PRECIO</span>
-                <strong>${vuelo.precioTotal}</strong>
+            <div className="dv-stats-grid">
+              <div className="dv-kpi-row">
+                <div className="dv-kpi-icon-container"><FaRegClock /></div>
+                <div className="dv-kpi-text">
+                  <span>DURACION</span>
+                  <strong>{vuelo.duracion.replace("Duracion:", "").trim()}</strong>
+                </div>
+              </div>
+
+              <div className="dv-kpi-row">
+                <div className="dv-kpi-icon-container"><FaRegCalendarAlt /></div>
+                <div className="dv-kpi-text">
+                  <span>FECHA</span>
+                  <strong>{vuelo.fechaSalidaRaw ? new Date(vuelo.fechaSalidaRaw).toLocaleDateString("es-AR", { day: '2-digit', month: 'short', year: 'numeric' }) : vuelo.fechaSalida}</strong>
+                </div>
+              </div>
+
+              <div className="dv-kpi-row">
+                <div className="dv-kpi-icon-container"><FaMoneyBillWave /></div>
+                <div className="dv-kpi-text">
+                  <span>PRECIO</span>
+                  <strong>${vuelo.precioTotal}</strong>
+                </div>
               </div>
             </div>
-
-            <div className="dv-kpi-row">
-              <div className="dv-kpi-icon-container"><FaRegCalendarAlt /></div>
-              <div className="dv-kpi-text">
-                <span>FECHA</span>
-                <strong>{vuelo.fechaSalidaRaw ? new Date(vuelo.fechaSalidaRaw).toLocaleDateString("es-AR", { day: '2-digit', month: 'short', year: 'numeric' }) : vuelo.fechaSalida}</strong>
-              </div>
-            </div>
-
-            <div className="dv-kpi-row">
-              <div className="dv-kpi-icon-container"><FaRegClock /></div>
-              <div className="dv-kpi-text">
-                <span>DURACIÓN</span>
-                <strong>{vuelo.duracion.replace("Duracion:", "").trim()}</strong>
-              </div>
-            </div>
-
             {/* Clase & Equipaje */}
             <div className="dv-class-section">
               <div className="dv-class-header">
@@ -310,8 +325,17 @@ export default function DetalleVuelo() {
 
           </div>
         </div>
+
+<section className="dv-gallery-section">
+  <Link to={`/galeria/${vuelo.id}`} className="galery-button">
+    Ver galería de imágenes
+  </Link>
+</section>
       </div>
 
     </div>
   );
 }
+
+
+
