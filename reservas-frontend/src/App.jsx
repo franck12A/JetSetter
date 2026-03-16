@@ -1,9 +1,9 @@
-﻿// src/App.jsx
+// src/App.jsx
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import ProtectedAdminRoute from "./routes/ProtectedAdminRoute";
 
-// PÃ¡ginas
+// Páginas
 import Home from "./pages/Home/Home";
 import AdminPanel from "./pages/AdminPanel/AdminPanel";
 import Resultados from "./pages/Resultados/Resultados.jsx";
@@ -23,7 +23,7 @@ function App() {
   return (
     <main>
       <Routes>
-        {/* ðŸŒ PÃºblicas */}
+        {/* 🌍 Públicas */}
         <Route path="/" element={<Home />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
@@ -31,7 +31,7 @@ function App() {
         <Route path="/vuelo/:id" element={<DetalleVuelo />} />
         <Route path="/galeria/:id" element={<GaleriaPage />} />
 
-        {/* ðŸ”’ Protegidas (requieren login) */}
+        {/* 🔒 Protegidas (requieren login) */}
         <Route
           path="/profile"
           element={
@@ -41,7 +41,7 @@ function App() {
           }
         />
 
-        {/* ðŸ”‘ Solo para admins */}
+        {/* 🔑 Solo para admins */}
         <Route
           path="/admin"
           element={
@@ -52,6 +52,14 @@ function App() {
         />
         <Route
           path="/administracion"
+          element={
+            <ProtectedAdminRoute adminOnly>
+              <AdminPanel />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/administraci\u00f3n"
           element={
             <ProtectedAdminRoute adminOnly>
               <AdminPanel />
@@ -96,3 +104,10 @@ function App() {
 }
 
 export default App;
+
+
+
+
+
+
+

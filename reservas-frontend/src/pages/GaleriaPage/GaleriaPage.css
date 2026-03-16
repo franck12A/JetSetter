@@ -339,13 +339,16 @@
 }
 
 .galeria-modal__close {
+  display: grid;
+  place-items: center;
   border: none;
   background: rgba(255, 255, 255, 0.08);
   color: #f5f7ff;
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  font-size: 1.2rem;
+  font-size: 1.35rem;
+  line-height: 1;
   cursor: pointer;
 }
 

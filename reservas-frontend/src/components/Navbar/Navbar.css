@@ -36,6 +36,7 @@
 .navbar-logo {
   display: flex;
   align-items: center;
+  gap: 0.6rem;
   text-decoration: none;
 }
 
@@ -49,11 +50,12 @@
 
 
 .navbar-lema {
-  font-weight: bold;
-  font-size: 1.2rem;
-  color: #F3F4F6;
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: #E8ECFF;
   /* White text for logo */
   letter-spacing: 0.2px;
+  line-height: 1.2;
 }
 
 /* ===================== */
@@ -246,5 +248,9 @@
     width: 100%;
     flex-wrap: wrap;
     justify-content: flex-end;
+  }
+
+  .navbar-lema {
+    font-size: 0.92rem;
   }
 }

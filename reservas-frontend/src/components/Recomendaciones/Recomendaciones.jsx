@@ -1,7 +1,7 @@
 // Recomendaciones.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination, A11y } from "swiper/modules";
+import { Navigation, Pagination, A11y, Autoplay } from "swiper/modules";
 import { Link } from "react-router-dom";
 
 import productService from "../../services/productService";
@@ -17,6 +17,7 @@ export default function Recomendaciones({ vuelos = [], origen, destino, fecha })
   const [loading, setLoading] = useState(vuelos && vuelos.length > 0 ? false : true);
   const [error, setError] = useState("");
   const MAX_RECOS = 10;
+  const CARDS_PER_PAGE = 4;
 
   const shuffle = (items) => {
     const arr = [...items];
@@ -28,11 +29,18 @@ export default function Recomendaciones({ vuelos = [], origen, destino, fecha })
   };
 
   const uniqueById = (items) => {
-    const seen = new Set();
+    const seenIds = new Set();
+    const seenDestinos = new Set();
     return items.filter((item) => {
       const id = item?.id ?? item?.productId;
-      if (id == null || seen.has(id)) return false;
-      seen.add(id);
+      const destSplit = item?.name ? item.name.split("->")[1] : null;
+      const destino = (item?.destino || destSplit || "").trim().toUpperCase();
+
+      if (id == null || seenIds.has(id)) return false;
+      if (destino && seenDestinos.has(destino)) return false;
+
+      seenIds.add(id);
+      if (destino) seenDestinos.add(destino);
       return true;
     });
   };
@@ -78,8 +86,8 @@ export default function Recomendaciones({ vuelos = [], origen, destino, fecha })
 
   const pages = useMemo(() => {
     const chunks = [];
-    for (let i = 0; i < recomendaciones.length; i += MAX_RECOS) {
-      chunks.push(recomendaciones.slice(i, i + MAX_RECOS));
+    for (let i = 0; i < recomendaciones.length; i += CARDS_PER_PAGE) {
+      chunks.push(recomendaciones.slice(i, i + CARDS_PER_PAGE));
     }
     return chunks;
   }, [recomendaciones]);
@@ -96,12 +104,13 @@ export default function Recomendaciones({ vuelos = [], origen, destino, fecha })
       </div>
       <div className="reco-wrapper">
         <Swiper
-          modules={[Navigation, Pagination, A11y]}
+          modules={[Navigation, Pagination, A11y, Autoplay]}
           slidesPerView={1}
           spaceBetween={24}
           pagination={{ clickable: true }}
           navigation
           loop={pages.length > 1}
+          autoplay={{ delay: 3500, disableOnInteraction: false, pauseOnMouseEnter: true }}
         >
           {pages.map((chunk, pageIndex) => (
             <SwiperSlide key={`reco-page-${pageIndex}`}>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaPlane, FaClock, FaFilter, FaChair, FaHeart, FaRegHeart } from "react-icons/fa";
 
@@ -66,18 +66,12 @@ export default function Home() {
         categorias: inferFlightCategories(vuelo),
       }));
       const dedup = [];
-      const seen = new Set();
+      const seenDestinos = new Set();
 
       for (const vuelo of merged) {
-        const fechaBase = String(vuelo.fechaSalida || vuelo.departureDate || "").slice(0, 10);
-        const key = [
-          (vuelo.origen || "").toUpperCase(),
-          (vuelo.destino || "").toUpperCase(),
-          (vuelo.aerolinea || "").toUpperCase(),
-          fechaBase,
-        ].join("|");
-        if (seen.has(key)) continue;
-        seen.add(key);
+        const destinoKey = (vuelo.destino || "N/A").toUpperCase();
+        if (seenDestinos.has(destinoKey)) continue;
+        seenDestinos.add(destinoKey);
         dedup.push(vuelo);
       }
 

@@ -1,10 +1,11 @@
-﻿// src/pages/AdminPanel/AdminPanel.jsx
+// src/pages/AdminPanel/AdminPanel.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "./AdminPanel.css";
 import AdminProductsList from "../../components/AdminProductsList/AdminProductsList";
 import IconPicker from "../../components/IconPicker/IconPicker";
 import { ICON_REGISTRY } from "../../utils/iconRegistry";
+import { MdFlightTakeoff, MdOutlinePublic, MdOutlineCalendarToday, MdOutlineImage, MdOutlineCloudUpload, MdInfoOutline } from "react-icons/md";
 import productService from "../../services/productService";
 import categoryService from "../../services/categoryService";
 import { getFeatures, createFeature, updateFeature, deleteFeature } from "../../services/featureService";
@@ -85,6 +86,9 @@ export default function AdminPanel() {
     departureDate: "",
     category: "",
     description: "",
+    duracion: "",
+    clase: "",
+    equipaje: "",
     imageUrl: "",
     imageFilesDataUrls: [],
     features: [],
@@ -180,6 +184,9 @@ export default function AdminPanel() {
       departureDate: "",
       category: "",
       description: "",
+      duracion: "",
+      clase: "",
+      equipaje: "",
       imageUrl: "",
       imageFilesDataUrls: [],
       features: [],
@@ -254,6 +261,9 @@ export default function AdminPanel() {
       departureDate: toInputDate(vuelo.departureDate),
       category: vuelo.category?.id || vuelo.categoryId || "",
       description: vuelo.description || "",
+      duracion: vuelo.duracion || "",
+      clase: vuelo.clase || "",
+      equipaje: vuelo.equipaje || "",
       imageUrl: vuelo.image || vuelo.imageUrl || "",
       imageFilesDataUrls: Array.isArray(vuelo.imagesBase64) ? vuelo.imagesBase64 : [],
       features: Array.isArray(vuelo.features)
@@ -345,7 +355,10 @@ export default function AdminPanel() {
     setForm((f) => ({ ...f, category: saved.id }));
 
     setShowCategoryModal(false);
-    setNewCategory({ title: "", description: "", imageUrl: "", icon: "" });
+    setNewCategory({ title: "", description: "",
+    duracion: "",
+    clase: "",
+    equipaje: "", imageUrl: "", icon: "" });
   };
 
   const clearLocalData = () => {
@@ -395,9 +408,12 @@ export default function AdminPanel() {
       <header className="admin-header">
         <div className="admin-header-main">
           <div className="admin-title-section">
-            <h1>Administracion de Vuelos</h1>
-            <p>Gestiona inventario, categorias y caracteristicas.</p>
+            <h1>Flight Administration</h1>
+            <p>Manage and create premium flight listings for the global fleet</p>
           </div>
+          <button className="btn-new-entry" onClick={() => handleJump("admin-form")}>
+            + New Entry
+          </button>
         </div>
         {backendError && <div className="form-error">{backendError}</div>}
       </header>
@@ -457,7 +473,10 @@ export default function AdminPanel() {
             <button
               className="btn-new-feature"
               onClick={() => {
-                setNewCategory({ title: "", description: "", imageUrl: "", icon: "" });
+                setNewCategory({ title: "", description: "",
+    duracion: "",
+    clase: "",
+    equipaje: "", imageUrl: "", icon: "" });
                 setShowCategoryModal(true);
               }}
             >
@@ -499,6 +518,7 @@ export default function AdminPanel() {
           <p>Completa todos los campos para publicar un nuevo destino.</p>
 
           <form
+            className="admin-form-stacked"
             onSubmit={(e) => {
               e.preventDefault();
               handleCreateOrUpdate({
@@ -509,120 +529,170 @@ export default function AdminPanel() {
                 departureDate: toBackendDate(form.departureDate),
                 categoryId: Number(form.category),
                 description: form.description,
+                duracion: form.duracion,
+                clase: form.clase,
+                equipaje: form.equipaje,
                 features: (form.features || []).map((f) => ({ id: f.id, name: f.name })),
                 image: form.imageUrl || null,
                 imagesBase64: form.imageFilesDataUrls || [],
               });
             }}
           >
-            <div className="grid-2">
-              <label>
-                Nombre del Vuelo
-                <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-              </label>
+            <div className="form-section">
+              <div className="form-section-header">
+                <span className="section-icon text-blue" style={{ fontSize: '1.4rem', display: 'flex', alignItems: 'center' }}><MdFlightTakeoff /></span>
+                <h3>General Information</h3>
+              </div>
 
-              <label>
-                Pais de Destino
-                <input required value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} />
-              </label>
+              <div className="grid-1">
+                <label>
+                  Flight Name
+                  <input required placeholder="e.g. London-Tokyo Premium Express" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                </label>
+              </div>
 
-              <label>
-                Precio (USD)
-                <input type="number" min="0" step="0.01" required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-              </label>
+              <div className="grid-2">
+                <label>
+                  Country / Destination
+                  <div className="input-with-icon">
+                    <span className="input-icon" style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}><MdOutlinePublic /></span>
+                    <input required placeholder="Enter destination" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} />
+                  </div>
+                </label>
 
-              <label>
-                Fecha de salida
-                <input type="date" required value={form.departureDate} onChange={(e) => setForm({ ...form, departureDate: e.target.value })} />
-              </label>
+                <label>
+                  Category
+                  <div style={{ display: "flex", gap: "0.5rem", width: "100%" }}>
+                    <select
+                      required
+                      value={form.category || ""}
+                      onChange={(e) => setForm({ ...form, category: Number(e.target.value) })}
+                      style={{ flex: 1 }}
+                    >
+                      <option value="">Select category...</option>
+                      {categories.map((c) => (
+                        <option key={`cat-${c.id}`} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </label>
 
-              <label>
-                Categoria
-                <div style={{ display: "flex", gap: "0.5rem" }}>
-                  <select
-                    required
-                    value={form.category || ""}
-                    onChange={(e) => setForm({ ...form, category: Number(e.target.value) })}
-                  >
-                    <option value="">Seleccionar categoria...</option>
-                    {categories.map((c) => (
-                      <option key={`cat-${c.id}`} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowCategoryModal(true)}>
-                    +
-                  </button>
-                </div>
-              </label>
+                <label>
+                  Price (USD)
+                  <div className="input-with-icon">
+                    <span className="input-icon">$</span>
+                    <input type="number" min="0" step="0.01" required placeholder="0.00" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+                  </div>
+                </label>
 
-              <label>
-                Descripcion del Vuelo
-                <textarea rows="3" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-              </label>
+                <label>
+                  Departure Date
+                  <div className="input-with-icon">
+                    <span className="input-icon" style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}><MdOutlineCalendarToday /></span>
+                    <input type="date" required value={form.departureDate} onChange={(e) => setForm({ ...form, departureDate: e.target.value })} />
+                  </div>
+                </label>
+              </div>
 
-              <label>
-                Caracteristicas del vuelo
-                <div className="features-list">
-                  {availableFeatures.length === 0 && (
-                    <p style={{ fontSize: "0.9rem", opacity: 0.7 }}>No hay caracteristicas creadas.</p>
-                  )}
+              <div className="grid-1" style={{ marginTop: '1rem' }}>
+                <label>
+                  Flight Description
+                  <textarea rows="4" placeholder="Provide detailed information about this route, services included, and aircraft type..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                </label>
+              </div>
 
+              {/* Keep this just in case, or hide it if not in mockup. The user mockup doesn't explicitly show characteristics but let's keep it below description just in case */}
+              <div className="form-section-spaced" style={{ marginTop: '1rem', display: 'none' }}>
+                <label>Flight Characteristics</label>
+                <div className="flight-chips-container">
                   {availableFeatures.map((feat) => {
-                    const selected = (form.features || []).find((f) => f.id === feat.id);
+                    const isSelected = (form.features || []).some((f) => f.id === feat.id);
                     return (
-                      <div key={`feat-item-${feat.id}`} className="feature-item">
-                        <label>
-                          <input
-                            type="checkbox"
-                            checked={!!selected}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setForm((f) => ({
-                                  ...f,
-                                  features: [...(f.features || []), { id: feat.id, name: feat.name }],
-                                }));
-                              } else {
-                                setForm((f) => ({
-                                  ...f,
-                                  features: (f.features || []).filter((x) => x.id !== feat.id),
-                                }));
-                              }
-                            }}
-                          />
-                          {feat.name}
-                        </label>
-                      </div>
-                    );
+                      <button
+                        type="button"
+                        key={`chip-${feat.id}`}
+                        className={`flight-chip ${isSelected ? "selected" : ""}`}
+                        onClick={() => {
+                          if (!isSelected) {
+                            setForm((f) => ({ ...f, features: [...(f.features || []), { id: feat.id, name: feat.name }] }));
+                          } else {
+                            setForm((f) => ({ ...f, features: (f.features || []).filter((x) => x.id !== feat.id) }));
+                          }
+                        }}
+                      >
+                        {feat.name}
+                      </button>
+                    )
                   })}
                 </div>
-              </label>
-
-              <label>
-                Imagen (URL)
-                <input value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value, imageFilesDataUrls: [] })} />
-              </label>
-
-              <label>
-                Subir imagen
-                <input ref={fileInputRef} onChange={handleFilesChange} type="file" accept="image/*" multiple />
-              </label>
+              </div>
             </div>
 
-            <div className="preview">
-              {form.imageFilesDataUrls.length > 0 ? (
-                form.imageFilesDataUrls.map((src, i) => <img key={i} src={src} alt={`preview-${i}`} />)
-              ) : form.imageUrl ? (
-                <img src={form.imageUrl} alt="url-preview" />
-              ) : (
-                <div>Sin imagen</div>
-              )}
+            <div className="form-section" style={{ marginTop: '2rem' }}>
+              <div className="form-section-header">
+                <span className="section-icon text-blue" style={{ fontSize: '1.4rem', display: 'flex', alignItems: 'center' }}><MdOutlineImage /></span>
+                <h3>Flight Assets</h3>
+              </div>
+              
+              <div className="media-upload-area" onClick={() => fileInputRef.current && fileInputRef.current.click()}>
+                <div className="upload-icon-wrapper">
+                  <span style={{ fontSize: '2rem', display: 'flex', alignItems: 'center' }}><MdOutlineCloudUpload /></span>
+                </div>
+                <strong>Drop flight images here</strong>
+                <span style={{ marginBottom: '0.5rem', color: '#94a3b8' }}>or click to browse from your computer</span>
+                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>High resolution PNG, JPG up to 10MB</span>
+                <input ref={fileInputRef} onChange={handleFilesChange} type="file" accept="image/*" multiple style={{ display: 'none' }} />
+              </div>
+
+              <div className="media-previews" style={{ marginTop: '1rem' }}>
+                {form.imageFilesDataUrls.map((src, i) => (
+                  <div key={i} className="media-preview-item">
+                    <img src={src} alt={`preview-${i}`} />
+                  </div>
+                ))}
+                {form.imageFilesDataUrls.length === 0 && form.imageUrl && (
+                  <div className="media-preview-item">
+                    <img src={form.imageUrl} alt="url-preview" />
+                  </div>
+                )}
+                <div className="media-preview-add" onClick={() => {
+                  const url = prompt("Add image URL:");
+                  if (url) {
+                    setForm(prev => ({...prev, imageUrl: url, imageFilesDataUrls: []}));
+                  }
+                }}>
+                  <span>+</span>
+                </div>
+              </div>
             </div>
 
-            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
-              <button type="submit" className="btn btn-primary">{editingId ? "Guardar cambios" : "Agregar producto"}</button>
-              {editingId && (
-                <button type="button" className="btn btn-secondary" onClick={resetForm}>Cancelar</button>
-              )}
+            <div className="summary-card" style={{ marginTop: '2rem', display: 'none' }}>
+              <div className="summary-header">
+                <span className="summary-icon">ℹ️</span>
+                <strong>Summary</strong>
+              </div>
+              <div className="summary-row">
+                <span>Base Listing Fee</span>
+                <strong>$250.00</strong>
+              </div>
+              <div className="summary-row">
+                <span>Platform Commission</span>
+                <strong>1.5%</strong>
+              </div>
+              <div className="summary-divider"></div>
+              <div className="summary-row highlight">
+                <span>Estimated Reach</span>
+                <strong className="text-blue">High</strong>
+              </div>
+            </div>
+
+            <div className="form-actions-stack" style={{ marginTop: '1.5rem' }}>
+              <button type="submit" className="btn btn-primary-wide" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <MdFlightTakeoff style={{ fontSize: '1.2rem' }} /> {editingId ? "Update Flight" : "Create Flight"}
+              </button>
+              <button type="button" className="btn btn-cancel-wide" onClick={resetForm}>
+                Cancel
+              </button>
             </div>
           </form>
         </section>

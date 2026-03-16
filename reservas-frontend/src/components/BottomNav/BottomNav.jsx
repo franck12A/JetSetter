@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { FaHome, FaCompass, FaSuitcase, FaUser, FaThLarge, FaUserFriends, FaPlane } from 'react-icons/fa';
 import './BottomNav.css';
@@ -6,8 +6,8 @@ import './BottomNav.css';
 export default function BottomNav() {
     const location = useLocation();
     const pathname = location.pathname;
-    const isAdminRoute = pathname.startsWith('/admin') || pathname.startsWith('/administracion');
-    const adminRoot = pathname.startsWith('/administracion') ? '/administracion' : '/admin';
+    const isAdminRoute = pathname.startsWith('/admin') || pathname.startsWith('/administracion') || pathname.startsWith('/administraci\u00f3n');
+    const adminRoot = pathname.startsWith('/admin') ? '/admin' : '/administracion';
 
     if (isAdminRoute) {
         return (
@@ -54,3 +54,5 @@ export default function BottomNav() {
         </nav>
     );
 }
+
+

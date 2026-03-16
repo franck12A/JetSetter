@@ -24,7 +24,7 @@ export default function Navbar() {
       <div className="navbar-left" onClick={() => navigate("/")}>
         <div className="navbar-logo">
           <img src="/assets/logoJettSeter.png" alt="logo" className="logo-header" />
-          <span className="navbar-lema">JetSetter</span>
+          <span className="navbar-lema">Tu próximo destino empieza acá.</span>
         </div>
       </div>
 

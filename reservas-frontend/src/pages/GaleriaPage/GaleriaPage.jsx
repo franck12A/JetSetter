@@ -45,7 +45,11 @@ export default function GaleriaPage() {
         : null;
       setTitulo(nombre);
 
-      const localImages = Array.isArray(vuelo?.imagenesPais) ? vuelo.imagenesPais : [];
+      const localImages = [];
+      if (Array.isArray(vuelo?.imagesBase64)) localImages.push(...vuelo.imagesBase64);
+      if (Array.isArray(vuelo?.imagenesPais)) localImages.push(...vuelo.imagenesPais);
+      if (vuelo?.image) localImages.push(vuelo.image);
+      if (vuelo?.imagenPrincipal) localImages.push(vuelo.imagenPrincipal);
       const uniqueLocal = Array.from(new Set(localImages.filter(Boolean)));
 
       const normalizedName = typeof nombre === "string" ? nombre.trim().toLowerCase() : "";
@@ -64,7 +68,7 @@ export default function GaleriaPage() {
       }
 
       const apiImages = apiData.map((item) => item.url).filter(Boolean);
-      const mergedAll = [...apiImages, ...uniqueLocal].filter(Boolean);
+      const mergedAll = [...uniqueLocal, ...apiImages].filter(Boolean);
       const finalAll = mergedAll.length ? mergedAll : [FALLBACK_IMAGE];
 
       const grid = [...finalAll];
@@ -96,7 +100,7 @@ export default function GaleriaPage() {
       titulo,
       destacado: index === 0,
       badge: "MAS POPULAR",
-      cta: index === GRID_COUNT - 1 ? "Ver más" : null,
+      cta: index === GRID_COUNT - 1 ? "Ver mï¿½s" : null,
     }));
   }, [gridImages, titulo]);
 
@@ -180,7 +184,7 @@ export default function GaleriaPage() {
                 onClick={() => setShowModal(false)}
                 aria-label="Cerrar"
               >
-                ×
+                ï¿½
               </button>
             </div>
             <div className="galeria-modal__grid">
@@ -194,3 +198,6 @@ export default function GaleriaPage() {
     </section>
   );
 }
+
+
+

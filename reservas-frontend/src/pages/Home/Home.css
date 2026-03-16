@@ -26,14 +26,13 @@
 }
 
 .main-content {
-  padding-top: 75px;
-  padding-bottom: 5rem;
+  padding: 75px 2rem 5rem;
   /* space for promo and bottomnav */
   position: relative;
   max-width: 1300px;
   margin: 0 auto;
-  padding: 0 2rem;
 }
+
 
 /* Banner Promotional */
 .home-promo-banner {
@@ -358,9 +357,7 @@
 
 @media (max-width: 1024px) {
   .main-content {
-    padding: 0 1.5rem;
-    padding-top: 75px;
-    padding-bottom: 4.5rem;
+    padding: 75px 1.5rem 4.5rem;
   }
 
   .home-promo-banner {
@@ -386,9 +383,7 @@
 
 @media (max-width: 768px) {
   .main-content {
-    padding: 0 1rem;
-    padding-top: 88px;
-    padding-bottom: 4rem;
+    padding: 88px 1rem 4rem;
   }
 
   .home-promo-banner {
@@ -434,3 +429,6 @@
     height: 200px;
   }
 }
+
+
+

@@ -10,7 +10,6 @@ import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Produ
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.repository.ProductRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -24,14 +23,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Amadeus.Controller.AmadeusController.IMAGENES_POR_PAIS;
-import static com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Amadeus.Controller.AmadeusController.PAIS_POR_IATA;
 
 @Service
 public class AmadeusService {
@@ -94,9 +92,23 @@ public class AmadeusService {
             }
 
             Map<String, Object> json = response.getBody();
-            this.accessToken = (String) json.get("access_token");
-            int expiresIn = (int) json.get("expires_in");
-            this.tokenExpiration = Instant.now().plusSeconds(expiresIn - 30);
+            if (json == null) {
+                System.out.println("❌ Respuesta de token vacia");
+                return null;
+            }
+
+            Object tokenValue = json.get("access_token");
+            if (!(tokenValue instanceof String) || ((String) tokenValue).isBlank()) {
+                System.out.println("❌ Token vacio en la respuesta");
+                return null;
+            }
+
+            this.accessToken = (String) tokenValue;
+
+            Number expiresIn = (json.get("expires_in") instanceof Number) ? (Number) json.get("expires_in") : null;
+            long expiresSeconds = expiresIn != null ? expiresIn.longValue() : 300L;
+            long refreshSeconds = Math.max(expiresSeconds - 30L, 30L);
+            this.tokenExpiration = Instant.now().plusSeconds(refreshSeconds);
 
             System.out.println("✔ Nuevo token Amadeus obtenido");
             return accessToken;
@@ -135,17 +147,7 @@ public class AmadeusService {
 
 
     private FlightOfferDTO mapear(FlightOfferSearch offer) {
-        FlightOfferDTO dto = new FlightOfferDTO();
-
-        dto.setId(offer.getId());
-        dto.setOrigen(offer.getItineraries()[0].getSegments()[0].getDeparture().getIataCode());
-        dto.setDestino(offer.getItineraries()[0].getSegments()[0].getArrival().getIataCode());
-        dto.setFechaSalida(offer.getItineraries()[0].getSegments()[0].getDeparture().getAt());
-        dto.setFechaLlegada(offer.getItineraries()[0].getSegments()[0].getArrival().getAt());
-
-
-
-        return dto;
+        return convertirAFlightOfferDTO(offer);
     }
 
 
@@ -158,20 +160,7 @@ public class AmadeusService {
             return existing.get();  // listo, reutilizalo
         }
 
-        // 2️⃣ Crear uno nuevo si no existe
-        Product product = new Product();
-        product.setExternalId(dto.getId());  // clave
-        product.setName("Vuelo " + dto.getOrigen() + " → " + dto.getDestino());
-        product.setDescription("Vuelo importado desde Amadeus");
-        product.setPrice(dto.getPrecioTotal());
-        product.setCountry(dto.getPaisDestino());
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
-        product.setDepartureDate(LocalDateTime.parse(dto.getFechaSalida(), formatter));
-
-
-        // imágenes, features y category no aplican
-        product.setImage(null);
-
+        Product product = mapToProduct(dto);
         return productRepository.save(product);
     }
 
@@ -242,8 +231,9 @@ public class AmadeusService {
         p.setImage(dto.getImagenPrincipal());
 
         // Fecha salida: convertir string → LocalDateTime
-        if (dto.getFechaSalida() != null) {
-            p.setDepartureDate(LocalDateTime.parse(dto.getFechaSalida() + "T00:00:00"));
+        LocalDateTime salida = parseFechaHora(dto.getFechaSalida());
+        if (salida != null) {
+            p.setDepartureDate(salida);
         }
 
         return p;
@@ -309,7 +299,10 @@ public class AmadeusService {
             var address = (Map<?, ?>) location.get("address");
             if (address == null) return null;
 
-            String country = address.get("countryCode").toString();
+            Object countryValue = address.get("countryCode");
+            if (countryValue == null) return null;
+
+            String country = countryValue.toString();
             cachePaises.put(iataCode, country);
             return country;
 
@@ -319,8 +312,6 @@ public class AmadeusService {
         }
     }
 
-    @Autowired
-    private AmadeusProductMapperService mapperService;
 
 
 
@@ -389,6 +380,33 @@ public class AmadeusService {
             Map.entry("TUR", List.of("turkia_1.jpg", "turkia_2.jpg"))
     );
 
+    private static LocalDateTime parseFechaHora(String value) {
+        if (value == null || value.isBlank()) return null;
+
+        String trimmed = value.trim();
+
+        if (trimmed.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            return LocalDate.parse(trimmed, DateTimeFormatter.ISO_LOCAL_DATE).atStartOfDay();
+        }
+
+        try {
+            return OffsetDateTime.parse(trimmed).toLocalDateTime();
+        } catch (DateTimeParseException ignored) {
+        }
+
+        try {
+            return LocalDateTime.parse(trimmed, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } catch (DateTimeParseException ignored) {
+        }
+
+        try {
+            return LocalDateTime.parse(trimmed, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
+        } catch (DateTimeParseException ignored) {
+        }
+
+        return null;
+    }
+
 
     // ===================================
 // Método de conversión de Amadeus
@@ -397,9 +415,16 @@ public class AmadeusService {
         FlightOfferDTO dto = new FlightOfferDTO();
 
         // 🔹 ID
-        dto.setId(UUID.randomUUID().toString());
+        String offerId = vuelo != null ? vuelo.getId() : null;
+        dto.setId(offerId != null ? offerId : UUID.randomUUID().toString());
 
-// 🔹 Origen y Destino (IATA)
+        if (vuelo == null || vuelo.getItineraries() == null || vuelo.getItineraries().length == 0
+                || vuelo.getItineraries()[0] == null || vuelo.getItineraries()[0].getSegments() == null
+                || vuelo.getItineraries()[0].getSegments().length == 0) {
+            return dto;
+        }
+
+        // 🔹 Origen y Destino (IATA)
         String origenIATA = vuelo.getItineraries()[0].getSegments()[0].getDeparture().getIataCode();
         String destinoIATA = vuelo.getItineraries()[0].getSegments()[0].getArrival().getIataCode();
         dto.setOrigen(origenIATA);
@@ -411,7 +436,6 @@ public class AmadeusService {
         dto.setCountry(destinoIATA);
 
 // 🔹 País legible y carpeta de imágenes del origen
-        String paisOrigenLegible = AmadeusService.NOMBRES_PAISES.getOrDefault(origenIATA, "Desconocido");
         List<String> imgsOrigen = AmadeusService.IMAGENES_POR_PAIS.getOrDefault(origenIATA,
                 List.of("default_1.jpg", "default_2.jpg"));
         dto.setImagenPrincipal("/assets/imagenespaises/" + imgsOrigen.get(0));
@@ -429,27 +453,38 @@ public class AmadeusService {
 
         if (vuelo.getItineraries() != null) {
             for (var itinerary : vuelo.getItineraries()) {
+                if (itinerary == null || itinerary.getSegments() == null) {
+                    continue;
+                }
                 for (var seg : itinerary.getSegments()) {
+                    if (seg == null) {
+                        continue;
+                    }
                     Map<String, Object> m = new HashMap<>();
                     m.put("aerolinea", seg.getCarrierCode());
                     m.put("numeroVuelo", seg.getNumber());
 
-                    LocalDateTime salida = LocalDateTime.parse(seg.getDeparture().getAt());
-                    LocalDateTime llegada = LocalDateTime.parse(seg.getArrival().getAt());
+                    String salidaRaw = seg.getDeparture() != null ? seg.getDeparture().getAt() : null;
+                    String llegadaRaw = seg.getArrival() != null ? seg.getArrival().getAt() : null;
 
-                    m.put("salida", salida);
-                    m.put("llegada", llegada);
+                    LocalDateTime salida = parseFechaHora(salidaRaw);
+                    LocalDateTime llegada = parseFechaHora(llegadaRaw);
 
-                    long duracionMin = Duration.between(salida, llegada).toMinutes();
-                    duracionTotalMinutos += duracionMin;
-                    m.put("duracion", duracionMin + " min");
+                    m.put("salida", salida != null ? salida : salidaRaw);
+                    m.put("llegada", llegada != null ? llegada : llegadaRaw);
+
+                    if (salida != null && llegada != null) {
+                        long duracionMin = Duration.between(salida, llegada).toMinutes();
+                        duracionTotalMinutos += duracionMin;
+                        m.put("duracion", duracionMin + " min");
+                    }
 
                     if (fechaSalidaPrimera == null) {
-                        fechaSalidaPrimera = salida.toString();
+                        fechaSalidaPrimera = salida != null ? salida.toString() : salidaRaw;
                         aerolineaPrincipal = seg.getCarrierCode();
                         numeroVueloPrincipal = seg.getNumber();
                     }
-                    fechaLlegadaUltima = llegada.toString();
+                    fechaLlegadaUltima = llegada != null ? llegada.toString() : llegadaRaw;
                     segmentos.add(m);
                 }
             }
@@ -620,3 +655,7 @@ public class AmadeusService {
 
 
 }
+
+
+
+

@@ -1,7 +1,7 @@
 .recomendaciones-section {
   max-width: 1200px;
   margin: 0.5rem auto 2rem;
-  padding: 0 1rem;
+  padding: 0 3.5rem;
 }
 
 .reco-header {
@@ -55,8 +55,24 @@
 
 /* Wrapper paddings for cards */
 .reco-wrapper {
+  position: relative;
   padding: 10px 0;
   /* Espacio para que el hover effect shadow no se corte */
+}
+
+/* Ubicar flechas por fuera de las tarjetas */
+.recomendaciones-section .swiper-button-next,
+.recomendaciones-section .swiper-button-prev {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.recomendaciones-section .swiper-button-prev {
+  left: -3.1rem;
+}
+
+.recomendaciones-section .swiper-button-next {
+  right: -3.1rem;
 }
 
 .reco-grid {
@@ -103,11 +119,15 @@
   .reco-grid {
     grid-template-columns: 1fr;
   }
+
+  .recomendaciones-section {
+    padding: 0 2.25rem;
+  }
 }
 
 @media (max-width: 480px) {
   .recomendaciones-section {
-    padding: 0 0.75rem;
+    padding: 0 1.75rem;
   }
 
   .ver-todas-reco {

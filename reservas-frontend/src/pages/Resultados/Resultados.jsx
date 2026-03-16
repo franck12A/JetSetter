@@ -109,18 +109,11 @@ export default function Resultados() {
         const all = [...localVuelos, ...apiVuelos].map(normalizeVuelo);
 
         const unique = [];
-        const seen = new Set();
+        const seenDestinos = new Set();
         all.forEach((vuelo) => {
-          const dedupKey = [
-            normalizeText(vuelo.origen),
-            normalizeText(vuelo.destino),
-            vuelo.fechaISO,
-            vuelo.precio,
-            normalizeText(vuelo.aerolinea || ""),
-          ].join("|");
-
-          if (!seen.has(dedupKey)) {
-            seen.add(dedupKey);
+          const dedupKey = normalizeText(vuelo.destino || "N/A");
+          if (!seenDestinos.has(dedupKey)) {
+            seenDestinos.add(dedupKey);
             unique.push(vuelo);
           }
         });
