@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Model.Role;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 @Service
 public class AuthService {
@@ -25,6 +26,7 @@ public class AuthService {
     private final JwtService jwtService;
 
     private final EmailService emailService;
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
 
 
@@ -58,10 +60,13 @@ public class AuthService {
 
     // Registro de usuario
     public User register(UserRequest request) {
+        validateRegisterRequest(request);
+        String email = request.getEmail().trim();
+
         User user = new User();
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setEmail(request.getEmail());
+        user.setFirstName(request.getFirstName().trim());
+        user.setLastName(request.getLastName().trim());
+        user.setEmail(email);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
 
@@ -75,13 +80,20 @@ public class AuthService {
 
     // Login
     public User login(String email, String password) throws Exception {
-        Optional<User> optionalUser = userRepository.findByEmail(email);
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("El email es obligatorio");
+        }
+        if (password == null || password.isBlank()) {
+            throw new IllegalArgumentException("La contrasena es obligatoria");
+        }
+
+        Optional<User> optionalUser = userRepository.findByEmail(email.trim());
         if(optionalUser.isEmpty()) {
-            throw new Exception("Usuario no encontrado");
+            throw new Exception("No existe una cuenta con ese email");
         }
         User user = optionalUser.get();
         if(!passwordEncoder.matches(password, user.getPassword())) {
-            throw new Exception("Contraseña incorrecta");
+            throw new Exception("La contrasena no coincide");
         }
         return user;
     }
@@ -91,14 +103,14 @@ public class AuthService {
     // Obtener favoritos de un usuario
     public Set<Product> getFavorites(Long userId) throws Exception {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new Exception("Usuario no encontrado"));
+                .orElseThrow(() -> new Exception("No existe una cuenta con ese email"));
         return user.getFavorites();
     }
 
     // Agregar un producto a favoritos
     public User addFavorite(Long userId, Long productId) throws Exception {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new Exception("Usuario no encontrado"));
+                .orElseThrow(() -> new Exception("No existe una cuenta con ese email"));
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new Exception("Producto no encontrado"));
 
@@ -113,7 +125,7 @@ public class AuthService {
     // Quitar un producto de favoritos
     public User removeFavorite(Long userId, Long productId) throws Exception {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new Exception("Usuario no encontrado"));
+                .orElseThrow(() -> new Exception("No existe una cuenta con ese email"));
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new Exception("Producto no encontrado"));
 
@@ -128,7 +140,7 @@ public class AuthService {
 
     public User updateUserRole(Long userId, String roleName) throws Exception {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new Exception("Usuario no encontrado"));
+                .orElseThrow(() -> new Exception("No existe una cuenta con ese email"));
 
         // 🚫 Evita que el super admin pierda privilegios
         if (user.getEmail().equals("admin@vuelos.com")) {
@@ -151,11 +163,11 @@ public class AuthService {
 
     public User makeAdminByEmail(String email, String password) throws Exception {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new Exception("Usuario no encontrado"));
+                .orElseThrow(() -> new Exception("No existe una cuenta con ese email"));
 
         // Validar contraseña
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new Exception("Contraseña incorrecta");
+            throw new Exception("La contrasena no coincide");
         }
 
         // Evitar tocar super admin
@@ -169,7 +181,7 @@ public class AuthService {
 
     public void deleteUser(Long userId) throws Exception {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new Exception("Usuario no encontrado"));
+                .orElseThrow(() -> new Exception("No existe una cuenta con ese email"));
 
         // Evitar borrar al super admin
         if (user.getEmail().equals("admin@vuelos.com")) {
@@ -198,8 +210,47 @@ public class AuthService {
         return response;
     }
 
+    private void validateRegisterRequest(UserRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Datos de registro invalidos");
+        }
+
+        String firstName = request.getFirstName() != null ? request.getFirstName().trim() : "";
+        String lastName = request.getLastName() != null ? request.getLastName().trim() : "";
+        String email = request.getEmail() != null ? request.getEmail().trim() : "";
+        String password = request.getPassword() != null ? request.getPassword().trim() : "";
+        String confirmPassword = request.getConfirmPassword() != null ? request.getConfirmPassword().trim() : "";
+
+        if (firstName.isEmpty()) {
+            throw new IllegalArgumentException("El nombre es obligatorio");
+        }
+        if (lastName.isEmpty()) {
+            throw new IllegalArgumentException("El apellido es obligatorio");
+        }
+        if (email.isEmpty()) {
+            throw new IllegalArgumentException("El email es obligatorio");
+        }
+        if (!EMAIL_PATTERN.matcher(email).matches()) {
+            throw new IllegalArgumentException("El email no es valido");
+        }
+        if (password.isEmpty()) {
+            throw new IllegalArgumentException("La contrasena es obligatoria");
+        }
+        if (password.length() < 6) {
+            throw new IllegalArgumentException("La contrasena debe tener al menos 6 caracteres");
+        }
+        if (!confirmPassword.isEmpty() && !confirmPassword.equals(password)) {
+            throw new IllegalArgumentException("Las contrasenas no coinciden");
+        }
+
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new IllegalArgumentException("El email ya esta registrado");
+        }
+    }
+
 
 
 
 
 }
+

@@ -12,6 +12,7 @@ export default function Register() {
     lastName: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -22,12 +23,23 @@ export default function Register() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const parseErrorMessage = async (res, fallback) => {
+    const text = await res.text();
+    if (!text) return fallback;
+    try {
+      const data = JSON.parse(text);
+      return data?.error || data?.message || fallback;
+    } catch {
+      return text;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
-    if (!form.firstName || !form.lastName || !form.email || !form.password) {
+    if (!form.firstName || !form.lastName || !form.email || !form.password || !form.confirmPassword) {
       return setError("Completa todos los campos.");
     }
 
@@ -37,6 +49,10 @@ export default function Register() {
 
     if (form.password.length < 6) {
       return setError("La contrasena debe tener al menos 6 caracteres.");
+    }
+
+    if (form.password !== form.confirmPassword) {
+      return setError("Las contrasenas no coinciden.");
     }
 
     setLoading(true);
@@ -49,13 +65,13 @@ export default function Register() {
       });
 
       if (!res.ok) {
-        const msg = await res.text();
+        const msg = await parseErrorMessage(res, "No se pudo registrar.");
         setLoading(false);
-        return setError(msg || "No se pudo registrar.");
+        return setError(msg);
       }
 
       setSuccess("Registro exitoso. Ya puedes iniciar sesion.");
-      setForm({ firstName: "", lastName: "", email: "", password: "" });
+      setForm({ firstName: "", lastName: "", email: "", password: "", confirmPassword: "" });
     } catch (err) {
       setError("Error de conexion con el servidor.");
     }
@@ -100,6 +116,15 @@ export default function Register() {
             type="password"
             placeholder="********"
             value={form.password}
+            onChange={handleChange}
+          />
+
+          <InputField
+            label="Confirmar contrasena"
+            name="confirmPassword"
+            type="password"
+            placeholder="********"
+            value={form.confirmPassword}
             onChange={handleChange}
           />
 

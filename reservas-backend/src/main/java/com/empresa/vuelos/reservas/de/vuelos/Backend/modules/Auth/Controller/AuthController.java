@@ -29,19 +29,24 @@ public class AuthController {
     // Registro
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserRequest request) {
+        try {
+            // 1. Crear usuario
+            User newUser = authService.register(request);
 
-        // 1. Crear usuario
-        User newUser = authService.register(request);
+            // 2. Enviar email HTML (tipo Airbnb)
+            emailService.sendWelcomeEmail(newUser.getEmail(), newUser.getFirstName());
 
-        // 2. Enviar email HTML (tipo Airbnb)
-        emailService.sendWelcomeEmail(newUser.getEmail(), newUser.getFirstName());
+            // 3. Devolver respuesta al frontend
+            Map<String, Object> res = new HashMap<>();
+            res.put("message", "Registro exitoso, email enviado");
+            res.put("user", toSafeUser(newUser));
 
-        // 3. Devolver respuesta al frontend
-        Map<String, Object> res = new HashMap<>();
-        res.put("message", "Registro exitoso, email enviado");
-        res.put("user", toSafeUser(newUser));
-
-        return ResponseEntity.ok(res);
+            return ResponseEntity.ok(res);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "No se pudo registrar el usuario"));
+        }
     }
 
 
@@ -49,8 +54,16 @@ public class AuthController {
     @PostMapping("/login/token")
     public ResponseEntity<?> loginWithToken(@RequestBody Map<String, String> credentials) {
         try {
-            String email = credentials.get("email");
-            String password = credentials.get("password");
+            String email = credentials != null ? credentials.get("email") : null;
+            String password = credentials != null ? credentials.get("password") : null;
+
+            if (email == null || email.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El email es obligatorio"));
+            }
+            if (password == null || password.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "La contrasena es obligatoria"));
+            }
+
             Map<String, Object> response = authService.loginWithToken(email, password);
             User user = (User) response.get("user");
 
@@ -59,6 +72,8 @@ public class AuthController {
             safeResponse.put("user", toSafeUser(user));
 
             return ResponseEntity.ok(safeResponse);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
         }

@@ -19,10 +19,26 @@ export default function Login() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const parseErrorMessage = async (res, fallback) => {
+    const text = await res.text();
+    if (!text) return fallback;
+    try {
+      const data = JSON.parse(text);
+      return data?.error || data?.message || fallback;
+    } catch {
+      return text;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
+
+    if (!form.email || !form.password) {
+      setLoading(false);
+      return setError("Completa email y contrasena.");
+    }
 
     try {
       const res = await fetch("http://localhost:8080/api/auth/login/token", {
@@ -32,8 +48,8 @@ export default function Login() {
       });
 
       if (!res.ok) {
-        const msg = await res.text();
-        setError(msg || "Usuario o contrasena incorrectos");
+        const msg = await parseErrorMessage(res, "Usuario o contrasena incorrectos");
+        setError(msg);
         setLoading(false);
         return;
       }
