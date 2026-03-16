@@ -23,17 +23,16 @@ public class EmailService {
     }
 
     /** MÉTODO PRINCIPAL — EMAIL ESTILO AIRBNB */
-    public void sendWelcomeEmail(String to, String name) {
+    public void sendWelcomeEmail(String to, String name, String userEmail) {
         try {
             MimeMessage msg = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
-
-            helper.setFrom("tucorreo@gmail.com"); // <-- CAMBIAR AQUÍ
+            helper.setFrom(from);
             helper.setTo(to);
-            helper.setSubject("¡Bienvenido a Vuelos, " + name + "!");
-
+            helper.setSubject("Registro confirmado en JetSetter, " + name + "!");
             String year = String.valueOf(LocalDate.now().getYear());
-            String html = loadAirbnbTemplate(name, year);
+            String loginUrl = "http://localhost:5173/login?fromEmail=true";
+            String html = loadAirbnbTemplate(name, userEmail, year, loginUrl);
 
             helper.setText(html, true); // <-- CAMBIAR AQUÍ
 
@@ -46,7 +45,7 @@ public class EmailService {
 
 
     /** TEMPLATE HTML ESTILO AIRBNB */
-    private String loadAirbnbTemplate(String name, String year) {
+    private String loadAirbnbTemplate(String name, String userEmail, String year, String loginUrl) {
 
         String html = """
                 <!DOCTYPE html>
@@ -85,25 +84,51 @@ public class EmailService {
                 
                           <!-- TITLE -->
                           <tr>
-                            <td style="padding:30px 40px 10px 40px;">
-                              <h1 style="margin:0; font-size:26px; color:#333; font-weight:600;">
-                                ¡Bienvenido a JetSetter, {{NAME}}! ✈️
-                              </h1>
-                            </td>
-                          </tr>
+  <td style="padding:30px 40px 10px 40px;">
+    <h1 style="margin:0; font-size:26px; color:#333; font-weight:600;">
+      Registro confirmado, {{NAME}}
+    </h1>
+  </td>
+</tr>
                 
                           <!-- TEXT -->
-                          <tr>
-                            <td style="padding:10px 40px 20px 40px; color:#555; font-size:16px; line-height:24px;">
-                              Estamos muy felices de tenerte con nosotros.
-                              Tu cuenta se creó correctamente y ya podés empezar a explorar vuelos, favoritos y mucho más.
-                            </td>
-                          </tr>
-                
-                          <!-- CTA BUTTON -->
+<tr>
+  <td style="padding:10px 40px 8px 40px; color:#555; font-size:16px; line-height:24px;">
+    Tu registro se completo con exito. Estos son los datos que ingresaste:
+  </td>
+</tr>
+<tr>
+  <td style="padding:0 40px 16px 40px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee; border-radius:10px;">
+      <tr>
+        <td style="padding:10px 12px; font-size:14px; color:#555; width:140px; background:#fafafa;">
+          Usuario
+        </td>
+        <td style="padding:10px 12px; font-size:14px; color:#333; font-weight:600;">
+          {{NAME}}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:10px 12px; font-size:14px; color:#555; width:140px; background:#fafafa;">
+          Email
+        </td>
+        <td style="padding:10px 12px; font-size:14px; color:#333; font-weight:600;">
+          {{EMAIL}}
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+  <td style="padding:0 40px 20px 40px; color:#555; font-size:16px; line-height:24px;">
+    Ya podes iniciar sesion con tu cuenta recien creada.
+  </td>
+</tr>
+
+<!-- CTA BUTTON -->
                           <tr>
                             <td align="center" style="padding:20px 40px;">
-                              <a href="http://localhost:5173/login?fromEmail=true"
+                              <a href="{{LOGIN_URL}}"
                                  style="
                                     display:inline-block;
                                     background:#FF385C;
@@ -146,6 +171,8 @@ public class EmailService {
 
         return html
                 .replace("{{NAME}}", escape(name))
+                .replace("{{EMAIL}}", escape(userEmail))
+                .replace("{{LOGIN_URL}}", loginUrl)
                 .replace("{{YEAR}}", year);
     }
 
@@ -154,3 +181,7 @@ public class EmailService {
     }
 
 }
+
+
+
+

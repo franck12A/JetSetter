@@ -71,7 +71,8 @@ public class AuthService {
         userRepository.save(user);
 
         // enviar email automáticamente
-        emailService.sendWelcomeEmail(user.getEmail(), user.getFirstName());
+        String displayName = buildDisplayName(user);
+        emailService.sendWelcomeEmail(user.getEmail(), displayName, user.getEmail());
 
         return user;
     }
@@ -210,6 +211,26 @@ public class AuthService {
         return response;
     }
 
+    public void resendConfirmationEmail(String email) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("El email es obligatorio");
+        }
+        if (!EMAIL_PATTERN.matcher(email.trim()).matches()) {
+            throw new IllegalArgumentException("El email no es valido");
+        }
+
+        User user = userRepository.findByEmail(email.trim())
+                .orElseThrow(() -> new IllegalArgumentException("No existe una cuenta con ese email"));
+
+        String displayName = buildDisplayName(user);
+        emailService.sendWelcomeEmail(user.getEmail(), displayName, user.getEmail());
+    }
+    private String buildDisplayName(User user) {
+        String firstName = user.getFirstName() != null ? user.getFirstName().trim() : "";
+        String lastName = user.getLastName() != null ? user.getLastName().trim() : "";
+        String displayName = (firstName + " " + lastName).trim();
+        return displayName.isEmpty() ? "Usuario" : displayName;
+    }
     private void validateRegisterRequest(UserRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("Datos de registro invalidos");
@@ -253,4 +274,8 @@ public class AuthService {
 
 
 }
+
+
+
+
 

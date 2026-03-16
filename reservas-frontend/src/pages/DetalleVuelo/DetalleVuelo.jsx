@@ -1,6 +1,25 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { FaChevronLeft, FaRegCalendarAlt, FaRegClock, FaMoneyBillWave, FaPlane, FaRegHeart, FaHeart, FaInfoCircle } from "react-icons/fa";
+import {
+  FaChevronLeft,
+  FaRegClock,
+  FaMoneyBillWave,
+  FaPlane,
+  FaRegHeart,
+  FaHeart,
+  FaSuitcaseRolling,
+  FaMapSigns,
+  FaRoute,
+  FaPlaneDeparture,
+  FaPlaneArrival,
+  FaTicketAlt,
+  FaWifi,
+  FaUtensils,
+  FaChair,
+  FaShieldAlt,
+  FaExchangeAlt,
+  FaPlug,
+} from "react-icons/fa";
 
 import productService from "../../services/productService";
 import { getUserFavorites, addFavorite, removeFavorite } from "../../services/favoritesApi";
@@ -35,6 +54,109 @@ const formatDateTime = (value) => {
   const minutes = String(d.getMinutes()).padStart(2, "0");
   return `${day}/${month}/${year} ${hours}:${minutes}`;
 };
+
+const normalizeText = (value) => String(value || "")
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase()
+  .trim();
+
+const FEATURE_LABEL_MAP = [
+  { match: /duracion|tiempo|hora/, label: "Duracion" },
+  { match: /clase|cabina/, label: "Clase" },
+  { match: /equipaje|maleta|bag|carry/, label: "Equipaje" },
+  { match: /aerolinea|airline/, label: "Aerolinea" },
+  { match: /(numero|nro|num)\s*(de)?\s*vuelo/, label: "Numero de vuelo" },
+  { match: /escala|escalas|conexion/, label: "Escalas" },
+  { match: /ruta/, label: "Ruta" },
+  { match: /salida|departure/, label: "Salida" },
+  { match: /llegada|arrival/, label: "Llegada" },
+  { match: /origen/, label: "Origen" },
+  { match: /destino/, label: "Destino" },
+  { match: /tarifa|precio|costo/, label: "Tarifa" },
+  { match: /asiento|seat/, label: "Asiento" },
+  { match: /wifi|internet/, label: "WiFi" },
+  { match: /comida|meal|snack|catering/, label: "Comidas" },
+  { match: /reembolso|cambio|flexible/, label: "Flexibilidad" },
+  { match: /seguro|proteccion|seguridad/, label: "Seguro" },
+  { match: /carga|usb|enchufe|energia/, label: "Carga a bordo" },
+  { match: /terminal|puerta|gate/, label: "Terminal" },
+];
+
+const humanizeFeatureLabel = (raw) => {
+  const cleaned = String(raw || "").trim();
+  if (!cleaned) return "";
+  const normalized = normalizeText(cleaned);
+  const mapped = FEATURE_LABEL_MAP.find((item) => item.match.test(normalized));
+  if (mapped) return mapped.label;
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+};
+
+const cleanFeatureValue = (value) => String(value || "")
+  .replace(/^(duracion|duraci\u00f3n)( aproximada)?\s*:\s*/i, "")
+  .replace(/^clase\s*:\s*/i, "")
+  .replace(/^equipaje( incluido)?\s*:\s*/i, "")
+  .replace(/^(aerolinea|aerol\u00ednea)\s*:\s*/i, "")
+  .replace(/^n(umero|ro)?\s*de\s*vuelo\s*:\s*/i, "")
+  .replace(/^(salida|llegada)\s*:\s*/i, "")
+  .replace(/\s+/g, " ")
+  .trim();
+
+const isMeaningful = (value) => {
+  const normalized = normalizeText(value);
+  if (!normalized) return false;
+  if (["-", "n/a", "na", "no disponible", "consultar"].includes(normalized)) return false;
+  return true;
+};
+
+const parseFeatureItem = (raw, iconName) => {
+  const text = String(raw || "").trim();
+  if (!text) return null;
+  const parts = text.split(":");
+  if (parts.length === 1) {
+    const label = humanizeFeatureLabel(text);
+    if (!label) return null;
+    return { label, value: "", iconName: iconName || text };
+  }
+  const [head, ...rest] = parts;
+  const label = humanizeFeatureLabel(head);
+  if (!label) return null;
+  const value = cleanFeatureValue(rest.join(":").trim());
+  return { label, value, iconName: iconName || head };
+};
+
+const buildComputedFeatures = (vuelo) => {
+  const items = [];
+  const addItem = (label, value) => {
+    const cleaned = cleanFeatureValue(value);
+    if (!isMeaningful(cleaned)) return;
+    items.push({ label, value: cleaned, iconName: label });
+  };
+
+  const route = vuelo.origen && vuelo.destino ? `${vuelo.origen} -> ${vuelo.destino}` : "";
+  addItem("Ruta", route);
+  addItem("Aerolinea", vuelo.aerolinea);
+  addItem("Numero de vuelo", vuelo.numeroVuelo);
+
+  const segmentsCount = Array.isArray(vuelo.segmentos) ? vuelo.segmentos.length : 0;
+  if (segmentsCount > 0) {
+    const escalas = Math.max(0, segmentsCount - 1);
+    const escalaLabel = escalas === 0 ? "Directo" : `${escalas} escala${escalas > 1 ? "s" : ""}`;
+    addItem("Escalas", escalaLabel);
+  }
+
+  const salida = vuelo.fechaSalidaRaw ? formatDateTime(vuelo.fechaSalidaRaw) : vuelo.fechaSalida;
+  const llegada = vuelo.fechaLlegadaRaw ? formatDateTime(vuelo.fechaLlegadaRaw) : vuelo.fechaLlegada;
+  addItem("Salida", salida);
+  addItem("Llegada", llegada);
+
+  addItem("Duracion", vuelo.duracion);
+  addItem("Clase", vuelo.clase);
+  addItem("Equipaje", vuelo.equipaje);
+
+  return items;
+};
+
 
 const normalizeVuelo = (data) => {
   if (!data) return null;
@@ -97,6 +219,28 @@ const normalizeVuelo = (data) => {
   };
 };
 
+const resolveFeatureIcon = (label, iconName) => {
+  const safe = normalizeText(`${label || ""} ${iconName || ""}`);
+  if (/duracion|tiempo|hora/.test(safe)) return FaRegClock;
+  if (/equipaje|maleta|bag|carry/.test(safe)) return FaSuitcaseRolling;
+  if (/escala|escalas|conexion/.test(safe)) return FaMapSigns;
+  if (/ruta|origen|destino/.test(safe)) return FaRoute;
+  if (/salida|departure/.test(safe)) return FaPlaneDeparture;
+  if (/llegada|arrival/.test(safe)) return FaPlaneArrival;
+  if (/clase|cabina/.test(safe)) return FaChair;
+  if (/tarifa|precio|costo/.test(safe)) return FaMoneyBillWave;
+  if (/asiento|seat/.test(safe)) return FaChair;
+  if (/wifi|internet/.test(safe)) return FaWifi;
+  if (/comida|meal|snack|catering/.test(safe)) return FaUtensils;
+  if (/reembolso|cambio|flexible/.test(safe)) return FaExchangeAlt;
+  if (/seguro|proteccion|seguridad/.test(safe)) return FaShieldAlt;
+  if (/carga|usb|enchufe|energia/.test(safe)) return FaPlug;
+  if (/ticket|boleto|reserva/.test(safe)) return FaTicketAlt;
+  if (/aerolinea|vuelo|flight|numero/.test(safe)) return FaPlane;
+  const fallback = iconName ? getSafeIcon(iconName) : null;
+  return fallback || FaPlane;
+};
+
 export default function DetalleVuelo() {
   const { id } = useParams();
   const location = useLocation();
@@ -110,20 +254,40 @@ export default function DetalleVuelo() {
   const featureItems = useMemo(() => {
     if (!vuelo) return [];
     const fromFeatures = Array.isArray(vuelo.features) ? vuelo.features : [];
-    if (fromFeatures.length > 0) {
-      return fromFeatures
-        .filter((f) => f?.name)
-        .map((f) => ({
-          label: String(f.name),
-          iconName: f.icon || f.name,
-        }));
-    }
+    const parsedFromFeatures = fromFeatures
+      .map((f) => parseFeatureItem(f?.name, f?.icon))
+      .filter(Boolean)
+      .map((item) => ({
+        ...item,
+        value: isMeaningful(item.value) ? item.value : "",
+      }));
 
     const rawList = Array.isArray(vuelo.caracteristicas) ? vuelo.caracteristicas : [];
-    return rawList
-      .map((item) => String(item || "").trim())
+    const parsedFromCaracteristicas = rawList
+      .map((item) => parseFeatureItem(item))
       .filter(Boolean)
-      .map((label) => ({ label, iconName: label }));
+      .map((item) => ({
+        ...item,
+        value: isMeaningful(item.value) ? item.value : "",
+      }));
+
+    const computed = buildComputedFeatures(vuelo);
+
+    const uniqueMap = new Map();
+    const pushUnique = (items) => {
+      items.forEach((item) => {
+        if (!item?.label) return;
+        const key = normalizeText(item.label);
+        if (!key || uniqueMap.has(key)) return;
+        uniqueMap.set(key, item);
+      });
+    };
+
+    pushUnique(parsedFromFeatures);
+    pushUnique(parsedFromCaracteristicas);
+    pushUnique(computed);
+
+    return Array.from(uniqueMap.values()).slice(0, 8);
   }, [vuelo]);
   const imageList = useMemo(() => {
     if (!vuelo) return [];
@@ -297,29 +461,30 @@ export default function DetalleVuelo() {
 
             {featureItems.length > 0 && (
               <div className="dv-features-block">
-                <h3>Caracteristicas</h3>
+                <h3>Caracteristicas del vuelo</h3>
                 <div className="dv-features-grid">
                   {featureItems.map((feat, index) => {
-                    const Icon = getSafeIcon(feat.iconName);
+                    const Icon = resolveFeatureIcon(feat.label, feat.iconName);
+                    const hasValue = Boolean(feat.value);
                     return (
-                      <div key={`${feat.label}-${index}`} className="dv-feature-item">
+                      <div key={`${feat.label}-${index}`} className={`dv-feature-item ${hasValue ? "" : "is-compact"}`}>
                         <span className="dv-feature-icon">{Icon ? <Icon /> : null}</span>
-                        <span className="dv-feature-text">{feat.label}</span>
+                        <div className="dv-feature-content">
+                          {hasValue ? (
+                            <>
+                              <span className="dv-feature-label">{feat.label}</span>
+                              <span className="dv-feature-value">{feat.value}</span>
+                            </>
+                          ) : (
+                            <span className="dv-feature-value">{feat.label}</span>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
                 </div>
               </div>
             )}
-
-            <div className="dv-class-section">
-              <div className="dv-class-header">
-                <span className="dv-subtitle">CARACTERISTICAS</span>
-                <span className="dv-badge-danger">SIN MALETA</span>
-              </div>
-              <h4>{vuelo.clase.replace("Clase:", "").trim() || "Tarifa Economy"}</h4>
-              <p className="dv-class-hint"><FaInfoCircle /> Solo incluye articulo personal debajo del asiento.</p>
-            </div>
 
             <div className="dv-price-bar">
               <div className="dv-price-info">
@@ -331,40 +496,6 @@ export default function DetalleVuelo() {
                 Reservar ahora
               </button>
             </div>
-
-            <div className="dv-stats-grid">
-              <div className="dv-kpi-row">
-                <div className="dv-kpi-icon-container"><FaRegCalendarAlt /></div>
-                <div className="dv-kpi-text">
-                  <span>FECHA</span>
-                  <strong>{vuelo.fechaSalidaRaw ? new Date(vuelo.fechaSalidaRaw).toLocaleDateString("es-AR", { day: '2-digit', month: 'short', year: 'numeric' }) : vuelo.fechaSalida}</strong>
-                </div>
-              </div>
-
-              <div className="dv-kpi-row">
-                <div className="dv-kpi-icon-container"><FaRegClock /></div>
-                <div className="dv-kpi-text">
-                  <span>DURACION</span>
-                  <strong>{vuelo.duracion.replace("Duracion:", "").trim()}</strong>
-                </div>
-              </div>
-
-              <div className="dv-kpi-row">
-                <div className="dv-kpi-icon-container"><FaPlane /></div>
-                <div className="dv-kpi-text">
-                  <span>CLASE</span>
-                  <strong>{vuelo.clase.replace("Clase:", "").trim() || "Consultar"}</strong>
-                </div>
-              </div>
-
-              <div className="dv-kpi-row">
-                <div className="dv-kpi-icon-container"><FaInfoCircle /></div>
-                <div className="dv-kpi-text">
-                  <span>EQUIPAJE</span>
-                  <strong>{vuelo.equipaje.replace("Equipaje:", "").trim() || "Consultar"}</strong>
-                </div>
-              </div>
-            </div>
             
             <Link to={`/galeria/${vuelo.id}`} className="dv-btn-galeria-wide">
               Ver galería de imágenes
@@ -375,6 +506,10 @@ export default function DetalleVuelo() {
     </div>
   );
 }
+
+
+
+
 
 
 

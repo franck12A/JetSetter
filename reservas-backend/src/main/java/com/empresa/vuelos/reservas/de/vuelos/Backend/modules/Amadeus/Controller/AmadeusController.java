@@ -285,6 +285,11 @@ public class AmadeusController {
                 "Clase: Economy",
                 "Equipaje incluido: Sí"
         ));
+        if (vuelo.getCaracteristicas() != null && !vuelo.getCaracteristicas().isEmpty()) {
+            List<String> caracteristicasExtra = new ArrayList<>(vuelo.getCaracteristicas());
+            caracteristicasExtra.add("Escalas: Directo");
+            vuelo.setCaracteristicas(caracteristicasExtra);
+        }
         vuelo.setCategoria("Internacional");
 
         // Segmentos simulados

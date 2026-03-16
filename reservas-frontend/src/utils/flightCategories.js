@@ -121,8 +121,9 @@ export function inferFlightCategories(vuelo = {}) {
   return Array.from(categories);
 }
 
-export function hasCategoryMatch(vueloCategorias = [], selectedCategory = "") {
-  const selected = normalizeText(selectedCategory);
-  if (!selected) return true;
-  return (vueloCategorias || []).some((cat) => normalizeText(cat) === selected);
+export function hasCategoryMatch(vueloCategorias = [], selectedCategories = []) {
+  const selectedArray = Array.isArray(selectedCategories) ? selectedCategories : [selectedCategories];
+  const cleaned = selectedArray.map((cat) => normalizeText(cat)).filter(Boolean);
+  if (cleaned.length === 0) return true;
+  return (vueloCategorias || []).some((cat) => cleaned.includes(normalizeText(cat)));
 }

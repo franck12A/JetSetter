@@ -18,6 +18,10 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
+  const [resendError, setResendError] = useState("");
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -38,6 +42,8 @@ export default function Register() {
     e.preventDefault();
     setError("");
     setSuccess("");
+    setResendMessage("");
+    setResendError("");
 
     if (!form.firstName || !form.lastName || !form.email || !form.password || !form.confirmPassword) {
       return setError("Completa todos los campos.");
@@ -70,13 +76,43 @@ export default function Register() {
         return setError(msg);
       }
 
-      setSuccess("Registro exitoso. Ya puedes iniciar sesion.");
+      const emailForResend = form.email;
+      setRegisteredEmail(emailForResend);
+      setSuccess(`Registro exitoso. Te enviamos un correo a ${emailForResend}.`);
       setForm({ firstName: "", lastName: "", email: "", password: "", confirmPassword: "" });
     } catch (err) {
       setError("Error de conexion con el servidor.");
     }
 
     setLoading(false);
+  };
+
+  const handleResend = async () => {
+    if (!registeredEmail || resendLoading) return;
+    setResendMessage("");
+    setResendError("");
+    setResendLoading(true);
+
+    try {
+      const res = await fetch("http://localhost:8080/api/auth/resend-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: registeredEmail }),
+      });
+
+      if (!res.ok) {
+        const msg = await parseErrorMessage(res, "No se pudo reenviar el email.");
+        setResendError(msg);
+        setResendLoading(false);
+        return;
+      }
+
+      setResendMessage("Listo. Te reenviamos el email de confirmacion.");
+    } catch (err) {
+      setResendError("Error de conexion con el servidor.");
+    }
+
+    setResendLoading(false);
   };
 
   return (
@@ -139,6 +175,32 @@ export default function Register() {
           {success && (
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="auth-message success">
               {success}
+            </motion.p>
+          )}
+
+          {success && registeredEmail && (
+            <div className="auth-resend-row">
+              <span>No llego el correo?</span>
+              <button
+                type="button"
+                className="auth-link auth-resend-btn"
+                onClick={handleResend}
+                disabled={resendLoading}
+              >
+                {resendLoading ? "Reenviando..." : "Reenviar"}
+              </button>
+            </div>
+          )}
+
+          {resendMessage && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="auth-message success">
+              {resendMessage}
+            </motion.p>
+          )}
+
+          {resendError && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="auth-message error">
+              {resendError}
             </motion.p>
           )}
         </form>

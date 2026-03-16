@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useLocation, Link } from "react-router-dom";
-import { FaPlane, FaClock, FaCalendarAlt, FaHeart, FaRegHeart } from "react-icons/fa";
+import { useLocation, useNavigate, Link } from "react-router-dom";
+import { FaPlane, FaClock, FaCalendarAlt, FaHeart, FaRegHeart, FaTimes } from "react-icons/fa";
 import Paginacion from "../../components/Paginacion/Paginacion";
 import productService from "../../services/productService";
 import { addFavorite as addFavApi, removeFavorite as removeFavApi, getUserFavorites } from "../../services/favoritesApi";
 import { getVueloImage } from "../../utils/images";
 import { inferFlightCategories, hasCategoryMatch } from "../../utils/flightCategories";
+import { getSafeIcon } from "../../utils/iconRegistry";
 import "./Resultados.css";
 
 const normalizeText = (value = "") =>
@@ -28,6 +29,25 @@ const splitRoute = (name = "") => {
   if (parts.length >= 2) return { origen: parts[0], destino: parts[1] };
   return { origen: clean || "N/A", destino: "N/A" };
 };
+
+const parseSelectedCategories = (value = "") =>
+  String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const CATEGORY_PRIORITY = [
+  "Internacional",
+  "Nacional",
+  "Playa",
+  "Montana",
+  "Montaña",
+  "Ciudad",
+  "Aventura",
+  "Lujo",
+  "Familiar",
+  "Naturaleza",
+];
 
 const getDuration = (vuelo) => {
   if (vuelo.duration) return vuelo.duration;
@@ -81,6 +101,7 @@ const getStoredFavorites = () => {
 
 export default function Resultados() {
   const location = useLocation();
+  const navigate = useNavigate();
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
   const filtroOrigen = queryParams.get("origen") || "";
@@ -92,6 +113,7 @@ export default function Resultados() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [favorites, setFavorites] = useState(getStoredFavorites());
+  const [selectedCategories, setSelectedCategories] = useState(() => parseSelectedCategories(filtroCategoria));
   const itemsPerPage = 8;
 
   useEffect(() => {
@@ -130,26 +152,33 @@ export default function Resultados() {
     fetchVuelos();
   }, []);
 
+  useEffect(() => {
+    setSelectedCategories(parseSelectedCategories(filtroCategoria));
+  }, [filtroCategoria]);
+
+  const baseFiltrados = useMemo(() => {
+    return vuelos.filter((v) => {
+      const coincideOrigen = !filtroOrigen || normalizeText(v.origen) === normalizeText(filtroOrigen);
+      const coincideDestino = !filtroDestino || normalizeText(v.destino) === normalizeText(filtroDestino);
+      const coincideFecha = !filtroFecha || v.fechaISO === filtroFecha;
+      return coincideOrigen && coincideDestino && coincideFecha;
+    });
+  }, [vuelos, filtroOrigen, filtroDestino, filtroFecha]);
+
   const resultadosFiltrados = useMemo(() => {
-    return vuelos
-      .filter((v) => {
-        const coincideOrigen = !filtroOrigen || normalizeText(v.origen) === normalizeText(filtroOrigen);
-        const coincideDestino = !filtroDestino || normalizeText(v.destino) === normalizeText(filtroDestino);
-        const coincideFecha = !filtroFecha || v.fechaISO === filtroFecha;
-        const coincideCategoria = hasCategoryMatch(v.categorias, filtroCategoria);
-        return coincideOrigen && coincideDestino && coincideFecha && coincideCategoria;
-      })
+    return baseFiltrados
+      .filter((v) => hasCategoryMatch(v.categorias, selectedCategories))
       .sort((a, b) => {
         const dateA = a.fechaISO || "9999-12-31";
         const dateB = b.fechaISO || "9999-12-31";
         if (dateA !== dateB) return dateA.localeCompare(dateB);
         return a.precio - b.precio;
       });
-  }, [vuelos, filtroOrigen, filtroDestino, filtroFecha, filtroCategoria]);
+  }, [baseFiltrados, selectedCategories]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filtroOrigen, filtroDestino, filtroFecha, filtroCategoria]);
+  }, [filtroOrigen, filtroDestino, filtroFecha, selectedCategories]);
 
   const totalPages = Math.max(1, Math.ceil(resultadosFiltrados.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -158,6 +187,95 @@ export default function Resultados() {
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
+
+  const categoryCounts = useMemo(() => {
+    const counts = new Map();
+    baseFiltrados.forEach((vuelo) => {
+      (vuelo.categorias || []).forEach((cat) => {
+        if (!cat) return;
+        counts.set(cat, (counts.get(cat) || 0) + 1);
+      });
+    });
+    return counts;
+  }, [baseFiltrados]);
+
+  const categoryOptions = useMemo(() => {
+    const items = Array.from(categoryCounts.entries()).map(([name, count]) => ({ name, count }));
+    const known = new Set(items.map((item) => normalizeText(item.name)));
+    selectedCategories.forEach((cat) => {
+      if (!known.has(normalizeText(cat))) {
+        items.push({ name: cat, count: 0 });
+      }
+    });
+    return items.sort((a, b) => {
+      const idxA = CATEGORY_PRIORITY.indexOf(a.name);
+      const idxB = CATEGORY_PRIORITY.indexOf(b.name);
+      if (idxA !== -1 || idxB !== -1) {
+        if (idxA === -1) return 1;
+        if (idxB === -1) return -1;
+        return idxA - idxB;
+      }
+      return a.name.localeCompare(b.name);
+    });
+  }, [categoryCounts, selectedCategories]);
+
+  const updateSearchParams = (mutator) => {
+    const params = new URLSearchParams(location.search);
+    mutator(params);
+    const nextSearch = params.toString();
+    navigate(
+      { pathname: location.pathname, search: nextSearch ? `?${nextSearch}` : "" },
+      { replace: true }
+    );
+  };
+
+  const updateCategoryInQuery = (nextCategories) => {
+    updateSearchParams((params) => {
+      if (nextCategories.length > 0) {
+        params.set("categoria", nextCategories.join(","));
+      } else {
+        params.delete("categoria");
+      }
+    });
+  };
+
+  const toggleCategory = (category) => {
+    setSelectedCategories((prev) => {
+      const exists = prev.some((c) => normalizeText(c) === normalizeText(category));
+      const next = exists
+        ? prev.filter((c) => normalizeText(c) !== normalizeText(category))
+        : [...prev, category];
+      updateCategoryInQuery(next);
+      return next;
+    });
+  };
+
+  const clearCategories = () => {
+    setSelectedCategories([]);
+    updateCategoryInQuery([]);
+  };
+
+  const clearAllFilters = () => {
+    setSelectedCategories([]);
+    updateSearchParams((params) => {
+      params.delete("origen");
+      params.delete("destino");
+      params.delete("fecha");
+      params.delete("categoria");
+    });
+  };
+
+  const removeQueryParam = (key) => {
+    updateSearchParams((params) => params.delete(key));
+  };
+
+  const removeCategoryFilter = (category) => {
+    setSelectedCategories((prev) => {
+      const next = prev.filter((c) => normalizeText(c) !== normalizeText(category));
+      updateCategoryInQuery(next);
+      return next;
+    });
+  };
 
   const toggleFavorite = async (vuelo) => {
     const user = JSON.parse(localStorage.getItem("user") || "null");
@@ -246,101 +364,179 @@ export default function Resultados() {
   };
 
   const filtrosActivos = [
-    filtroOrigen ? `Origen: ${filtroOrigen}` : null,
-    filtroDestino ? `Destino: ${filtroDestino}` : null,
-    filtroFecha ? `Fecha: ${filtroFecha}` : null,
-    filtroCategoria ? `Categoria: ${filtroCategoria}` : null,
+    filtroOrigen
+      ? { key: "origen", label: `Origen: ${filtroOrigen}`, onRemove: () => removeQueryParam("origen") }
+      : null,
+    filtroDestino
+      ? { key: "destino", label: `Destino: ${filtroDestino}`, onRemove: () => removeQueryParam("destino") }
+      : null,
+    filtroFecha
+      ? { key: "fecha", label: `Fecha: ${filtroFecha}`, onRemove: () => removeQueryParam("fecha") }
+      : null,
+    ...selectedCategories.map((cat) => ({
+      key: `cat-${cat}`,
+      label: `Categoria: ${cat}`,
+      onRemove: () => removeCategoryFilter(cat),
+    })),
   ].filter(Boolean);
+
+  const hasActiveFilters = filtrosActivos.length > 0;
 
   return (
     <div className="main-bg resultados-page">
       <div className="main-content resultados-content">
-        <h1 className="resultados-title">Resultados de busqueda</h1>
-        <p className="resultados-subtitle">
-          Mostrando {resultadosFiltrados.length} vuelo(s) de {vuelos.length} disponibles.
-        </p>
-
-        {filtrosActivos.length > 0 && (
-          <div className="resultados-filtros">
-            {filtrosActivos.map((filtro) => (
-              <span key={filtro} className="resultados-chip">
-                {filtro}
-              </span>
-            ))}
+        <div className="resultados-header">
+          <div>
+            <h1 className="resultados-title">Resultados de busqueda</h1>
+            <p className="resultados-subtitle">
+              Mostrando <strong>{resultadosFiltrados.length}</strong> de <strong>{vuelos.length}</strong> resultados.
+            </p>
           </div>
-        )}
-
-        {loading && <p className="resultados-empty">Cargando vuelos...</p>}
-
-        {!loading && vuelosPaginados.length === 0 && (
-          <p className="resultados-empty">No se encontraron vuelos con esos filtros.</p>
-        )}
-
-        <div className="resultados-grid">
-          {vuelosPaginados.map((vuelo) => {
-            const user = JSON.parse(localStorage.getItem("user") || "null");
-            const isFavorite = favorites.some((f) => f.uid === vuelo.uid && f.userId === user?.id);
-
-            return (
-              <article key={vuelo.uid} className="resultados-card">
-                <img
-                  src={getVueloImage(vuelo)}
-                  alt={vuelo.name || `${vuelo.origen} ${vuelo.destino}`}
-                  className="resultados-img"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = "/assets/avionsito.png";
-                  }}
-                />
-
-                <div className="resultados-info">
-                  <h3>{vuelo.displayName}</h3>
-                  <p className="resultados-route">{vuelo.origen} {"->"} {vuelo.destino}</p>
-
-                  <p>
-                    <FaPlane /> {vuelo.aerolinea || "Aerolinea no disponible"}
-                  </p>
-                  <p>
-                    <FaCalendarAlt /> {formatFecha(vuelo.fechaRaw || vuelo.fechaISO)}
-                  </p>
-                  <p>
-                    <FaClock /> {vuelo.duracion}
-                  </p>
-
-                  <span className="resultados-category">{vuelo.categoria}</span>
-                </div>
-
-                <div className="resultados-side">
-                  <strong className="resultados-price">${vuelo.precio}</strong>
-
-                  <button
-                    className={`btn-fav ${isFavorite ? "activo" : ""}`}
-                    onClick={() => toggleFavorite(vuelo)}
-                  >
-                    {isFavorite ? <FaHeart /> : <FaRegHeart />} {isFavorite ? "Favorito" : "Agregar"}
-                  </button>
-
-                  <button className="btn-reservar" onClick={() => reservarVuelo(vuelo)}>
-                    Reservar
-                  </button>
-
-                  <Link to={`/vuelo/${vuelo.localProductId || vuelo.id || vuelo.productId}`} state={{ vuelo: { ...vuelo, productId: vuelo.localProductId || vuelo.productId || vuelo.id } }}>
-                    <button className="btn-detalle">Ver detalle</button>
-                  </Link>
-                </div>
-              </article>
-            );
-          })}
+          {hasActiveFilters && (
+            <button className="resultados-clear-btn" onClick={clearAllFilters}>
+              Limpiar filtros
+            </button>
+          )}
         </div>
 
-        {!loading && resultadosFiltrados.length > 0 && (
-          <Paginacion
-            totalItems={resultadosFiltrados.length}
-            itemsPerPage={itemsPerPage}
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
-          />
-        )}
+        <div className="resultados-layout">
+          <aside className="resultados-filters-panel">
+            <div className="resultados-filter-head">
+              <h2>Filtrar</h2>
+              <span>{resultadosFiltrados.length}/{vuelos.length}</span>
+            </div>
+
+            <div className="resultados-filter-section">
+              <p className="resultados-filter-title">Categorias</p>
+              <div className="resultados-category-list">
+                <button
+                  type="button"
+                  className={`resultados-category-pill ${selectedCategories.length === 0 ? "active" : ""}`}
+                  onClick={clearCategories}
+                >
+                  <span className="pill-left">
+                    <FaPlane />
+                    <span className="pill-label">Todas</span>
+                  </span>
+                  <span className="pill-count">{baseFiltrados.length}</span>
+                </button>
+                {categoryOptions.map((item) => {
+                  const active = selectedCategories.some((c) => normalizeText(c) === normalizeText(item.name));
+                  const Icon = getSafeIcon(item.name);
+                  return (
+                    <button
+                      type="button"
+                      key={item.name}
+                      className={`resultados-category-pill ${active ? "active" : ""}`}
+                      onClick={() => toggleCategory(item.name)}
+                    >
+                      <span className="pill-left">
+                        {Icon ? <Icon /> : null}
+                        <span className="pill-label">{item.name}</span>
+                      </span>
+                      <span className="pill-count">{item.count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {filtrosActivos.length > 0 && (
+              <div className="resultados-filter-section">
+                <p className="resultados-filter-title">Filtros activos</p>
+                <div className="resultados-filtros">
+                  {filtrosActivos.map((filtro) => (
+                    <span key={filtro.key} className="resultados-chip">
+                      <span>{filtro.label}</span>
+                      <button
+                        type="button"
+                        className="resultados-chip-remove"
+                        onClick={filtro.onRemove}
+                        aria-label={`Quitar ${filtro.label}`}
+                      >
+                        <FaTimes />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </aside>
+
+          <section className="resultados-list-panel">
+            {loading && <p className="resultados-empty">Cargando vuelos...</p>}
+
+            {!loading && vuelosPaginados.length === 0 && (
+              <p className="resultados-empty">No se encontraron vuelos con esos filtros.</p>
+            )}
+
+            <div className="resultados-grid">
+              {vuelosPaginados.map((vuelo) => {
+                const user = JSON.parse(localStorage.getItem("user") || "null");
+                const isFavorite = favorites.some((f) => f.uid === vuelo.uid && f.userId === user?.id);
+
+                return (
+                  <article key={vuelo.uid} className="resultados-card">
+                    <img
+                      src={getVueloImage(vuelo)}
+                      alt={vuelo.name || `${vuelo.origen} ${vuelo.destino}`}
+                      className="resultados-img"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "/assets/avionsito.png";
+                      }}
+                    />
+
+                    <div className="resultados-info">
+                      <h3>{vuelo.displayName}</h3>
+                      <p className="resultados-route">{vuelo.origen} {"->"} {vuelo.destino}</p>
+
+                      <p>
+                        <FaPlane /> {vuelo.aerolinea || "Aerolinea no disponible"}
+                      </p>
+                      <p>
+                        <FaCalendarAlt /> {formatFecha(vuelo.fechaRaw || vuelo.fechaISO)}
+                      </p>
+                      <p>
+                        <FaClock /> {vuelo.duracion}
+                      </p>
+
+                      <span className="resultados-category">{vuelo.categoria}</span>
+                    </div>
+
+                    <div className="resultados-side">
+                      <strong className="resultados-price">${vuelo.precio}</strong>
+
+                      <button
+                        className={`btn-fav ${isFavorite ? "activo" : ""}`}
+                        onClick={() => toggleFavorite(vuelo)}
+                      >
+                        {isFavorite ? <FaHeart /> : <FaRegHeart />} {isFavorite ? "Favorito" : "Agregar"}
+                      </button>
+
+                      <button className="btn-reservar" onClick={() => reservarVuelo(vuelo)}>
+                        Reservar
+                      </button>
+
+                      <Link to={`/vuelo/${vuelo.localProductId || vuelo.id || vuelo.productId}`} state={{ vuelo: { ...vuelo, productId: vuelo.localProductId || vuelo.productId || vuelo.id } }}>
+                        <button className="btn-detalle">Ver detalle</button>
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            {!loading && resultadosFiltrados.length > 0 && (
+              <Paginacion
+                totalItems={resultadosFiltrados.length}
+                itemsPerPage={itemsPerPage}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+              />
+            )}
+          </section>
+        </div>
       </div>
     </div>
   );

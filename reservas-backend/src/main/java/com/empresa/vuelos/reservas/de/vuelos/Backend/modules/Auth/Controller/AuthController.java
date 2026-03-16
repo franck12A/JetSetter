@@ -3,7 +3,6 @@ package com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Controller;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.DTO.UserRequest;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Model.User;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Service.AuthService;
-import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Gmail.EmailService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -18,12 +17,10 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
-    private final EmailService emailService;
 
 
-    public AuthController(AuthService authService, EmailService emailService) {
+    public AuthController(AuthService authService) {
         this.authService = authService;
-        this.emailService = emailService;
     }
 
     // Registro
@@ -33,10 +30,7 @@ public class AuthController {
             // 1. Crear usuario
             User newUser = authService.register(request);
 
-            // 2. Enviar email HTML (tipo Airbnb)
-            emailService.sendWelcomeEmail(newUser.getEmail(), newUser.getFirstName());
-
-            // 3. Devolver respuesta al frontend
+            // 2. Devolver respuesta al frontend
             Map<String, Object> res = new HashMap<>();
             res.put("message", "Registro exitoso, email enviado");
             res.put("user", toSafeUser(newUser));
@@ -46,6 +40,19 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("error", "No se pudo registrar el usuario"));
+        }
+    }
+
+    @PostMapping("/resend-confirmation")
+    public ResponseEntity<?> resendConfirmation(@RequestBody Map<String, String> payload) {
+        try {
+            String email = payload != null ? payload.get("email") : null;
+            authService.resendConfirmationEmail(email);
+            return ResponseEntity.ok(Map.of("message", "Email de confirmacion reenviado"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "No se pudo reenviar el email"));
         }
     }
 

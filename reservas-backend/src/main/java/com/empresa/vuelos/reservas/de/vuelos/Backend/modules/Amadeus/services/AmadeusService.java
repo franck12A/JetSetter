@@ -507,6 +507,8 @@ public class AmadeusService {
         List<String> caracteristicas = new ArrayList<>();
         caracteristicas.add("Duración total: " + (duracionTotalMinutos / 60) + "h " + (duracionTotalMinutos % 60) + "m");
         caracteristicas.add("Clase: Economy");
+        int escalas = Math.max(0, segmentos.size() - 1);
+        caracteristicas.add("Escalas: " + (escalas == 0 ? "Directo" : escalas));
         caracteristicas.add("Equipaje incluido: No");
         dto.setCaracteristicas(caracteristicas);
 

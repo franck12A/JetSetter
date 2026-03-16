@@ -222,6 +222,27 @@
   color: #86efac;
 }
 
+.auth-resend-row {
+  margin-top: 0.4rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: #b7cce5;
+}
+
+.auth-resend-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.auth-resend-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
 .auth-divider {
   display: flex;
   align-items: center;

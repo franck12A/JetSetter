@@ -496,10 +496,10 @@
 }
 
 .dv-features-block {
-  background: #0f172a;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(11, 18, 32, 0.95));
   border: 1px solid #1f2a44;
-  border-radius: 14px;
-  padding: 1rem 1.1rem;
+  border-radius: 16px;
+  padding: 1rem 1.1rem 1.1rem;
 }
 
 .dv-features-block h3 {
@@ -512,39 +512,67 @@
 
 .dv-features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.85rem;
 }
 
 .dv-feature-item {
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.65rem 0.75rem;
-  border-radius: 12px;
-  border: 1px solid #1f2a44;
-  background: #0b1220;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 14px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: linear-gradient(140deg, rgba(11, 18, 32, 0.95), rgba(15, 23, 42, 0.95));
+  box-shadow: 0 10px 18px rgba(2, 8, 23, 0.35);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dv-feature-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 14px 24px rgba(2, 8, 23, 0.45);
+}
+
+.dv-feature-item.is-compact .dv-feature-value {
+  font-size: 0.88rem;
 }
 
 .dv-feature-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background: #0b2b45;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: radial-gradient(circle at top, rgba(56, 189, 248, 0.35), rgba(15, 23, 42, 0.9));
   color: #38bdf8;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 1.05rem;
   flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.2);
 }
 
-.dv-feature-text {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #e2e8f0;
+.dv-feature-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
 }
 
+.dv-feature-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #93c5fd;
+}
+
+.dv-feature-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.2;
+  word-break: break-word;
+}
 .dv-class-section {
   border-radius: 14px;
   background: #0f172a;
@@ -678,4 +706,5 @@
 }
 
 \n
+
 
