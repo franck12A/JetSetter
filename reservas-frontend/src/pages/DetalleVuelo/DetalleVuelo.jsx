@@ -6,6 +6,7 @@ import productService from "../../services/productService";
 import { getUserFavorites, addFavorite, removeFavorite } from "../../services/favoritesApi";
 import { createBooking } from "../../services/bookingsApi";
 import { getVueloImage } from "../../utils/images";
+import { getSafeIcon } from "../../utils/iconRegistry";
 import "./DetalleVuelo.css";
 import Galeria from "../../components/Galeria/Galeria";
 import { Link } from "react-router-dom";
@@ -106,6 +107,24 @@ export default function DetalleVuelo() {
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [bookings, setBookings] = useState([]);
+  const featureItems = useMemo(() => {
+    if (!vuelo) return [];
+    const fromFeatures = Array.isArray(vuelo.features) ? vuelo.features : [];
+    if (fromFeatures.length > 0) {
+      return fromFeatures
+        .filter((f) => f?.name)
+        .map((f) => ({
+          label: String(f.name),
+          iconName: f.icon || f.name,
+        }));
+    }
+
+    const rawList = Array.isArray(vuelo.caracteristicas) ? vuelo.caracteristicas : [];
+    return rawList
+      .map((item) => String(item || "").trim())
+      .filter(Boolean)
+      .map((label) => ({ label, iconName: label }));
+  }, [vuelo]);
   const imageList = useMemo(() => {
     if (!vuelo) return [];
     const items = [];
@@ -275,6 +294,23 @@ export default function DetalleVuelo() {
               <h3>Descripcion</h3>
               <p>{vuelo.descripcion || vuelo.description || "Descubre la magia, cultura y gastronomía de este increíble destino garantizando una experiencia inolvidable. ¡Reserva tu vuelo hoy mismo!"}</p>
             </div>
+
+            {featureItems.length > 0 && (
+              <div className="dv-features-block">
+                <h3>Caracteristicas</h3>
+                <div className="dv-features-grid">
+                  {featureItems.map((feat, index) => {
+                    const Icon = getSafeIcon(feat.iconName);
+                    return (
+                      <div key={`${feat.label}-${index}`} className="dv-feature-item">
+                        <span className="dv-feature-icon">{Icon ? <Icon /> : null}</span>
+                        <span className="dv-feature-text">{feat.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div className="dv-class-section">
               <div className="dv-class-header">

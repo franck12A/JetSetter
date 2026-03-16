@@ -399,7 +399,7 @@ export default function AdminPanel() {
 
       <nav className="admin-menu">
         <button type="button" className="admin-menu-link" onClick={() => handleJump("admin-form")}>Vuelos</button>
-        <button type="button" className="admin-menu-link" onClick={() => handleJump("admin-features")}>Caracteristicas</button>
+        <button type="button" className="admin-menu-link" onClick={() => handleJump("admin-features")}>Administrar caracteristicas</button>
         <button type="button" className="admin-menu-link" onClick={() => handleJump("admin-categories")}>Categorias</button>
         <button type="button" className="admin-menu-link" onClick={() => handleJump("admin-products")}>Listado de productos</button>
         <Link to="/administracion/usuarios" className="admin-menu-link">Usuarios</Link>
@@ -423,7 +423,7 @@ export default function AdminPanel() {
           <h2>Caracteristicas registradas</h2>
           <div className="features-header-right">
             <span className="features-count">{availableFeatures.length} total</span>
-            <button className="btn-new-feature" onClick={openNewFeatureModal}>+ Nueva</button>
+            <button className="btn-new-feature" onClick={openNewFeatureModal}>Añadir nueva</button>
           </div>
         </div>
 
@@ -443,7 +443,16 @@ export default function AdminPanel() {
               {availableFeatures.map((feat) => (
                 <tr key={feat.id}>
                   <td>{feat.name}</td>
-                  <td>{feat.icon || "-"}</td>
+                  <td>
+                    <div className="feature-icon-cell">
+                      {ICON_REGISTRY[feat.icon] ? (
+                        <span className="feature-icon-preview">{React.createElement(ICON_REGISTRY[feat.icon])}</span>
+                      ) : (
+                        <span className="feature-icon-preview feature-icon-preview--empty">-</span>
+                      )}
+                      <span className="feature-icon-name">{feat.icon || "Sin icono"}</span>
+                    </div>
+                  </td>
                   <td>{feat.id || "-"}</td>
                   <td style={{ textAlign: "center" }}>
                     <button
@@ -602,29 +611,35 @@ export default function AdminPanel() {
               </div>
 
               {/* Keep this just in case, or hide it if not in mockup. The user mockup doesn't explicitly show characteristics but let's keep it below description just in case */}
-              <div className="form-section-spaced" style={{ marginTop: '1rem', display: 'none' }}>
-                <label>Flight Characteristics</label>
-                <div className="flight-chips-container">
-                  {availableFeatures.map((feat) => {
-                    const isSelected = (form.features || []).some((f) => f.id === feat.id);
-                    return (
-                      <button
-                        type="button"
-                        key={`chip-${feat.id}`}
-                        className={`flight-chip ${isSelected ? "selected" : ""}`}
-                        onClick={() => {
-                          if (!isSelected) {
-                            setForm((f) => ({ ...f, features: [...(f.features || []), { id: feat.id, name: feat.name }] }));
-                          } else {
-                            setForm((f) => ({ ...f, features: (f.features || []).filter((x) => x.id !== feat.id) }));
-                          }
-                        }}
-                      >
-                        {feat.name}
-                      </button>
-                    )
-                  })}
-                </div>
+              <div className="form-section-spaced" style={{ marginTop: '1rem' }}>
+                <label>Caracteristicas del vuelo</label>
+                {availableFeatures.length === 0 ? (
+                  <p className="no-data">No hay caracteristicas registradas para seleccionar.</p>
+                ) : (
+                  <div className="flight-chips-container">
+                    {availableFeatures.map((feat) => {
+                      const isSelected = (form.features || []).some((f) => f.id === feat.id);
+                      const Icon = ICON_REGISTRY[feat.icon] || null;
+                      return (
+                        <button
+                          type="button"
+                          key={`chip-${feat.id}`}
+                          className={`flight-chip ${isSelected ? "selected" : ""}`}
+                          onClick={() => {
+                            if (!isSelected) {
+                              setForm((f) => ({ ...f, features: [...(f.features || []), { id: feat.id, name: feat.name }] }));
+                            } else {
+                              setForm((f) => ({ ...f, features: (f.features || []).filter((x) => x.id !== feat.id) }));
+                            }
+                          }}
+                        >
+                          {Icon && <Icon className="flight-chip-icon" />}
+                          {feat.name}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 
