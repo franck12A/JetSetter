@@ -136,7 +136,7 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], vu
   return (
     <div className="hero-section">
       <div className="search-wrapper">
-        <h1 className="hero-title">Where would you like to go?</h1>
+        <h1 className="hero-title">A donde quieres viajar?</h1>
 
         <div className="search-row-full">
           <div className="search-pill search-pill-control" ref={origenRef}>
@@ -278,7 +278,7 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], vu
               <span className="control-label">Fecha</span>
               <button
                 type="button"
-                className="control-trigger"
+                className="control-trigger control-trigger--wrap"
                 onClick={() => setActiveDropdown((prev) => (prev === "fecha" ? null : "fecha"))}
               >
                 {formatDateLabel(fecha)}
@@ -335,7 +335,7 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], vu
 
         <button onClick={handleBuscar} className="search-btn">
           <FaSearch className="btn-icon" />
-          Search Flights
+          Buscar vuelos
         </button>
       </div>
     </div>

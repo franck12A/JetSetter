@@ -151,14 +151,6 @@ export default function Home() {
         />
         <Recomendaciones vuelos={vuelos} />
 
-        <div className="home-promo-banner">
-          <div className="home-promo-content">
-            <span className="home-promo-subtitle">Limited Time</span>
-            <h3>30% Off to Paris!</h3>
-            <p>Book your winter getaway in European style</p>
-          </div>
-        </div>
-
         <div className="vuelos-paginados-section">
           <div className="vp-header">
             <h2>Vuelos disponibles</h2>

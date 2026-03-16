@@ -15,13 +15,28 @@
   justify-content: space-between;
   width: 100%;
   padding: 1rem 2rem;
-  background: #121826;
-  /* Dark theme background */
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  /* Subtle border */
+  background: linear-gradient(
+    90deg,
+    rgba(18, 24, 38, 0.96) 0%,
+    rgba(23, 34, 54, 0.94) 50%,
+    rgba(18, 24, 38, 0.96) 100%
+  );
+  border-bottom: 1px solid rgba(76, 195, 255, 0.12);
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 10px 30px rgba(3, 10, 24, 0.35);
+  backdrop-filter: blur(8px);
+}
+
+.navbar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 12% 50%, rgba(76, 195, 255, 0.12), transparent 55%);
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .navbar-left {
@@ -31,6 +46,8 @@
   min-width: 180px;
   /* <- evita que se colapse */
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .navbar-logo {
@@ -56,6 +73,7 @@
   /* White text for logo */
   letter-spacing: 0.2px;
   line-height: 1.2;
+  text-shadow: 0 2px 8px rgba(8, 15, 32, 0.45);
 }
 
 /* ===================== */
@@ -68,6 +86,8 @@
   gap: 1rem;
   flex-grow: 1;
   min-width: 300px;
+  position: relative;
+  z-index: 1;
 }
 
 
@@ -87,24 +107,28 @@
 
 /* Crear cuenta */
 .btn-signup {
-  background: linear-gradient(180deg, var(--green-primary) 0%, var(--green-dark) 100%);
-  color: white;
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  color: #ffffff;
+  border: 1px solid rgba(96, 165, 250, 0.4);
+  box-shadow: 0 10px 20px rgba(29, 78, 216, 0.25);
 }
 
 .btn-signup:hover {
-  filter: brightness(1.04);
-  box-shadow: 0 6px 14px rgba(30, 126, 52, 0.3);
+  filter: brightness(1.08);
+  box-shadow: 0 12px 24px rgba(29, 78, 216, 0.35);
 }
 
 /* Iniciar sesión */
 .btn-login {
-  background: linear-gradient(180deg, var(--blue-primary) 0%, var(--blue-dark) 100%);
-  color: white;
+  background: rgba(15, 23, 42, 0.6);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  box-shadow: 0 8px 16px rgba(3, 10, 24, 0.3);
 }
 
 .btn-login:hover {
-  filter: brightness(1.04);
-  box-shadow: 0 6px 14px rgba(0, 86, 179, 0.3);
+  filter: brightness(1.08);
+  box-shadow: 0 12px 22px rgba(15, 23, 42, 0.35);
 }
 
 /* Panel admin */
@@ -185,10 +209,10 @@
   position: absolute;
   top: 50px;
   right: 0;
-  background: #fff;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 10px;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+  background: #0f172a;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(3, 10, 24, 0.5);
   display: flex;
   flex-direction: column;
   padding: 0.5rem;
@@ -204,21 +228,35 @@
   text-align: left;
   cursor: pointer;
   font-weight: 600;
-  color: #333;
+  color: #e2e8f0;
   border-radius: 8px;
   transition: background 0.2s ease;
 }
 
 .user-menu-item:hover {
-  background: #f3f4f6;
+  background: rgba(148, 163, 184, 0.12);
 }
 
 .user-menu-item.logout {
-  color: #dc2626;
+  color: #f87171;
 }
 
 .user-menu-item.logout:hover {
-  background: #fee2e2;
+  background: rgba(248, 113, 113, 0.16);
+}
+
+.user-menu-logout {
+  margin-top: 0.35rem;
+  padding: 0.6rem 0.75rem;
+  text-align: center;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  color: #fecaca;
+  font-weight: 700;
+}
+
+.user-menu-logout:hover {
+  background: rgba(248, 113, 113, 0.2);
 }
 
 @keyframes fadeIn {
