@@ -375,7 +375,14 @@ public class AmadeusController {
         if (destinoSeguro != null && !AEROPUERTOS.containsKey(destinoSeguro)) {
             destinoSeguro = null;
         }
-        String fechaSegura = (fecha == null || fecha.isBlank()) ? LocalDate.now().plusDays(7).toString() : fecha.trim();
+        LocalDate fechaBase = null;
+        if (fecha != null && !fecha.isBlank()) {
+            try {
+                fechaBase = LocalDate.parse(fecha.trim());
+            } catch (Exception ignored) {
+                fechaBase = LocalDate.now().plusDays(7);
+            }
+        }
         productService.cleanupSimulatedProducts(10, 500);
 
         List<String> aeropuertos = new ArrayList<>(AEROPUERTOS.keySet());
@@ -391,9 +398,24 @@ public class AmadeusController {
                 destinoLoop = aeropuertos.get(random.nextInt(aeropuertos.size()));
             }
 
+            boolean isReturn = random.nextDouble() < 0.35;
+            if (isReturn && origenSeguro != null && destinoSeguro != null) {
+                String temp = origenLoop;
+                origenLoop = destinoLoop;
+                destinoLoop = temp;
+            }
+
             FlightOfferDTO dto = new FlightOfferDTO();
 
             // ID único
+            LocalDate fechaVuelo = fechaBase != null
+                    ? fechaBase
+                    : LocalDate.now().plusDays(1 + random.nextInt(180));
+            if (isReturn) {
+                fechaVuelo = fechaVuelo.plusDays(2 + random.nextInt(15));
+            }
+            String fechaSegura = fechaVuelo.toString();
+
             String externalId = origenLoop + "-" + destinoLoop + "-" + fechaSegura + "-" + i;
             dto.setId(externalId);
 
@@ -421,6 +443,18 @@ public class AmadeusController {
             double precio = 300 + random.nextDouble() * 900;
             dto.setPrecioTotal(Math.round(precio * 100.0) / 100.0);
 
+            List<String> caracteristicas = new ArrayList<>();
+            caracteristicas.add("Duracion aproximada: " + (8 + random.nextInt(5)) + "h " + (10 + random.nextInt(50)) + "m");
+            caracteristicas.add("Clase: " + CATEGORIAS.get(random.nextInt(CATEGORIAS.size())));
+            caracteristicas.add("Equipaje incluido: " + (random.nextBoolean() ? "Si" : "No"));
+            if (isReturn) {
+                caracteristicas.add("Tipo: Regreso");
+            }
+            dto.setCaracteristicas(caracteristicas);
+
+            dto.setCategoria(isReturn ? "Regreso" : "Internacional");
+
+            /*
             dto.setCaracteristicas(List.of(
                     "Duración aproximada: " + (8 + random.nextInt(5)) + "h " + (10 + random.nextInt(50)) + "m",
                     "Clase: " + CATEGORIAS.get(random.nextInt(CATEGORIAS.size())),
@@ -428,6 +462,7 @@ public class AmadeusController {
             ));
 
             dto.setCategoria("Internacional");
+            */
 
             // **Fechas directamente en DTO**
             int horaSalida = random.nextInt(0, 24);
