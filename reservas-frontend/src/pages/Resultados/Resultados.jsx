@@ -387,7 +387,7 @@ export default function Resultados() {
       <div className="main-content resultados-content">
         <div className="resultados-header">
           <div>
-            <h1 className="resultados-title">Resultados de busqueda</h1>
+            <h1 className="resultados-title">Resultados de búsqueda</h1>
             <p className="resultados-subtitle">
               Mostrando <strong>{resultadosFiltrados.length}</strong> de <strong>{vuelos.length}</strong> resultados.
             </p>
