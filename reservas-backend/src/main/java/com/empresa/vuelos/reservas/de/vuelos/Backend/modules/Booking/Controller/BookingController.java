@@ -5,6 +5,7 @@ import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Repository.Use
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Model.Booking;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Service.BookingService;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.dto.BookingRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -15,7 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bookings")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+@CrossOrigin(originPatterns = {"http://localhost:*", "http://127.0.0.1:*"}, allowCredentials = "true")
 public class BookingController {
 
     private final BookingService bookingService;
@@ -35,6 +36,19 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.getBookingsByUser(user.getId()));
     }
 
+    @GetMapping("/product/{productId}/dates")
+    public ResponseEntity<?> getBookedDatesByProduct(@PathVariable String productId) {
+        try {
+            Long resolvedProductId = bookingService.resolveProductId(productId);
+            List<String> dates = bookingService.getBookedDatesByProductId(resolvedProductId);
+            return ResponseEntity.ok(dates);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "No se pudo obtener disponibilidad"));
+        }
+    }
+
     @PostMapping("/create")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> createBooking(@RequestBody BookingRequest request,
@@ -52,6 +66,8 @@ public class BookingController {
                     request.passengers
             );
             return ResponseEntity.ok(booking);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

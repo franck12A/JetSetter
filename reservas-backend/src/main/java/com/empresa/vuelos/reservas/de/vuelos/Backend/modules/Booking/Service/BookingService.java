@@ -6,6 +6,7 @@ import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Model.Booki
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Repository.BookingRepository;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Product;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.repository.ProductRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -50,13 +52,21 @@ public class BookingService {
         booking.setPassengers(passengers);
         booking.setStatus("PENDIENTE");
 
-        if (dateStr != null && !dateStr.isEmpty()) {
-            booking.setBookingDate(parseBookingDate(dateStr));
-        } else {
-            booking.setBookingDate(LocalDateTime.now());
-        }
+        LocalDateTime travelDateTime = (dateStr != null && !dateStr.isEmpty())
+                ? parseBookingDate(dateStr)
+                : LocalDateTime.now();
+        LocalDate travelDate = travelDateTime.toLocalDate();
 
-        return bookingRepository.save(booking);
+        validateAvailability(productId, travelDate);
+
+        booking.setBookingDate(LocalDateTime.now());
+        booking.setTravelDate(travelDate);
+
+        try {
+            return bookingRepository.saveAndFlush(booking);
+        } catch (DataIntegrityViolationException ex) {
+            throw new IllegalStateException("La fecha seleccionada ya tiene una reserva para este vuelo.");
+        }
     }
 
     public Long resolveProductId(Object rawProductId) throws Exception {
@@ -99,6 +109,43 @@ public class BookingService {
         bookingRepository.deleteById(id);
     }
 
+    public List<String> getBookedDatesByProductId(Long productId) {
+        return bookingRepository.findByProductId(productId).stream()
+                .map(booking -> {
+                    LocalDate travelDate = booking.getTravelDate();
+                    if (travelDate != null) return travelDate;
+                    LocalDateTime bookingDate = booking.getBookingDate();
+                    return bookingDate != null ? bookingDate.toLocalDate() : null;
+                })
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted()
+                .map(LocalDate::toString)
+                .toList();
+    }
+
+    private void validateAvailability(Long productId, LocalDate travelDate) {
+        if (travelDate == null) {
+            throw new IllegalArgumentException("La fecha de viaje es obligatoria.");
+        }
+
+        if (bookingRepository.existsByProductIdAndTravelDate(productId, travelDate)) {
+            throw new IllegalStateException("La fecha seleccionada ya tiene una reserva para este vuelo.");
+        }
+
+        boolean duplicatedLegacyDate = bookingRepository.findByProductId(productId).stream()
+                .anyMatch(booking -> {
+                    LocalDate legacyDate = booking.getTravelDate();
+                    if (legacyDate != null) return false;
+                    LocalDateTime bookingDate = booking.getBookingDate();
+                    return bookingDate != null && travelDate.equals(bookingDate.toLocalDate());
+                });
+
+        if (duplicatedLegacyDate) {
+            throw new IllegalStateException("La fecha seleccionada ya tiene una reserva para este vuelo.");
+        }
+    }
+
     private LocalDateTime parseBookingDate(String rawDate) {
         String value = rawDate.trim();
         if (value.isEmpty()) return LocalDateTime.now();
@@ -118,7 +165,11 @@ public class BookingService {
 
         List<DateTimeFormatter> dateTimeFormats = List.of(
                 DateTimeFormatter.ISO_LOCAL_DATE_TIME,     // 2026-03-11T10:00:00
-                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"),
+                DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"),
+                DateTimeFormatter.ofPattern("d/M/yyyy HH:mm"),
+                DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"),
+                DateTimeFormatter.ofPattern("d/M/yyyy HH:mm:ss")
         );
 
         for (DateTimeFormatter formatter : dateTimeFormats) {

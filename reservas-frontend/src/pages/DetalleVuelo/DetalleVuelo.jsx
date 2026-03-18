@@ -1,40 +1,45 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { DayPicker } from "react-day-picker";
+import { es } from "react-day-picker/locale";
 import {
+  FaCalendarAlt,
+  FaChair,
+  FaCheckCircle,
   FaChevronLeft,
-  FaRegClock,
+  FaChevronRight,
+  FaExchangeAlt,
+  FaExclamationCircle,
+  FaHeart,
+  FaMapSigns,
   FaMoneyBillWave,
   FaPlane,
-  FaRegHeart,
-  FaHeart,
-  FaSuitcaseRolling,
-  FaMapSigns,
-  FaRoute,
-  FaPlaneDeparture,
   FaPlaneArrival,
-  FaTicketAlt,
-  FaWifi,
-  FaUtensils,
-  FaChair,
-  FaShieldAlt,
-  FaExchangeAlt,
+  FaPlaneDeparture,
   FaPlug,
+  FaRegClock,
+  FaRegHeart,
+  FaRoute,
+  FaShieldAlt,
+  FaSuitcaseRolling,
+  FaTicketAlt,
+  FaUtensils,
+  FaWifi,
 } from "react-icons/fa";
 
 import productService from "../../services/productService";
-import { getUserFavorites, addFavorite, removeFavorite } from "../../services/favoritesApi";
-import { createBooking } from "../../services/bookingsApi";
+import { addFavorite, getUserFavorites, removeFavorite } from "../../services/favoritesApi";
+import { createBooking, getProductBookedDates } from "../../services/bookingsApi";
 import { getVueloImage } from "../../utils/images";
 import { getSafeIcon } from "../../utils/iconRegistry";
+import "react-day-picker/style.css";
 import "./DetalleVuelo.css";
-import Galeria from "../../components/Galeria/Galeria";
-import { Link } from "react-router-dom";
 
 const parseRouteName = (name, fallbackCountry = "-") => {
   const raw = name || "";
   const parts = raw
-    .split(/->|â†’|Ã¢â€ â€™|ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢/)
-    .map((p) => p.trim())
+    .split(/->|\u2192/)
+    .map((part) => part.trim())
     .filter(Boolean);
 
   return {
@@ -45,21 +50,75 @@ const parseRouteName = (name, fallbackCountry = "-") => {
 
 const formatDateTime = (value) => {
   if (!value) return "-";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "-";
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  return `${day}/${month}/${year} ${hours}:${minutes}`;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 };
 
-const normalizeText = (value) => String(value || "")
-  .normalize("NFD")
-  .replace(/[\u0300-\u036f]/g, "")
-  .toLowerCase()
-  .trim();
+const toISODateLocal = (date) => {
+  if (!date) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const fromISODate = (value) => {
+  if (!value) return null;
+  const parts = String(value).split("-");
+  if (parts.length !== 3) return null;
+  const year = Number(parts[0]);
+  const month = Number(parts[1]);
+  const day = Number(parts[2]);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+};
+
+const getStartOfToday = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+};
+
+const parseDateValue = (value) => {
+  if (!value) return null;
+  const parsed = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  parsed.setHours(0, 0, 0, 0);
+  return parsed;
+};
+
+const formatTravelDateLabel = (value) => {
+  const date = parseDateValue(value);
+  if (!date) return "Sin fecha seleccionada";
+  return date.toLocaleDateString("es-AR", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const getInitialTravelDate = (vuelo) => {
+  const today = getStartOfToday();
+  const preferred = parseDateValue(vuelo?.fechaSalidaRaw || vuelo?.departureDate);
+  if (preferred && preferred >= today) return preferred;
+  return today;
+};
+
+const normalizeText = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 
 const FEATURE_LABEL_MAP = [
   { match: /duracion|tiempo|hora/, label: "Duracion" },
@@ -92,32 +151,34 @@ const humanizeFeatureLabel = (raw) => {
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 };
 
-const cleanFeatureValue = (value) => String(value || "")
-  .replace(/^(duracion|duraci\u00f3n)( aproximada)?\s*:\s*/i, "")
-  .replace(/^clase\s*:\s*/i, "")
-  .replace(/^equipaje( incluido)?\s*:\s*/i, "")
-  .replace(/^(aerolinea|aerol\u00ednea)\s*:\s*/i, "")
-  .replace(/^n(umero|ro)?\s*de\s*vuelo\s*:\s*/i, "")
-  .replace(/^(salida|llegada)\s*:\s*/i, "")
-  .replace(/\s+/g, " ")
-  .trim();
+const cleanFeatureValue = (value) =>
+  String(value || "")
+    .replace(/^(duracion|duraci\u00f3n)( aproximada)?\s*:\s*/i, "")
+    .replace(/^clase\s*:\s*/i, "")
+    .replace(/^equipaje( incluido)?\s*:\s*/i, "")
+    .replace(/^(aerolinea|aerol\u00ednea)\s*:\s*/i, "")
+    .replace(/^n(umero|ro)?\s*de\s*vuelo\s*:\s*/i, "")
+    .replace(/^(salida|llegada)\s*:\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 const isMeaningful = (value) => {
   const normalized = normalizeText(value);
   if (!normalized) return false;
-  if (["-", "n/a", "na", "no disponible", "consultar"].includes(normalized)) return false;
-  return true;
+  return !["-", "n/a", "na", "no disponible", "consultar"].includes(normalized);
 };
 
 const parseFeatureItem = (raw, iconName) => {
   const text = String(raw || "").trim();
   if (!text) return null;
+
   const parts = text.split(":");
   if (parts.length === 1) {
     const label = humanizeFeatureLabel(text);
     if (!label) return null;
     return { label, value: "", iconName: iconName || text };
   }
+
   const [head, ...rest] = parts;
   const label = humanizeFeatureLabel(head);
   if (!label) return null;
@@ -127,6 +188,7 @@ const parseFeatureItem = (raw, iconName) => {
 
 const buildComputedFeatures = (vuelo) => {
   const items = [];
+
   const addItem = (label, value) => {
     const cleaned = cleanFeatureValue(value);
     if (!isMeaningful(cleaned)) return;
@@ -149,14 +211,12 @@ const buildComputedFeatures = (vuelo) => {
   const llegada = vuelo.fechaLlegadaRaw ? formatDateTime(vuelo.fechaLlegadaRaw) : vuelo.fechaLlegada;
   addItem("Salida", salida);
   addItem("Llegada", llegada);
-
   addItem("Duracion", vuelo.duracion);
   addItem("Clase", vuelo.clase);
   addItem("Equipaje", vuelo.equipaje);
 
   return items;
 };
-
 
 const normalizeVuelo = (data) => {
   if (!data) return null;
@@ -171,7 +231,7 @@ const normalizeVuelo = (data) => {
 
   const caracteristicas = data.caracteristicas?.length
     ? data.caracteristicas
-    : data.features?.map((f) => f.name).filter(Boolean) || [];
+    : data.features?.map((feature) => feature.name).filter(Boolean) || [];
 
   const parsedCaracteristicas = caracteristicas
     .map((item) => String(item || "").split(":"))
@@ -182,20 +242,16 @@ const normalizeVuelo = (data) => {
     .filter((item) => item.key && item.value);
 
   const getFeatureValue = (patterns) => {
-    const entry = parsedCaracteristicas.find((item) =>
-      patterns.some((p) => p.test(item.key))
-    );
+    const entry = parsedCaracteristicas.find((item) => patterns.some((pattern) => pattern.test(item.key)));
     return entry?.value || "";
   };
 
-  const duracion = data?.duracion || getFeatureValue([/duracion/i, /duraci\\u00f3n/i]) || "Consultar";
+  const duracion = data?.duracion || getFeatureValue([/duracion/i, /duraci\u00f3n/i]) || "Consultar";
   const clase = data?.clase || getFeatureValue([/clase/i]) || "Economica";
   const equipaje = data?.equipaje || getFeatureValue([/equipaje/i, /maleta/i, /bag/i]) || "No incluido";
   const rawProductId = data.productId ?? data.id;
   const parsedProductId = Number(rawProductId);
-  const localProductId = Number.isInteger(parsedProductId) && parsedProductId > 0
-    ? parsedProductId
-    : null;
+  const localProductId = Number.isInteger(parsedProductId) && parsedProductId > 0 ? parsedProductId : null;
 
   return {
     ...data,
@@ -229,7 +285,6 @@ const resolveFeatureIcon = (label, iconName) => {
   if (/llegada|arrival/.test(safe)) return FaPlaneArrival;
   if (/clase|cabina/.test(safe)) return FaChair;
   if (/tarifa|precio|costo/.test(safe)) return FaMoneyBillWave;
-  if (/asiento|seat/.test(safe)) return FaChair;
   if (/wifi|internet/.test(safe)) return FaWifi;
   if (/comida|meal|snack|catering/.test(safe)) return FaUtensils;
   if (/reembolso|cambio|flexible/.test(safe)) return FaExchangeAlt;
@@ -241,21 +296,77 @@ const resolveFeatureIcon = (label, iconName) => {
   return fallback || FaPlane;
 };
 
+const looksTechnicalDescription = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return true;
+
+  const normalized = normalizeText(raw);
+  return (
+    normalized.includes("aerolinea:") ||
+    normalized.includes("salida:") ||
+    normalized.includes("llegada:") ||
+    normalized.includes("vuelo:") ||
+    normalized.includes("null") ||
+    normalized.includes("undefined")
+  );
+};
+
+const POLICY_ITEMS = [
+  {
+    title: "Documentacion y check-in",
+    description:
+      "Presenta un documento valido y realiza el check-in dentro de los tiempos indicados por la aerolinea.",
+  },
+  {
+    title: "Equipaje permitido",
+    description:
+      "Verifica medidas y peso del equipaje. El exceso puede generar cargos adicionales en el aeropuerto.",
+  },
+  {
+    title: "Cambios y cancelaciones",
+    description:
+      "Las modificaciones dependen de la tarifa seleccionada. Consulta condiciones antes de confirmar la reserva.",
+  },
+  {
+    title: "Seguridad y embarque",
+    description:
+      "Llega con anticipacion al embarque y respeta las restricciones de seguridad para un abordaje fluido.",
+  },
+];
+
 export default function DetalleVuelo() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const user = useMemo(() => JSON.parse(localStorage.getItem("user")), []);
+
+  const user = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  }, []);
 
   const [vuelo, setVuelo] = useState(location.state?.vuelo ? normalizeVuelo(location.state.vuelo) : null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
-  const [bookings, setBookings] = useState([]);
+  const [selectedTravelDate, setSelectedTravelDate] = useState(() => getStartOfToday());
+  const [bookedDates, setBookedDates] = useState([]);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState("");
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingFeedback, setBookingFeedback] = useState(null);
+  const [visibleMonth, setVisibleMonth] = useState(() => getStartOfToday());
+  const [calendarExpanded, setCalendarExpanded] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(null);
+
   const featureItems = useMemo(() => {
     if (!vuelo) return [];
+
     const fromFeatures = Array.isArray(vuelo.features) ? vuelo.features : [];
     const parsedFromFeatures = fromFeatures
-      .map((f) => parseFeatureItem(f?.name, f?.icon))
+      .map((feature) => parseFeatureItem(feature?.name, feature?.icon))
       .filter(Boolean)
       .map((item) => ({
         ...item,
@@ -272,8 +383,8 @@ export default function DetalleVuelo() {
       }));
 
     const computed = buildComputedFeatures(vuelo);
-
     const uniqueMap = new Map();
+
     const pushUnique = (items) => {
       items.forEach((item) => {
         if (!item?.label) return;
@@ -287,37 +398,107 @@ export default function DetalleVuelo() {
     pushUnique(parsedFromCaracteristicas);
     pushUnique(computed);
 
-    return Array.from(uniqueMap.values()).slice(0, 8);
+    return Array.from(uniqueMap.values());
   }, [vuelo]);
+
   const imageList = useMemo(() => {
     if (!vuelo) return [];
+
     const items = [];
     const pushUnique = (src) => {
       if (!src) return;
       if (!items.includes(src)) items.push(src);
     };
-    if (Array.isArray(vuelo.imagesBase64)) {
-      vuelo.imagesBase64.forEach(pushUnique);
-    }
-    if (Array.isArray(vuelo.imagenesPais)) {
-      vuelo.imagenesPais.forEach(pushUnique);
-    }
+
+    if (Array.isArray(vuelo.imagesBase64)) vuelo.imagesBase64.forEach(pushUnique);
+    if (Array.isArray(vuelo.imagenesPais)) vuelo.imagenesPais.forEach(pushUnique);
     pushUnique(vuelo.imagenPrincipal);
-    return items;
+    pushUnique(getVueloImage(vuelo));
+
+    return items.filter(Boolean);
   }, [vuelo]);
+
+  useEffect(() => {
+    if (!imageList.length) {
+      setSelectedImage(null);
+      return;
+    }
+
+    setSelectedImage((prev) => {
+      if (prev && imageList.includes(prev)) return prev;
+      return imageList[0];
+    });
+  }, [imageList]);
+
+  const escalaResumen = useMemo(() => {
+    const escalas = featureItems.find((item) => normalizeText(item.label) === "escalas");
+    return escalas?.value || "Directo";
+  }, [featureItems]);
+
+  const descriptionText = useMemo(() => {
+    const rawDescription = vuelo?.descripcion || vuelo?.description || "";
+    if (!looksTechnicalDescription(rawDescription)) return rawDescription;
+
+    const destino = vuelo?.paisDestino || vuelo?.destino || "este destino";
+    return `Viaja hacia ${destino} con ${vuelo?.aerolinea || "tu aerolinea seleccionada"} en una experiencia pensada para resolver la reserva rapido, con informacion clara sobre tu salida, llegada y disponibilidad real.`;
+  }, [vuelo]);
+
+  const bookedDateSet = useMemo(() => new Set(bookedDates), [bookedDates]);
+  const disabledDates = useMemo(() => bookedDates.map(fromISODate).filter(Boolean), [bookedDates]);
+  const today = useMemo(() => getStartOfToday(), []);
+  const disabledMatchers = useMemo(() => [{ before: today }, ...disabledDates], [disabledDates, today]);
+  const availableMatcher = useMemo(
+    () => (date) => {
+      if (!date || Number.isNaN(date.getTime())) return false;
+      if (date < today) return false;
+      const iso = toISODateLocal(date);
+      if (!iso) return false;
+      return !bookedDateSet.has(iso);
+    },
+    [bookedDateSet, today]
+  );
+  const calendarModifiers = useMemo(
+    () => ({ booked: disabledDates, available: availableMatcher }),
+    [availableMatcher, disabledDates]
+  );
+  const selectedDateISO = useMemo(() => toISODateLocal(selectedTravelDate), [selectedTravelDate]);
+  const selectedDateLabel = useMemo(() => formatTravelDateLabel(selectedTravelDate), [selectedTravelDate]);
+  const selectedDateBooked = Boolean(selectedDateISO) && bookedDateSet.has(selectedDateISO);
+  const bookedDatesSummary = bookedDates.length
+    ? `${bookedDates.length} fecha${bookedDates.length > 1 ? "s" : ""} ya reservada${bookedDates.length > 1 ? "s" : ""}.`
+    : "Todavia no hay fechas reservadas para este vuelo.";
+  const bookingButtonLabel = bookingLoading
+    ? "Reservando..."
+    : selectedDateBooked
+      ? "Fecha no disponible"
+      : "Reservar ahora";
+  const canReserve =
+    Boolean(vuelo?.localProductId) && !availabilityLoading && !bookingLoading && !selectedDateBooked;
+
+  const handleTravelDateSelect = (date) => {
+    if (!date) return;
+    const nextDate = parseDateValue(date) || getStartOfToday();
+    setSelectedTravelDate(nextDate);
+    setVisibleMonth(nextDate);
+    setBookingFeedback(null);
+  };
 
   useEffect(() => {
     const loadVuelo = async () => {
       setLoading(true);
+      setLoadError("");
+
       let data = null;
       const stateVuelo = location.state?.vuelo || null;
       const stateLocalId = Number(stateVuelo?.productId ?? stateVuelo?.id);
       const detailId = Number(id);
 
-      // 1) Priorizar producto local (BD) para respetar imagen/campos editados en admin.
-      const localIdCandidate = Number.isInteger(stateLocalId) && stateLocalId > 0
-        ? stateLocalId
-        : (Number.isInteger(detailId) && detailId > 0 ? detailId : null);
+      const localIdCandidate =
+        Number.isInteger(stateLocalId) && stateLocalId > 0
+          ? stateLocalId
+          : Number.isInteger(detailId) && detailId > 0
+            ? detailId
+            : null;
 
       if (localIdCandidate) {
         try {
@@ -327,7 +508,6 @@ export default function DetalleVuelo() {
         }
       }
 
-      // 2) Si no existe en BD, fallback a endpoint Amadeus.
       if (!data) {
         try {
           data = await productService.obtenerVueloPorIdAPI(id);
@@ -336,25 +516,66 @@ export default function DetalleVuelo() {
         }
       }
 
-      // 3) Ultimo fallback: lo que venia por navigation state.
-      if (!data && stateVuelo) {
-        data = stateVuelo;
-      }
+      if (!data && stateVuelo) data = stateVuelo;
 
       const normalizado = normalizeVuelo(data);
       if (normalizado) setVuelo(normalizado);
+      else setLoadError("No se pudo cargar el detalle de este vuelo.");
+
       setLoading(false);
     };
 
     loadVuelo();
   }, [id, location.state]);
 
+  const loadAvailability = async (productId) => {
+    if (!productId) {
+      setBookedDates([]);
+      setAvailabilityError("");
+      return;
+    }
+
+    setAvailabilityLoading(true);
+    setAvailabilityError("");
+
+    try {
+      const dates = await getProductBookedDates(productId);
+      setBookedDates(dates);
+    } catch (err) {
+      console.error("Error cargando disponibilidad:", err);
+      setAvailabilityError("No se pudo obtener la disponibilidad en este momento.");
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!vuelo?.localProductId) {
+      setBookedDates([]);
+      setAvailabilityError("");
+      return;
+    }
+
+    loadAvailability(vuelo.localProductId);
+  }, [vuelo?.localProductId]);
+
+  useEffect(() => {
+    if (!vuelo) return;
+    const initialDate = getInitialTravelDate(vuelo);
+    setSelectedTravelDate(initialDate);
+    setVisibleMonth(initialDate);
+    setBookingFeedback(null);
+  }, [vuelo]);
+
   useEffect(() => {
     const loadFavs = async () => {
       if (!user || !vuelo?.localProductId) return;
       try {
         const favs = await getUserFavorites();
-        setIsFavorite(favs.some((f) => Number(f.id) === Number(vuelo.localProductId)));
+        setIsFavorite((prev) => {
+          const next = (favs || []).some((favorite) => Number(favorite.id) === Number(vuelo.localProductId));
+          return prev === next ? prev : next;
+        });
       } catch (err) {
         console.error("Error cargando favoritos:", err);
       }
@@ -363,58 +584,135 @@ export default function DetalleVuelo() {
     loadFavs();
   }, [user, vuelo?.localProductId]);
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate("/resultados");
+  };
+
   const handleFavorite = async () => {
-    if (!user) return alert("Debes iniciar sesion para agregar favoritos");
-    if (!vuelo?.localProductId) return alert("Este vuelo de Amadeus no esta guardado en la BD.");
+    if (!user) {
+      alert("Debes iniciar sesion para agregar favoritos.");
+      navigate("/login");
+      return;
+    }
+
+    if (!vuelo?.localProductId) {
+      alert("Este vuelo no esta guardado en la base para favoritos.");
+      return;
+    }
+
     try {
-      if (isFavorite) {
-        await removeFavorite(vuelo.localProductId);
-        setIsFavorite(false);
-      } else {
-        await addFavorite(vuelo.localProductId);
-        setIsFavorite(true);
-      }
+      if (isFavorite) await removeFavorite(vuelo.localProductId);
+      else await addFavorite(vuelo.localProductId);
+      setIsFavorite((prev) => !prev);
     } catch (err) {
-      alert("Error al actualizar favoritos");
-      console.error(err);
+      console.error("Error actualizando favorito:", err);
+      alert("No se pudo actualizar el favorito.");
     }
   };
 
   const handleBooking = async () => {
-    if (!user) return alert("Debes iniciar sesion para reservar");
-    if (!vuelo?.localProductId) return alert("Este vuelo de Amadeus no esta guardado en la BD.");
-    if (!vuelo.fechaSalidaRaw) return alert("No se puede reservar: fecha de salida no disponible");
+    if (!user) {
+      alert("Debes iniciar sesion para reservar un vuelo.");
+      navigate("/login");
+      return;
+    }
+
+    if (!vuelo?.localProductId) {
+      alert("Este vuelo no esta disponible para reserva directa.");
+      return;
+    }
+
+    if (!selectedDateISO) {
+      setBookingFeedback({
+        type: "error",
+        message: "Selecciona una fecha de viaje antes de reservar.",
+      });
+      return;
+    }
+
+    if (selectedDateBooked) {
+      setBookingFeedback({
+        type: "error",
+        message: "Esa fecha ya esta ocupada. Elige otra para continuar.",
+      });
+      return;
+    }
+
+    setBookingLoading(true);
+    setBookingFeedback(null);
 
     try {
-      const booking = await createBooking({
-        userId: user.id,
+      await createBooking({
         productId: vuelo.localProductId,
-        dateStr: vuelo.fechaSalidaRaw,
+        dateStr: selectedDateISO,
         passengers: 1,
       });
 
-      alert("Reserva realizada correctamente");
-      setBookings((prev) => [...prev, booking]);
+      await loadAvailability(vuelo.localProductId);
+      setBookingFeedback({
+        type: "success",
+        message: `Reserva creada para ${selectedDateLabel}.`,
+      });
     } catch (err) {
-      alert("Error al realizar la reserva");
-      console.error(err);
+      console.error("Error creando reserva:", err);
+      setBookingFeedback({
+        type: "error",
+        message: err?.message || "No se pudo completar la reserva.",
+      });
+    } finally {
+      setBookingLoading(false);
     }
   };
 
-  if (loading) return <p className="detalle-state">Cargando vuelo...</p>;
-  if (!vuelo) return <p className="detalle-state">Vuelo no encontrado</p>;
+  const heroImage = selectedImage || imageList[0] || "/assets/avionsito.png";
+  const galleryId = vuelo?.localProductId || vuelo?.id;
+
+  if (loading) {
+    return (
+      <div className="detalle-page-container">
+        <div className="detalle-card-wrapper">
+          <p className="dv-availability-state">Cargando detalle del vuelo...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!vuelo || loadError) {
+    return (
+      <div className="detalle-page-container">
+        <div className="detalle-card-wrapper">
+          <div className="dv-availability-error">
+            <span>{loadError || "No se encontro el vuelo."}</span>
+            <button type="button" className="dv-availability-retry" onClick={handleBack}>
+              Volver
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="detalle-page-container">
       <header className="detalle-header-bar">
         <div className="detalle-header-inner">
           <div className="dv-header-left">
-            <h1 className="dv-header-title">Vuelo a {vuelo.destino}</h1>
-            <p className="dv-header-subtitle">{vuelo.aerolinea} | VUELO {vuelo.numeroVuelo}</p>
+            <h1 className="dv-header-title">
+              {vuelo.origen} {"->"} {vuelo.destino}
+            </h1>
+            <p className="dv-header-subtitle">
+              {vuelo.aerolinea} - {vuelo.numeroVuelo}
+            </p>
           </div>
-          <button className="dv-back-btn dv-back-right" onClick={() => navigate(-1)} aria-label="Volver">
-            <FaChevronLeft />
-          </button>
+          <div className="dv-back-right">
+            <button type="button" className="dv-back-btn" onClick={handleBack} aria-label="Volver">
+              <FaChevronLeft />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -422,18 +720,47 @@ export default function DetalleVuelo() {
         <section className="dv-hero">
           <div className="dv-hero-media">
             <div className="dv-hero-image">
-              <img src={getVueloImage(vuelo)} alt={`Destino ${vuelo.destino}`} />
+              <img
+                src={heroImage}
+                alt={`Vuelo ${vuelo.origen} a ${vuelo.destino}`}
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = "/assets/avionsito.png";
+                }}
+              />
               <div className="dv-hero-overlay">
-                <span className="dv-hero-badge">DESTINO PREMIUM</span>
-                <h2 className="dv-hero-title">{vuelo.destino}</h2>
+                <div className="dv-hero-copy">
+                  <span className="dv-hero-badge">JETSET AIR</span>
+                  <h2 className="dv-hero-title">{vuelo.paisDestino || "Tu proximo destino"}</h2>
+                </div>
               </div>
             </div>
 
             {imageList.length > 1 && (
-              <div className="dv-thumb-row">
-                {imageList.slice(0, 4).map((src, index) => (
-                  <img key={`${index}-${src}`} src={src} alt={`Vista ${index + 1}`} className="dv-thumb" />
-                ))}
+              <div className="dv-gallery-row dv-gallery-thumbs">
+                {imageList.map((src, index) => {
+                  const isActive = src === heroImage;
+                  return (
+                    <button
+                      key={`${index}-${src}`}
+                      type="button"
+                      className={`dv-gallery-thumb ${isActive ? "is-active" : ""}`}
+                      onClick={() => setSelectedImage(src)}
+                      aria-label={`Ver imagen ${index + 1} del vuelo`}
+                      aria-pressed={isActive}
+                    >
+                      <img
+                        src={src}
+                        alt={`Vista ${index + 1} de ${vuelo.destino}`}
+                        className="dv-gallery-image"
+                        onError={(event) => {
+                          event.currentTarget.onerror = null;
+                          event.currentTarget.src = "/assets/avionsito.png";
+                        }}
+                      />
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -442,10 +769,15 @@ export default function DetalleVuelo() {
             <div className="dv-meta">
               <div className="dv-route-block">
                 <span className="dv-country">{vuelo.paisDestino || "Destino"}</span>
-                <h2 className="dv-route-title">{vuelo.origen} - {vuelo.destino}</h2>
-                <p className="dv-route-sub">{vuelo.aerolinea} · {vuelo.numeroVuelo}</p>
+                <h2 className="dv-route-title">
+                  {vuelo.origen} - {vuelo.destino}
+                </h2>
+                <p className="dv-route-sub">
+                  {vuelo.aerolinea} - {vuelo.numeroVuelo} / {escalaResumen}
+                </p>
               </div>
               <button
+                type="button"
                 className={`dv-icon-btn ${isFavorite ? "is-active" : ""}`}
                 onClick={handleFavorite}
                 aria-label={isFavorite ? "Quitar favorito" : "Agregar favorito"}
@@ -456,27 +788,31 @@ export default function DetalleVuelo() {
 
             <div className="dv-description">
               <h3>Descripcion</h3>
-              <p>{vuelo.descripcion || vuelo.description || "Descubre la magia, cultura y gastronomía de este increíble destino garantizando una experiencia inolvidable. ¡Reserva tu vuelo hoy mismo!"}</p>
+              <p>{descriptionText}</p>
             </div>
 
             {featureItems.length > 0 && (
               <div className="dv-features-block">
                 <h3>Caracteristicas del vuelo</h3>
                 <div className="dv-features-grid">
-                  {featureItems.map((feat, index) => {
-                    const Icon = resolveFeatureIcon(feat.label, feat.iconName);
-                    const hasValue = Boolean(feat.value);
+                  {featureItems.map((feature, index) => {
+                    const Icon = resolveFeatureIcon(feature.label, feature.iconName);
+                    const hasValue = Boolean(feature.value);
+
                     return (
-                      <div key={`${feat.label}-${index}`} className={`dv-feature-item ${hasValue ? "" : "is-compact"}`}>
+                      <div
+                        key={`${feature.label}-${index}`}
+                        className={`dv-feature-item ${hasValue ? "" : "is-compact"}`}
+                      >
                         <span className="dv-feature-icon">{Icon ? <Icon /> : null}</span>
                         <div className="dv-feature-content">
                           {hasValue ? (
                             <>
-                              <span className="dv-feature-label">{feat.label}</span>
-                              <span className="dv-feature-value">{feat.value}</span>
+                              <span className="dv-feature-label">{feature.label}</span>
+                              <span className="dv-feature-value">{feature.value}</span>
                             </>
                           ) : (
-                            <span className="dv-feature-value">{feat.label}</span>
+                            <span className="dv-feature-value">{feature.label}</span>
                           )}
                         </div>
                       </div>
@@ -486,43 +822,159 @@ export default function DetalleVuelo() {
               </div>
             )}
 
+            <div className="dv-policies">
+              <h3 className="dv-policies-title">Politicas de uso</h3>
+              <div className="dv-policies-grid">
+                {POLICY_ITEMS.map((policy) => (
+                  <div key={policy.title} className="dv-policy-card">
+                    <h4>{policy.title}</h4>
+                    <p>{policy.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="dv-availability">
+              <div className="dv-availability-head">
+                <h3>Disponibilidad real</h3>
+                <div className="dv-availability-legend">
+                  <span className="dv-legend-item">
+                    <span className="dv-legend-dot is-available" />
+                    Disponible
+                  </span>
+                  <span className="dv-legend-item">
+                    <span className="dv-legend-dot is-booked" />
+                    Ocupada
+                  </span>
+                </div>
+              </div>
+
+              <div className="dv-selection-strip">
+                <div className="dv-selection-copy">
+                  <span className="dv-selection-label">Fecha de viaje</span>
+                  <strong className="dv-selection-date">{selectedDateLabel}</strong>
+                  <p className="dv-selection-helper">
+                    {bookedDatesSummary} Las fechas ocupadas se validan en la interfaz y tambien en el servidor.
+                  </p>
+                </div>
+                <span className={`dv-selection-badge ${selectedDateBooked ? "is-booked" : "is-available"}`}>
+                  {selectedDateBooked ? "Ocupada" : "Disponible"}
+                </span>
+              </div>
+
+              {bookingFeedback && (
+                <div className={`dv-feedback is-${bookingFeedback.type}`}>
+                  {bookingFeedback.type === "success" ? <FaCheckCircle /> : <FaExclamationCircle />}
+                  <span>{bookingFeedback.message}</span>
+                </div>
+              )}
+
+              {availabilityLoading && <p className="dv-availability-state">Cargando fechas disponibles...</p>}
+
+              {!availabilityLoading && !vuelo?.localProductId && (
+                <p className="dv-availability-state">
+                  Este vuelo aun no tiene disponibilidad publicada para reserva directa.
+                </p>
+              )}
+
+              {availabilityError && (
+                <div className="dv-availability-error">
+                  <span>{availabilityError}</span>
+                  <button
+                    type="button"
+                    className="dv-availability-retry"
+                    onClick={() => loadAvailability(vuelo?.localProductId)}
+                  >
+                    Reintentar
+                  </button>
+                </div>
+              )}
+
+              {!availabilityLoading && !availabilityError && vuelo?.localProductId && (
+                <div className="dv-calendar">
+                  <div className="dv-calendar-grid">
+                    <div className="dv-calendar-panel">
+                      <h4 className="dv-calendar-title">Selecciona tu fecha</h4>
+                      <p className="dv-calendar-copy">
+                        Elige el dia en el que quieres reservar este vuelo. Si otra persona se adelanta, el backend
+                        bloqueara esa fecha para evitar dobles reservas.
+                      </p>
+                      <div className="dv-calendar-actions">
+                        <button
+                          type="button"
+                          className={`dv-calendar-toggle ${calendarExpanded ? "is-active" : ""}`}
+                          onClick={() => setCalendarExpanded((prev) => !prev)}
+                        >
+                          {calendarExpanded ? "Ver 1 mes" : "Ver 2 meses"}
+                        </button>
+                        <span className="dv-calendar-hint">
+                          {calendarExpanded ? "Mostrando 2 meses" : "Vista compacta"}
+                        </span>
+                      </div>
+                      <div className={`dv-calendar-shell ${calendarExpanded ? "is-expanded" : "is-collapsed"}`}>
+                        <DayPicker
+                          mode="single"
+                          locale={es}
+                          className={`dv-daypicker ${calendarExpanded ? "is-dual" : "is-single"}`}
+                          selected={selectedTravelDate}
+                          month={visibleMonth}
+                          onMonthChange={setVisibleMonth}
+                          onSelect={handleTravelDateSelect}
+                          disabled={disabledMatchers}
+                          modifiers={calendarModifiers}
+                          modifiersClassNames={{ booked: "dv-day-booked", available: "dv-day-available" }}
+                          numberOfMonths={calendarExpanded ? 2 : 1}
+                          pagedNavigation={calendarExpanded}
+                          showOutsideDays
+                          fixedWeeks
+                          animate
+                          navLayout="around"
+                          components={{
+                            Chevron: ({ orientation, className }) =>
+                              orientation === "left" ? (
+                                <FaChevronLeft className={className} />
+                              ) : (
+                                <FaChevronRight className={className} />
+                              ),
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="dv-price-bar">
               <div className="dv-price-info">
                 <span>Desde</span>
                 <strong>${vuelo.precioTotal}</strong>
                 <em>por persona</em>
               </div>
-              <button className="dv-btn-reservar" onClick={handleBooking}>
-                Reservar ahora
+
+              <div className="dv-price-meta">
+                <span>
+                  <FaCalendarAlt /> Fecha elegida
+                </span>
+                <strong>{selectedDateLabel}</strong>
+                <em>{selectedDateBooked ? "Selecciona otra fecha para continuar." : "Lista para confirmar."}</em>
+              </div>
+
+              <button className="dv-btn-reservar" onClick={handleBooking} disabled={!canReserve}>
+                {bookingButtonLabel}
               </button>
             </div>
-            
-            <Link to={`/galeria/${vuelo.id}`} className="dv-btn-galeria-wide">
-              Ver galería de imágenes
-            </Link>
+
+            {galleryId ? (
+              <div className="dv-secondary-actions">
+                <Link to={`/galeria/${galleryId}`} className="dv-btn-galeria-wide">
+                  Ver galeria de imagenes
+                </Link>
+              </div>
+            ) : null}
           </div>
         </section>
       </div>
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

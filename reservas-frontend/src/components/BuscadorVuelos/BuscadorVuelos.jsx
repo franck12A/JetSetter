@@ -30,10 +30,21 @@ const asDateISO = (value) => {
 };
 
 const formatDateLabel = (value) => {
-  if (!value) return "Seleccionar fecha";
-  const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return "Seleccionar fecha";
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" });
+};
+
+const formatDateRangeLabel = (salida, regreso) => {
+  const salidaLabel = formatDateLabel(salida);
+  const regresoLabel = formatDateLabel(regreso);
+  if (!salidaLabel && !regresoLabel) return "Selecciona salida y regreso";
+  if (salidaLabel && regresoLabel && salidaLabel !== regresoLabel) {
+    return `Salida: ${salidaLabel} · Regreso: ${regresoLabel}`;
+  }
+  if (salidaLabel) return `Salida: ${salidaLabel}`;
+  return `Regreso: ${regresoLabel}`;
 };
 
 const normalizeVuelo = (vuelo = {}) => {
@@ -61,12 +72,18 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], vu
 
   const [pasajeros, setPasajeros] = useState(1);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
-  const [fecha, setFecha] = useState("");
+  const [fechaSalida, setFechaSalida] = useState("");
+  const [fechaRegreso, setFechaRegreso] = useState("");
+  const [activeDatePicker, setActiveDatePicker] = useState("salida");
   const [origen, setOrigen] = useState("");
   const [destino, setDestino] = useState("");
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [origenQuery, setOrigenQuery] = useState("");
   const [destinoQuery, setDestinoQuery] = useState("");
+
+  const salidaLabel = formatDateLabel(fechaSalida);
+  const regresoLabel = formatDateLabel(fechaRegreso);
+  const focusLabel = activeDatePicker === "regreso" ? "Regreso" : "Salida";
 
   const origenRef = useRef(null);
   const destinoRef = useRef(null);
@@ -113,10 +130,20 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], vu
   }, []);
 
   const handleBuscar = () => {
+    const fechaInicio = fechaSalida || fechaRegreso;
+    const fechaFin = fechaRegreso || fechaSalida;
+    const hasDateRange = Boolean(fechaInicio);
+
     const filtrados = sourceVuelos.filter((v) => {
       const okOrigen = !origen || normalizeText(v.origen) === normalizeText(origen);
       const okDestino = !destino || normalizeText(v.destino) === normalizeText(destino);
-      const okFecha = !fecha || v.fechaISO === fecha;
+      const okFecha =
+        !hasDateRange ||
+        (v.fechaISO &&
+          fechaInicio &&
+          fechaFin &&
+          v.fechaISO >= fechaInicio &&
+          v.fechaISO <= fechaFin);
       const okCategoria = !categoriaSeleccionada || normalizeText(v.categoria) === normalizeText(categoriaSeleccionada);
       return okOrigen && okDestino && okFecha && okCategoria;
     });
@@ -126,7 +153,8 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], vu
     const params = new URLSearchParams();
     if (origen) params.set("origen", origen);
     if (destino) params.set("destino", destino);
-    if (fecha) params.set("fecha", fecha);
+    if (fechaSalida) params.set("fechaSalida", fechaSalida);
+    if (fechaRegreso) params.set("fechaRegreso", fechaRegreso);
     if (categoriaSeleccionada) params.set("categoria", categoriaSeleccionada);
     if (pasajeros > 1) params.set("pasajeros", String(pasajeros));
 
@@ -137,6 +165,9 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], vu
     <div className="hero-section">
       <div className="search-wrapper">
         <h1 className="hero-title">A donde quieres viajar?</h1>
+        <p className="hero-subtitle">
+          Selecciona origen, destino y fechas de salida y regreso para encontrar los vuelos mas relevantes.
+        </p>
 
         <div className="search-row-full">
           <div className="search-pill search-pill-control" ref={origenRef}>
@@ -275,37 +306,85 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], vu
           <div className="search-pill search-pill-control" ref={fechaRef}>
             <FaRegCalendarAlt className="pill-icon" />
             <div className="control-stack">
-              <span className="control-label">Fecha</span>
-              <button
-                type="button"
-                className="control-trigger control-trigger--wrap"
-                onClick={() => setActiveDropdown((prev) => (prev === "fecha" ? null : "fecha"))}
-              >
-                {formatDateLabel(fecha)}
-              </button>
+              <span className="control-label">Salida y regreso</span>
+              <div className="date-buttons">
+                <button
+                  type="button"
+                  className="date-trigger"
+                  onClick={() => {
+                    setActiveDatePicker("salida");
+                    setActiveDropdown("fecha");
+                  }}
+                >
+                  <span className="date-trigger-label">Salida</span>
+                  <span className="date-trigger-value">{salidaLabel || "Seleccionar"}</span>
+                </button>
+                <button
+                  type="button"
+                  className="date-trigger"
+                  onClick={() => {
+                    setActiveDatePicker("regreso");
+                    setActiveDropdown("fecha");
+                  }}
+                >
+                  <span className="date-trigger-label">Regreso</span>
+                  <span className="date-trigger-value">{regresoLabel || "Seleccionar"}</span>
+                </button>
+              </div>
+              <div className="control-hint">
+                {formatDateRangeLabel(fechaSalida, fechaRegreso)}
+              </div>
             </div>
 
             {activeDropdown === "fecha" && (
               <div className="date-panel">
+                <div className="date-panel-head">Seleccionando: {focusLabel}</div>
                 <Calendar
-                  date={fecha ? new Date(`${fecha}T00:00:00`) : new Date()}
+                  date={
+                    activeDatePicker === "regreso"
+                      ? (fechaRegreso
+                        ? new Date(`${fechaRegreso}T00:00:00`)
+                        : (fechaSalida ? new Date(`${fechaSalida}T00:00:00`) : new Date()))
+                      : (fechaSalida
+                        ? new Date(`${fechaSalida}T00:00:00`)
+                        : (fechaRegreso ? new Date(`${fechaRegreso}T00:00:00`) : new Date()))
+                  }
+                  minDate={
+                    activeDatePicker === "regreso" && fechaSalida
+                      ? new Date(`${fechaSalida}T00:00:00`)
+                      : undefined
+                  }
+                  maxDate={
+                    activeDatePicker === "salida" && fechaRegreso
+                      ? new Date(`${fechaRegreso}T00:00:00`)
+                      : undefined
+                  }
                   onChange={(nextDate) => {
-                    setFecha(asDateISO(nextDate));
+                    const nextISO = asDateISO(nextDate);
+                    if (activeDatePicker === "regreso") {
+                      setFechaRegreso(nextISO);
+                      if (!fechaSalida) setFechaSalida(nextISO);
+                    } else {
+                      setFechaSalida(nextISO);
+                      if (fechaRegreso && nextISO > fechaRegreso) setFechaRegreso("");
+                    }
                     setActiveDropdown(null);
                   }}
                   color="#2563eb"
                 />
 
-                {fecha && (
+                {(fechaSalida || fechaRegreso) && (
                   <button
                     type="button"
                     className="date-clear-btn"
                     onClick={() => {
-                      setFecha("");
+                      setFechaSalida("");
+                      setFechaRegreso("");
+                      setActiveDatePicker("salida");
                       setActiveDropdown(null);
                     }}
                   >
-                    Limpiar fecha
+                    Limpiar fechas
                   </button>
                 )}
               </div>
@@ -313,22 +392,28 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], vu
           </div>
 
           {categorias.length > 0 && (
-            <div className="search-pill">
-              <select
-                value={categoriaSeleccionada}
-                onChange={(e) => setCategoriaSeleccionada(e.target.value)}
-                className="search-select"
-              >
-                <option value="">Categoria</option>
-                {categorias.map((cat) => {
-                  const name = cat?.name || String(cat || "");
-                  return (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  );
-                })}
-              </select>
+            <div className="search-pill search-pill-control">
+              <div className="control-stack">
+                <label className="control-label" htmlFor="categoria-select">
+                  Categoria
+                </label>
+                <select
+                  id="categoria-select"
+                  value={categoriaSeleccionada}
+                  onChange={(e) => setCategoriaSeleccionada(e.target.value)}
+                  className="search-select control-input"
+                >
+                  <option value="">Categoria</option>
+                  {categorias.map((cat) => {
+                    const name = cat?.name || String(cat || "");
+                    return (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
             </div>
           )}
         </div>

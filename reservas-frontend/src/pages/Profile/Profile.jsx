@@ -27,6 +27,13 @@ const resolveProductId = (item) => {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 };
 
+const formatBookingDate = (value) => {
+  if (!value) return "Fecha pendiente";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "Fecha pendiente";
+  return parsed.toLocaleDateString("es-AR");
+};
+
 export default function Profile() {
   const [favorites, setFavorites] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -236,7 +243,8 @@ export default function Profile() {
             <div className="card-grid">
               {bookings.map((b, idx) => {
                 const vuelo = b.product || b;
-                const fechaVuelo = new Date(b.travelDate ?? b.dateStr);
+                const fechaValue = b.travelDate ?? b.dateStr ?? b.bookingDate;
+                const fechaVuelo = new Date(fechaValue);
                 const esFuturo = fechaVuelo > new Date();
                 return (
                   <div key={`book-${b.id}-${idx}`} className="card flight-card">
@@ -256,7 +264,7 @@ export default function Profile() {
                     </div>
                     <div className="flight-card-body">
                       <h5 className="flight-title">{vuelo.name}</h5>
-                      <p className="flight-meta-data">📅 {fechaVuelo.toLocaleDateString("es-AR")}</p>
+                      <p className="flight-meta-data">📅 {formatBookingDate(fechaValue)}</p>
                       <div className="flight-footer mt-2">
                         <span className="flight-price">${vuelo.price}</span>
                         <button className="btn-delete" onClick={() => handleCancelBooking(b.id)}>❌</button>

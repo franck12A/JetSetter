@@ -15,6 +15,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
+import jakarta.servlet.http.HttpServletResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 @Configuration
 @EnableMethodSecurity
@@ -55,6 +57,20 @@ public class SecurityConfig {
                     System.out.println("🌐 Configuración CORS aplicada para request: " + request.getRequestURI());
                     return config;
                 }))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\":\"UNAUTHORIZED\",\"path\":\"" + request.getRequestURI() + "\"}");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\":\"FORBIDDEN\",\"path\":\"" + request.getRequestURI() + "\"}");
+                        })
+                )
                 .authorizeHttpRequests(auth -> {
                     System.out.println("🛡 Configurando rutas públicas y privadas...");
                     auth
@@ -69,8 +85,9 @@ public class SecurityConfig {
                             .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAuthority("ROLE_ADMIN")
                             .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAuthority("ROLE_ADMIN")
                             .requestMatchers("/api/favorites/**").authenticated()
-
-                            .requestMatchers("/api/bookings/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+                            .requestMatchers("/api/bookings/product/**").permitAll()
+                            // Bookings: autenticado (el rol puede variar según origen del auth)
+                            .requestMatchers("/api/bookings/**").authenticated()
                             .requestMatchers("/vuelos/**", "/api/vuelos/**").permitAll()
                             .requestMatchers("/amadeus/vuelos/**").permitAll()
                             .requestMatchers("/amadeus/**").permitAll()

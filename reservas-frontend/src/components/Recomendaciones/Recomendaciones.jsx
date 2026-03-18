@@ -3,19 +3,22 @@ import React, { useEffect, useState, useMemo } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, A11y, Autoplay } from "swiper/modules";
 import { Link } from "react-router-dom";
+import { FaHeart, FaRegHeart, FaShareAlt } from "react-icons/fa";
 
 import productService from "../../services/productService";
 import CarouselCard from "../CarouselCard/CarouselCard";
+import { addFavorite, getUserFavorites, removeFavorite } from "../../services/favoritesApi";
 
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "./Recomendaciones.css";
 
-export default function Recomendaciones({ vuelos = [], origen, destino, fecha }) {
+export default function Recomendaciones({ vuelos = [], onShare }) {
   const [productos, setProductos] = useState(vuelos);
   const [loading, setLoading] = useState(vuelos && vuelos.length > 0 ? false : true);
   const [error, setError] = useState("");
+  const [favoriteIds, setFavoriteIds] = useState([]);
   const MAX_RECOS = 10;
   const CARDS_PER_PAGE = 4;
 
@@ -70,6 +73,25 @@ export default function Recomendaciones({ vuelos = [], origen, destino, fecha })
     loadProductos();
   }, [vuelos]);
 
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem("user") || "null");
+        if (!user) {
+          setFavoriteIds([]);
+          return;
+        }
+        const favs = await getUserFavorites();
+        const ids = (favs || []).map((item) => Number(item.id)).filter((id) => Number.isInteger(id));
+        setFavoriteIds(ids);
+      } catch (err) {
+        console.error("Error cargando favoritos en recomendaciones:", err);
+      }
+    };
+
+    loadFavorites();
+  }, []);
+
   const recomendaciones = useMemo(() => {
     const unique = uniqueById(Array.isArray(productos) ? productos : []);
     const shuffled = shuffle(unique);
@@ -83,6 +105,60 @@ export default function Recomendaciones({ vuelos = [], origen, destino, fecha })
       };
     });
   }, [productos]);
+
+  const resolveProductId = (item) => {
+    const raw = item?.productId ?? item?.id;
+    const parsed = Number(raw);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  };
+
+  const toggleFavorite = async (event, item) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    const token = localStorage.getItem("token");
+    if (!user || !token) {
+      alert("Debes iniciar sesion para agregar favoritos.");
+      return;
+    }
+
+    const productId = resolveProductId(item);
+    if (!productId) {
+      alert("Este vuelo no esta guardado en la BD para favoritos.");
+      return;
+    }
+
+    const isFav = favoriteIds.includes(productId);
+
+    try {
+      if (isFav) {
+        await removeFavorite(productId);
+      } else {
+        await addFavorite(productId);
+      }
+
+      setFavoriteIds((prev) =>
+        isFav ? prev.filter((id) => id !== productId) : [...prev, productId]
+      );
+
+      const stored = JSON.parse(localStorage.getItem("user") || "{}");
+      const nextFavorites = isFav
+        ? (stored.favorites || []).filter((id) => Number(id) !== productId)
+        : [...(stored.favorites || []), productId];
+      stored.favorites = nextFavorites;
+      localStorage.setItem("user", JSON.stringify(stored));
+    } catch (err) {
+      console.error("Error actualizando favorito:", err);
+      alert("No se pudo actualizar el favorito.");
+    }
+  };
+
+  const handleShare = (event, item) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (onShare) onShare(item);
+  };
 
   const pages = useMemo(() => {
     const chunks = [];
@@ -115,21 +191,46 @@ export default function Recomendaciones({ vuelos = [], origen, destino, fecha })
           {pages.map((chunk, pageIndex) => (
             <SwiperSlide key={`reco-page-${pageIndex}`}>
               <div className="reco-grid">
-                {chunk.map((v, index) => (
-                  <Link
-                    key={v.id || index}
-                    to={`/vuelo/${v.productId || v.id}`}
-                    className="reco-link"
-                    state={{ vuelo: { ...v, productId: v.productId || v.id } }}
-                  >
-                    <CarouselCard
-                      image={v.imagenPrincipal}
-                      subtitle={`${v.origen} -> ${v.destino}`}
-                      title={v.destino}
-                      price={v.precioTotal}
-                    />
-                  </Link>
-                ))}
+                {chunk.map((v, index) => {
+                  const productId = resolveProductId(v);
+                  const isFavorite = productId ? favoriteIds.includes(productId) : false;
+
+                  return (
+                    <Link
+                      key={v.id || index}
+                      to={`/vuelo/${v.productId || v.id}`}
+                      className="reco-link"
+                      state={{ vuelo: { ...v, productId: v.productId || v.id } }}
+                    >
+                      <CarouselCard
+                        image={v.imagenPrincipal}
+                        subtitle={`${v.origen} -> ${v.destino}`}
+                        title={v.destino}
+                        price={v.precioTotal}
+                        actions={
+                          <>
+                            <button
+                              type="button"
+                              className={`carousel-action ${isFavorite ? "is-active" : ""}`}
+                              onClick={(event) => toggleFavorite(event, v)}
+                              aria-label="Marcar como favorito"
+                            >
+                              {isFavorite ? <FaHeart /> : <FaRegHeart />}
+                            </button>
+                            <button
+                              type="button"
+                              className="carousel-action"
+                              onClick={(event) => handleShare(event, v)}
+                              aria-label="Compartir vuelo"
+                            >
+                              <FaShareAlt />
+                            </button>
+                          </>
+                        }
+                      />
+                    </Link>
+                  );
+                })}
               </div>
             </SwiperSlide>
           ))}

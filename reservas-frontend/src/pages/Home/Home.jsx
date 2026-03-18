@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FaPlane, FaClock, FaFilter, FaChair, FaHeart, FaRegHeart } from "react-icons/fa";
+import { FaPlane, FaClock, FaFilter, FaChair, FaHeart, FaRegHeart, FaShareAlt } from "react-icons/fa";
 
 import Navbar from "../../components/Navbar/Navbar";
 import BuscadorVuelos from "../../components/BuscadorVuelos/BuscadorVuelos";
 import CategoriasSection from "../../components/CategoriasSection/CategoriasSection";
 import Recomendaciones from "../../components/Recomendaciones/Recomendaciones";
+import ShareModal from "../../components/ShareModal/ShareModal";
 import { useNavigate } from "react-router-dom";
 import Paginacion from "../../components/Paginacion/Paginacion";
 import "./Home.css";
@@ -30,12 +31,37 @@ const resolveLocalProductId = (vuelo) => {
   const parsed = Number(raw);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 };
+
+const buildSharePayload = (vuelo) => {
+  if (!vuelo) return null;
+  const route =
+    vuelo.origen && vuelo.destino
+      ? { origen: vuelo.origen, destino: vuelo.destino }
+      : splitRoute(vuelo?.name || "");
+  const localProductId = resolveLocalProductId(vuelo) || vuelo?.id;
+  const baseUrl =
+    typeof window !== "undefined" && window.location?.origin ? window.location.origin : "";
+  const url = localProductId ? `${baseUrl}/vuelo/${localProductId}` : baseUrl || "";
+  const priceLabel = vuelo?.precioTotal ? `$${vuelo.precioTotal}` : "precio a consultar";
+  const aerolinea = vuelo?.aerolinea || vuelo?.airline || "";
+  const title = `Vuelo ${route.origen} -> ${route.destino}`;
+  const description = `Vuelo ${route.origen} -> ${route.destino}${aerolinea ? ` con ${aerolinea}` : ""}. Desde ${priceLabel}.`;
+
+  return {
+    title,
+    description,
+    image: getVueloImage(vuelo),
+    url,
+  };
+};
 export default function Home() {
   const [vuelos, setVuelos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const [vuelosFiltrados, setVuelosFiltrados] = useState([]);
+  const [_vuelosFiltrados, setVuelosFiltrados] = useState([]);
+  const [shareData, setShareData] = useState(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   // ðŸ”¹ Traer vuelos desde la API real
   const fetchVuelos = async () => {
@@ -132,6 +158,18 @@ export default function Home() {
     navigate(`/resultados?categoria=${encodeURIComponent(cat)}`);
   };
 
+  const openShareModal = (vuelo) => {
+    const payload = buildSharePayload(vuelo);
+    if (!payload) return;
+    setShareData(payload);
+    setShareOpen(true);
+  };
+
+  const closeShareModal = () => {
+    setShareOpen(false);
+    setShareData(null);
+  };
+
   return (
     <div className="main-bg">
       <div className="header-wrapper">
@@ -149,7 +187,7 @@ export default function Home() {
           categorias={categorias}
           onSelectCategoria={handleSelectCategoria}
         />
-        <Recomendaciones vuelos={vuelos} />
+        <Recomendaciones vuelos={vuelos} onShare={openShareModal} />
 
         <div className="vuelos-paginados-section">
           <div className="vp-header">
@@ -229,6 +267,14 @@ export default function Home() {
                     >
                       {isFavorite ? <FaHeart color="white" /> : <FaRegHeart color="white" />}
                     </button>
+                    <button
+                      className="vnc-share-btn"
+                      type="button"
+                      aria-label="Compartir vuelo"
+                      onClick={() => openShareModal(vuelo)}
+                    >
+                      <FaShareAlt />
+                    </button>
                   </div>
 
                   <div className="vnc-info">
@@ -270,6 +316,8 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      <ShareModal isOpen={shareOpen} onClose={closeShareModal} data={shareData} />
     </div>
   );
 }

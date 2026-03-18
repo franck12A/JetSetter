@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import { FaPlane, FaClock, FaCalendarAlt, FaHeart, FaRegHeart, FaTimes } from "react-icons/fa";
+import { FaPlane, FaClock, FaCalendarAlt, FaHeart, FaRegHeart, FaTimes, FaFilter } from "react-icons/fa";
 import Paginacion from "../../components/Paginacion/Paginacion";
 import productService from "../../services/productService";
 import { addFavorite as addFavApi, removeFavorite as removeFavApi, getUserFavorites } from "../../services/favoritesApi";
+import { createBooking } from "../../services/bookingsApi";
 import { getVueloImage } from "../../utils/images";
 import { inferFlightCategories, hasCategoryMatch } from "../../utils/flightCategories";
 import { getSafeIcon } from "../../utils/iconRegistry";
@@ -91,6 +92,27 @@ const formatFecha = (value) => {
   });
 };
 
+const NEARBY_DAYS = 20;
+
+const toDateOnly = (isoDate) => {
+  if (!isoDate) return null;
+  const date = new Date(`${isoDate}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const diffDays = (a, b) => Math.round(Math.abs(a.getTime() - b.getTime()) / 86400000);
+
+const distanceToRange = (isoDate, range) => {
+  if (!isoDate || !range) return Number.POSITIVE_INFINITY;
+  const date = toDateOnly(isoDate);
+  const start = toDateOnly(range.start);
+  const end = toDateOnly(range.end);
+  if (!date || !start || !end) return Number.POSITIVE_INFINITY;
+  if (date >= start && date <= end) return 0;
+  if (date < start) return diffDays(start, date);
+  return diffDays(date, end);
+};
+
 const getStoredFavorites = () => {
   try {
     return JSON.parse(localStorage.getItem("favorites") || "[]");
@@ -107,6 +129,8 @@ export default function Resultados() {
   const filtroOrigen = queryParams.get("origen") || "";
   const filtroDestino = queryParams.get("destino") || "";
   const filtroFecha = queryParams.get("fecha") || "";
+  const filtroFechaSalida = queryParams.get("fechaSalida") || queryParams.get("fechaInicio") || "";
+  const filtroFechaRegreso = queryParams.get("fechaRegreso") || queryParams.get("fechaFin") || "";
   const filtroCategoria = queryParams.get("categoria") || "";
 
   const [vuelos, setVuelos] = useState([]);
@@ -114,7 +138,15 @@ export default function Resultados() {
   const [currentPage, setCurrentPage] = useState(1);
   const [favorites, setFavorites] = useState(getStoredFavorites());
   const [selectedCategories, setSelectedCategories] = useState(() => parseSelectedCategories(filtroCategoria));
+  const [filtersOpen, setFiltersOpen] = useState(true);
   const itemsPerPage = 8;
+
+  const dateRange = useMemo(() => {
+    const start = filtroFechaSalida || filtroFecha || "";
+    const end = filtroFechaRegreso || filtroFecha || "";
+    if (!start && !end) return null;
+    return { start: start || end, end: end || start };
+  }, [filtroFechaSalida, filtroFechaRegreso, filtroFecha]);
 
   useEffect(() => {
     const fetchVuelos = async () => {
@@ -152,18 +184,27 @@ export default function Resultados() {
     fetchVuelos();
   }, []);
 
+
   useEffect(() => {
     setSelectedCategories(parseSelectedCategories(filtroCategoria));
   }, [filtroCategoria]);
 
-  const baseFiltrados = useMemo(() => {
+  const baseSinFecha = useMemo(() => {
     return vuelos.filter((v) => {
       const coincideOrigen = !filtroOrigen || normalizeText(v.origen) === normalizeText(filtroOrigen);
       const coincideDestino = !filtroDestino || normalizeText(v.destino) === normalizeText(filtroDestino);
-      const coincideFecha = !filtroFecha || v.fechaISO === filtroFecha;
-      return coincideOrigen && coincideDestino && coincideFecha;
+      return coincideOrigen && coincideDestino;
     });
-  }, [vuelos, filtroOrigen, filtroDestino, filtroFecha]);
+  }, [vuelos, filtroOrigen, filtroDestino]);
+
+  const baseFiltrados = useMemo(() => {
+    return baseSinFecha.filter((v) => {
+      const coincideFecha =
+        !dateRange ||
+        (v.fechaISO && v.fechaISO >= dateRange.start && v.fechaISO <= dateRange.end);
+      return coincideFecha;
+    });
+  }, [baseSinFecha, dateRange]);
 
   const resultadosFiltrados = useMemo(() => {
     return baseFiltrados
@@ -176,13 +217,37 @@ export default function Resultados() {
       });
   }, [baseFiltrados, selectedCategories]);
 
+  const resultadosCercanos = useMemo(() => {
+    if (!dateRange) return [];
+    return baseSinFecha
+      .filter((v) => hasCategoryMatch(v.categorias, selectedCategories))
+      .map((v) => ({ vuelo: v, distancia: distanceToRange(v.fechaISO, dateRange) }))
+      .filter((item) => Number.isFinite(item.distancia) && item.distancia > 0 && item.distancia <= NEARBY_DAYS)
+      .sort((a, b) => {
+        if (a.distancia !== b.distancia) return a.distancia - b.distancia;
+        const dateA = a.vuelo.fechaISO || "9999-12-31";
+        const dateB = b.vuelo.fechaISO || "9999-12-31";
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        return a.vuelo.precio - b.vuelo.precio;
+      });
+  }, [baseSinFecha, dateRange, selectedCategories]);
+
+  const showNearby = Boolean(dateRange) && resultadosFiltrados.length === 0 && resultadosCercanos.length > 0;
+  const listaMostrada = showNearby ? resultadosCercanos.map((item) => item.vuelo) : resultadosFiltrados;
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [filtroOrigen, filtroDestino, filtroFecha, selectedCategories]);
+  }, [filtroOrigen, filtroDestino, dateRange, selectedCategories]);
 
-  const totalPages = Math.max(1, Math.ceil(resultadosFiltrados.length / itemsPerPage));
+  useEffect(() => {
+    if (window.innerWidth <= 900) {
+      setFiltersOpen(false);
+    }
+  }, []);
+
+  const totalPages = Math.max(1, Math.ceil(listaMostrada.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const vuelosPaginados = resultadosFiltrados.slice(startIndex, startIndex + itemsPerPage);
+  const vuelosPaginados = listaMostrada.slice(startIndex, startIndex + itemsPerPage);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -190,14 +255,14 @@ export default function Resultados() {
 
   const categoryCounts = useMemo(() => {
     const counts = new Map();
-    baseFiltrados.forEach((vuelo) => {
+    (showNearby ? listaMostrada : baseFiltrados).forEach((vuelo) => {
       (vuelo.categorias || []).forEach((cat) => {
         if (!cat) return;
         counts.set(cat, (counts.get(cat) || 0) + 1);
       });
     });
     return counts;
-  }, [baseFiltrados]);
+  }, [baseFiltrados, showNearby, listaMostrada]);
 
   const categoryOptions = useMemo(() => {
     const items = Array.from(categoryCounts.entries()).map(([name, count]) => ({ name, count }));
@@ -261,6 +326,10 @@ export default function Resultados() {
       params.delete("origen");
       params.delete("destino");
       params.delete("fecha");
+      params.delete("fechaInicio");
+      params.delete("fechaFin");
+      params.delete("fechaSalida");
+      params.delete("fechaRegreso");
       params.delete("categoria");
     });
   };
@@ -276,6 +345,9 @@ export default function Resultados() {
       return next;
     });
   };
+
+  const hasSalida = Boolean(filtroFechaSalida || filtroFecha);
+  const hasRegreso = Boolean(filtroFechaRegreso || filtroFecha);
 
   const toggleFavorite = async (vuelo) => {
     const user = JSON.parse(localStorage.getItem("user") || "null");
@@ -333,33 +405,16 @@ export default function Resultados() {
       return;
     }
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Debes iniciar sesion para reservar un vuelo.");
-      window.location.href = "/login";
-      return;
-    }
-
     try {
-      const res = await fetch("http://localhost:8080/api/bookings/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          productId: vuelo.localProductId,
-          dateStr: vuelo.fechaISO || new Date().toISOString().slice(0, 10),
-          passengers: 1,
-        }),
+      await createBooking({
+        productId: vuelo.localProductId,
+        dateStr: vuelo.fechaISO || new Date().toISOString().slice(0, 10),
+        passengers: 1,
       });
-
-      if (!res.ok) throw new Error("Error al crear la reserva");
       alert(`Reserva creada para: ${vuelo.name || `${vuelo.origen} -> ${vuelo.destino}`}`);
     } catch (err) {
       console.error("Error reservando vuelo:", err);
-      alert("Hubo un error al reservar el vuelo.");
+      alert(err?.message || "Hubo un error al reservar el vuelo.");
     }
   };
 
@@ -370,8 +425,23 @@ export default function Resultados() {
     filtroDestino
       ? { key: "destino", label: `Destino: ${filtroDestino}`, onRemove: () => removeQueryParam("destino") }
       : null,
-    filtroFecha
-      ? { key: "fecha", label: `Fecha: ${filtroFecha}`, onRemove: () => removeQueryParam("fecha") }
+    dateRange
+      ? {
+          key: "fecha",
+          label: hasSalida && hasRegreso && dateRange.start !== dateRange.end
+            ? `Salida: ${formatFecha(dateRange.start)} · Regreso: ${formatFecha(dateRange.end)}`
+            : hasSalida
+              ? `Salida: ${formatFecha(dateRange.start)}`
+              : `Regreso: ${formatFecha(dateRange.end)}`,
+          onRemove: () =>
+            updateSearchParams((params) => {
+              params.delete("fecha");
+              params.delete("fechaInicio");
+              params.delete("fechaFin");
+              params.delete("fechaSalida");
+              params.delete("fechaRegreso");
+            }),
+        }
       : null,
     ...selectedCategories.map((cat) => ({
       key: `cat-${cat}`,
@@ -389,7 +459,15 @@ export default function Resultados() {
           <div>
             <h1 className="resultados-title">Resultados de búsqueda</h1>
             <p className="resultados-subtitle">
-              Mostrando <strong>{resultadosFiltrados.length}</strong> de <strong>{vuelos.length}</strong> resultados.
+              {showNearby ? (
+                <>
+                  No encontramos vuelos exactos para esas fechas. Mostrando <strong>{listaMostrada.length}</strong> opciones cercanas.
+                </>
+              ) : (
+                <>
+                  Mostrando <strong>{listaMostrada.length}</strong> de <strong>{vuelos.length}</strong> resultados.
+                </>
+              )}
             </p>
           </div>
           {hasActiveFilters && (
@@ -397,13 +475,19 @@ export default function Resultados() {
               Limpiar filtros
             </button>
           )}
+          <button
+            className={`resultados-filter-toggle ${filtersOpen ? "is-open" : ""}`}
+            onClick={() => setFiltersOpen((prev) => !prev)}
+          >
+            <FaFilter /> {filtersOpen ? "Ocultar filtros" : "Filtrar"}
+          </button>
         </div>
 
-        <div className="resultados-layout">
-          <aside className="resultados-filters-panel">
+        <div className={`resultados-layout ${filtersOpen ? "" : "filters-collapsed"}`}>
+          <aside className={`resultados-filters-panel ${filtersOpen ? "is-open" : "is-closed"}`}>
             <div className="resultados-filter-head">
               <h2>Filtrar</h2>
-              <span>{resultadosFiltrados.length}/{vuelos.length}</span>
+              <span>{listaMostrada.length}/{vuelos.length}</span>
             </div>
 
             <div className="resultados-filter-section">
@@ -467,7 +551,16 @@ export default function Resultados() {
             {loading && <p className="resultados-empty">Cargando vuelos...</p>}
 
             {!loading && vuelosPaginados.length === 0 && (
-              <p className="resultados-empty">No se encontraron vuelos con esos filtros.</p>
+              <p className="resultados-empty">
+                {dateRange ? "No se encontraron vuelos para esas fechas." : "No se encontraron vuelos con esos filtros."}
+              </p>
+            )}
+
+            {!loading && showNearby && (
+              <div className="resultados-alert">
+                <strong>No encontramos vuelos exactos para tus fechas.</strong>
+                <span>Te mostramos opciones cercanas dentro de los prÃ³ximos {NEARBY_DAYS} dÃ­as.</span>
+              </div>
             )}
 
             <div className="resultados-grid">
@@ -527,9 +620,9 @@ export default function Resultados() {
               })}
             </div>
 
-            {!loading && resultadosFiltrados.length > 0 && (
+            {!loading && listaMostrada.length > 0 && (
               <Paginacion
-                totalItems={resultadosFiltrados.length}
+                totalItems={listaMostrada.length}
                 itemsPerPage={itemsPerPage}
                 currentPage={currentPage}
                 setCurrentPage={setCurrentPage}

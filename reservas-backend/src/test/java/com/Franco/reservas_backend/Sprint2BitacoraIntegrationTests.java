@@ -1,6 +1,7 @@
 package com.Franco.reservas_backend;
 
 import com.empresa.vuelos.reservas.de.vuelos.ReservasDeVuelosApplication;
+import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Repository.BookingRepository;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Category.Model.Category;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Category.Repository.CategoryRepository;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Gmail.EmailService;
@@ -52,6 +53,9 @@ class Sprint2BitacoraIntegrationTests {
     private ProductRepository productRepository;
 
     @Autowired
+    private BookingRepository bookingRepository;
+
+    @Autowired
     private FeatureRepository featureRepository;
 
     @MockBean
@@ -59,6 +63,7 @@ class Sprint2BitacoraIntegrationTests {
 
     @BeforeEach
     void setUp() {
+        bookingRepository.deleteAll();
         productRepository.deleteAll();
         featureRepository.deleteAll();
         categoryRepository.deleteAll();
@@ -168,7 +173,7 @@ class Sprint2BitacoraIntegrationTests {
         mockMvc.perform(post("/api/features")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(buildFeaturePayload("Wifi", "wifi")))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

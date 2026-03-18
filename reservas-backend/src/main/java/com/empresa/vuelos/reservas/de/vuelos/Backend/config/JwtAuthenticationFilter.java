@@ -46,6 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         List<String> publicPaths = List.of(
                 "/api/auth/register",
                 "/api/auth/login/token",
+                "/api/bookings/product",
                 "/api/vuelos",
                 "/amadeus"   // sin slash final
         );

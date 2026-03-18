@@ -1,6 +1,7 @@
 package com.Franco.reservas_backend;
 
 import com.empresa.vuelos.reservas.de.vuelos.ReservasDeVuelosApplication;
+import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Repository.BookingRepository;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Category.Model.Category;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Category.Repository.CategoryRepository;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.repository.ProductRepository;
@@ -45,10 +46,14 @@ class ProductFlowIntegrationTests {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private BookingRepository bookingRepository;
+
     private Long categoryId;
 
     @BeforeEach
     void setUp() {
+        bookingRepository.deleteAll();
         productRepository.deleteAll();
         categoryRepository.deleteAll();
 
@@ -112,7 +117,7 @@ class ProductFlowIntegrationTests {
         mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(buildProductPayload(name)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -218,6 +223,6 @@ class ProductFlowIntegrationTests {
         Long id = createProductAndReturnId(name);
 
         mockMvc.perform(delete("/api/products/{id}", id))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 }

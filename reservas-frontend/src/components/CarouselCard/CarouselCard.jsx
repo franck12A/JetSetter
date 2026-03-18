@@ -3,8 +3,20 @@ import "./CarouselCard.css";
 
 import { FaStar, FaClock, FaUtensils } from "react-icons/fa";
 
-export default function CarouselCard({ image, title, subtitle, price, rating, duration, tag, included }) {
-  const displayRating = rating || (Math.random() * (5.0 - 4.5) + 4.5).toFixed(1);
+export default function CarouselCard({
+  image,
+  title,
+  subtitle,
+  price,
+  rating,
+  duration,
+  tag,
+  included,
+  actions,
+}) {
+  const numericRating =
+    rating != null && !Number.isNaN(Number(rating)) ? Number(rating) : 4.8;
+  const displayRating = numericRating.toFixed(1);
   const displayDur = duration || "12h 00m";
   const displayTag = tag || "DIRECT FLIGHT";
   const displayInc = included || "Meals included";
@@ -20,6 +32,7 @@ export default function CarouselCard({ image, title, subtitle, price, rating, du
           alt={title || ""}
           className="carousel-img"
         />
+        {actions ? <div className="carousel-actions">{actions}</div> : null}
         <div className="carousel-badge">
           <FaStar className="badge-icon" /> {displayRating}
         </div>

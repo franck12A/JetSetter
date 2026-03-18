@@ -1,5 +1,42 @@
 const API_URL = "http://localhost:8080/api/bookings";
 
+async function readErrorBody(res) {
+  try {
+    const text = await res.text();
+    return String(text || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+function getAuthToken() {
+  const directToken = localStorage.getItem("token");
+  if (directToken && directToken !== "null" && directToken !== "undefined") {
+    return directToken.startsWith("Bearer ") ? directToken.slice(7) : directToken;
+  }
+
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const userToken = user?.token;
+    if (!userToken || userToken === "null" || userToken === "undefined") return null;
+    return userToken.startsWith("Bearer ") ? userToken.slice(7) : userToken;
+  } catch {
+    return null;
+  }
+}
+
+function isTokenExpired(token) {
+  try {
+    const payloadBase64 = token.split(".")[1];
+    if (!payloadBase64) return true;
+    const payload = JSON.parse(atob(payloadBase64));
+    if (!payload?.exp) return false;
+    return Date.now() >= payload.exp * 1000;
+  } catch {
+    return true;
+  }
+}
+
 function normalizeDateStr(dateStr) {
   if (!dateStr) return "";
 
@@ -18,20 +55,29 @@ function normalizeDateStr(dateStr) {
     return `${m[3]}-${month}-${day}`;
   }
 
+  const withTime = direct.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?$/);
+  if (withTime) {
+    const day = withTime[1].padStart(2, "0");
+    const month = withTime[2].padStart(2, "0");
+    return `${withTime[3]}-${month}-${day}`;
+  }
+
   return direct;
 }
 
-export async function createBooking({ userId, productId, dateStr, passengers }) {
+export async function createBooking({ productId, dateStr, passengers = 1 }) {
   const normalizedDateStr = normalizeDateStr(dateStr);
+  const token = getAuthToken();
+  if (!token) throw new Error("No autenticado");
+  if (isTokenExpired(token)) throw new Error("Token expirado");
 
   const res = await fetch(`${API_URL}/create`, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      userId,
       productId,
       dateStr: normalizedDateStr,
       passengers,
@@ -39,30 +85,59 @@ export async function createBooking({ userId, productId, dateStr, passengers }) 
   });
 
   if (!res.ok) {
-    console.error("Error backend:", await res.text());
-    throw new Error("Error al crear reserva");
+    const body = await readErrorBody(res);
+    const detail =
+      body ||
+      `${res.status} ${res.statusText}`.trim() ||
+      String(res.status || "").trim() ||
+      "Error desconocido";
+    console.error("Error backend:", detail);
+    throw new Error(detail);
   }
 
   return res.json();
 }
 
-export async function getUserBookings(userId) {
+export async function getUserBookings() {
+  const token = getAuthToken();
+  if (!token) throw new Error("No autenticado");
   const res = await fetch(`${API_URL}/user`, {
     headers: {
-      "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
   });
+  if (!res.ok) {
+    const body = await readErrorBody(res);
+    throw new Error(body || "No se pudieron obtener las reservas");
+  }
   return res.json();
 }
 
 export async function cancelBooking(id) {
+  const token = getAuthToken();
+  if (!token) throw new Error("No autenticado");
   const res = await fetch(`${API_URL}/${id}`, {
     method: "DELETE",
     headers: {
-      "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
   });
+  if (!res.ok) {
+    const body = await readErrorBody(res);
+    throw new Error(body || "No se pudo cancelar la reserva");
+  }
   return res.json();
+}
+
+export async function getProductBookedDates(productId) {
+  if (!productId) return [];
+  const res = await fetch(`${API_URL}/product/${productId}/dates`);
+  if (!res.ok) {
+    const body = await readErrorBody(res);
+    throw new Error(body || "No se pudo obtener disponibilidad");
+  }
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
 }

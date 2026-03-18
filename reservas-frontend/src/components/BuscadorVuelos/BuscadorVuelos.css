@@ -34,8 +34,15 @@
   color: #F3F4F6;
   /* White text */
   margin-top: 0;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.35rem;
   text-align: left;
+}
+
+.hero-subtitle {
+  margin: 0 0 1.5rem;
+  color: #b7c3d7;
+  font-size: 0.95rem;
+  max-width: 640px;
 }
 
 .search-row-full {
@@ -128,6 +135,52 @@
   word-break: break-word;
 }
 
+
+.date-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.date-trigger {
+  border: 1px solid rgba(76, 195, 255, 0.12);
+  background: #0f172a;
+  border-radius: 10px;
+  padding: 0.45rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  text-align: left;
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.date-trigger:hover {
+  border-color: rgba(76, 195, 255, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(76, 195, 255, 0.2);
+}
+
+.date-trigger-label {
+  font-size: 0.72rem;
+  color: #8aa3c7;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.date-trigger-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.control-hint {
+  font-size: 0.72rem;
+  color: #8aa3c7;
+  font-weight: 600;
+}
+
 .control-trigger:focus {
   outline: none;
 }
@@ -208,12 +261,26 @@
   overflow: hidden;
 }
 
+.date-panel-head {
+  padding: 0.55rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1e293b;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5edf8;
+}
+
 .date-panel .rdrCalendarWrapper {
   font-size: 12px;
+  background: #ffffff;
 }
 
 .date-panel .rdrMonthAndYearPickers select {
   font-size: 0.9rem;
+}
+
+.date-panel .rdrMonths {
+  gap: 0.5rem;
 }
 
 .date-clear-btn {
@@ -318,9 +385,10 @@
     left: 0;
     right: auto;
     max-width: 100%;
+    overflow-x: auto;
   }
 
   .date-panel .rdrCalendarWrapper {
-    width: min(100vw - 3rem, 330px);
+    width: min(100vw - 3rem, 680px);
   }
 }
