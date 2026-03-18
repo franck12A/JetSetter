@@ -357,6 +357,233 @@
   font-size: 0.97rem;
 }
 
+.dv-reviews {
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(10, 18, 33, 0.96), rgba(8, 14, 26, 0.96));
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.dv-reviews-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.dv-reviews-head h3 {
+  margin: 0 0 0.35rem;
+  color: #7dd3fc;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.dv-reviews-sub {
+  margin: 0;
+  color: #9fb3cf;
+  font-size: 0.9rem;
+}
+
+.dv-rating-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 16px;
+  background: rgba(12, 19, 34, 0.8);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.dv-rating-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.dv-rating-score {
+  color: #f8fbff;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.dv-rating-count {
+  color: #9fb3cf;
+  font-size: 0.78rem;
+}
+
+.dv-stars {
+  display: inline-flex;
+  gap: 0.25rem;
+  color: #8db6dc;
+}
+
+.dv-star {
+  font-size: 0.9rem;
+}
+
+.dv-star.is-filled {
+  color: #38bdf8;
+}
+
+.dv-reviews-error {
+  padding: 0.75rem 0.9rem;
+  border-radius: 14px;
+  background: rgba(251, 113, 133, 0.12);
+  border: 1px solid rgba(251, 113, 133, 0.24);
+  color: #ffe4e8;
+  font-weight: 700;
+}
+
+.dv-review-empty {
+  margin: 0;
+  color: #b6c7dd;
+  font-size: 0.9rem;
+}
+
+.dv-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.dv-review-card {
+  padding: 0.85rem 0.95rem;
+  border-radius: 16px;
+  background: rgba(12, 19, 34, 0.86);
+  border: 1px solid rgba(56, 189, 248, 0.16);
+}
+
+.dv-review-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.dv-review-user {
+  color: #f8fbff;
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.dv-review-date {
+  color: #8db6dc;
+  font-size: 0.8rem;
+}
+
+.dv-review-comment {
+  margin: 0.6rem 0 0;
+  color: #d4dfef;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.dv-review-comment.is-empty {
+  color: #94a3b8;
+}
+
+.dv-review-form {
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  background: rgba(12, 19, 34, 0.86);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dv-review-form h4 {
+  margin: 0;
+  color: #7dd3fc;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.dv-star-input {
+  display: inline-flex;
+  gap: 0.4rem;
+}
+
+.dv-star-btn {
+  border: none;
+  background: rgba(15, 23, 42, 0.9);
+  color: #8db6dc;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.dv-star-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(14, 165, 233, 0.18);
+  color: #38bdf8;
+}
+
+.dv-star-btn.is-filled {
+  background: rgba(14, 165, 233, 0.22);
+  color: #38bdf8;
+}
+
+.dv-review-textarea {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  background: rgba(8, 14, 26, 0.92);
+  color: #e5eefb;
+  padding: 0.75rem 0.85rem;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+
+.dv-review-submit {
+  align-self: flex-start;
+  border: none;
+  border-radius: 999px;
+  padding: 0.6rem 1.1rem;
+  background: linear-gradient(135deg, #38bdf8, #3b82f6);
+  color: #05111f;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.dv-review-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dv-review-gate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  color: #c8d8ea;
+  font-size: 0.9rem;
+}
+
+.dv-review-login {
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 0.95rem;
+  background: rgba(56, 189, 248, 0.18);
+  color: #e5eefb;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .dv-features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));

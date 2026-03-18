@@ -323,6 +323,24 @@
   color: #9ca3af;
 }
 
+.resultados-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #dbeafe;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.resultados-rating-icon {
+  color: #38bdf8;
+}
+
+.resultados-rating-empty {
+  color: #9ca3af;
+  font-weight: 600;
+}
+
 .resultados-category {
   margin-top: 0.35rem;
   width: fit-content;

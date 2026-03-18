@@ -22,6 +22,8 @@ import {
   FaRoute,
   FaShieldAlt,
   FaSuitcaseRolling,
+  FaStar,
+  FaRegStar,
   FaTicketAlt,
   FaUtensils,
   FaWifi,
@@ -29,7 +31,8 @@ import {
 
 import productService from "../../services/productService";
 import { addFavorite, getUserFavorites, removeFavorite } from "../../services/favoritesApi";
-import { createBooking, getProductBookedDates } from "../../services/bookingsApi";
+import { createBooking, getProductBookedDates, getUserBookings } from "../../services/bookingsApi";
+import { createReview, getProductReviews } from "../../services/reviewsApi";
 import { getVueloImage } from "../../utils/images";
 import { getSafeIcon } from "../../utils/iconRegistry";
 import "react-day-picker/style.css";
@@ -100,6 +103,17 @@ const formatTravelDateLabel = (value) => {
   if (!date) return "Sin fecha seleccionada";
   return date.toLocaleDateString("es-AR", {
     weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const formatReviewDate = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("es-AR", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -360,6 +374,15 @@ export default function DetalleVuelo() {
   const [visibleMonth, setVisibleMonth] = useState(() => getStartOfToday());
   const [calendarExpanded, setCalendarExpanded] = useState(true);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsError, setReviewsError] = useState("");
+  const [ratingValue, setRatingValue] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+  const [reviewGateMessage, setReviewGateMessage] = useState("");
 
   const featureItems = useMemo(() => {
     if (!vuelo) return [];
@@ -442,6 +465,17 @@ export default function DetalleVuelo() {
     const destino = vuelo?.paisDestino || vuelo?.destino || "este destino";
     return `Viaja hacia ${destino} con ${vuelo?.aerolinea || "tu aerolinea seleccionada"} en una experiencia pensada para resolver la reserva rapido, con informacion clara sobre tu salida, llegada y disponibilidad real.`;
   }, [vuelo]);
+
+  const ratingSummary = useMemo(() => {
+    if (!reviews.length) {
+      return { average: 0, total: 0 };
+    }
+    const total = reviews.length;
+    const sum = reviews.reduce((acc, item) => acc + (Number(item.rating) || 0), 0);
+    return { average: sum / total, total };
+  }, [reviews]);
+
+  const ratingDisplay = ratingSummary.total ? ratingSummary.average.toFixed(1) : "0.0";
 
   const bookedDateSet = useMemo(() => new Set(bookedDates), [bookedDates]);
   const disabledDates = useMemo(() => bookedDates.map(fromISODate).filter(Boolean), [bookedDates]);
@@ -560,12 +594,91 @@ export default function DetalleVuelo() {
   }, [vuelo?.localProductId]);
 
   useEffect(() => {
+    if (!vuelo?.localProductId) {
+      setReviews([]);
+      setReviewsError("");
+      return;
+    }
+
+    let isMounted = true;
+    setReviewsLoading(true);
+    setReviewsError("");
+
+    getProductReviews(vuelo.localProductId)
+      .then((data) => {
+        if (isMounted) setReviews(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        console.error("Error cargando reseñas:", err);
+        if (isMounted) setReviewsError("No se pudieron cargar las valoraciones.");
+      })
+      .finally(() => {
+        if (isMounted) setReviewsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [vuelo?.localProductId]);
+
+  useEffect(() => {
+    if (!vuelo?.localProductId) {
+      setCanReview(false);
+      setReviewGateMessage("Este vuelo no tiene valoraciones disponibles.");
+      return;
+    }
+
+    if (!user) {
+      setCanReview(false);
+      setReviewGateMessage("Inicia sesion para valorar este vuelo.");
+      return;
+    }
+
+    let isMounted = true;
+    setReviewGateMessage("");
+
+    getUserBookings()
+      .then((bookings) => {
+        if (!isMounted) return;
+        const hasBooking = (bookings || []).some((booking) => {
+          const bookingProductId =
+            booking?.product?.id ??
+            booking?.productId ??
+            booking?.product?.productId ??
+            booking?.product?.product_id;
+          return Number(bookingProductId) === Number(vuelo.localProductId);
+        });
+        setCanReview(hasBooking);
+        setReviewGateMessage(
+          hasBooking ? "" : "Solo puedes valorar si ya finalizaste una reserva para este vuelo."
+        );
+      })
+      .catch((err) => {
+        console.error("Error validando reservas:", err);
+        if (isMounted) {
+          setCanReview(false);
+          setReviewGateMessage("No pudimos validar tu reserva en este momento.");
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, vuelo?.localProductId]);
+
+  useEffect(() => {
     if (!vuelo) return;
     const initialDate = getInitialTravelDate(vuelo);
     setSelectedTravelDate(initialDate);
     setVisibleMonth(initialDate);
     setBookingFeedback(null);
   }, [vuelo]);
+
+  useEffect(() => {
+    setRatingValue(0);
+    setHoverRating(0);
+    setReviewComment("");
+  }, [vuelo?.localProductId]);
 
   useEffect(() => {
     const loadFavs = async () => {
@@ -611,6 +724,68 @@ export default function DetalleVuelo() {
     } catch (err) {
       console.error("Error actualizando favorito:", err);
       alert("No se pudo actualizar el favorito.");
+    }
+  };
+
+  const renderStars = (value) => (
+    <div className="dv-stars">
+      {[1, 2, 3, 4, 5].map((star) => {
+        const filled = star <= value;
+        return (
+          <span key={star} className={`dv-star ${filled ? "is-filled" : ""}`}>
+            {filled ? <FaStar /> : <FaRegStar />}
+          </span>
+        );
+      })}
+    </div>
+  );
+
+  const handleReviewSubmit = async () => {
+    if (!user) {
+      alert("Debes iniciar sesion para valorar este vuelo.");
+      navigate("/login");
+      return;
+    }
+
+    if (!vuelo?.localProductId) {
+      setReviewsError("Este vuelo no esta disponible para valoraciones.");
+      return;
+    }
+
+    if (!canReview) {
+      setReviewsError("Solo puedes valorar si ya finalizaste una reserva.");
+      return;
+    }
+
+    if (!ratingValue) {
+      setReviewsError("Selecciona una puntuacion antes de publicar tu reseña.");
+      return;
+    }
+
+    setReviewSubmitting(true);
+    setReviewsError("");
+
+    try {
+      const newReview = await createReview({
+        productId: String(vuelo.localProductId),
+        rating: ratingValue,
+        comment: reviewComment,
+      });
+
+      setReviews((prev) => {
+        const filtered = prev.filter(
+          (item) => item?.id !== newReview?.id && item?.userId !== newReview?.userId
+        );
+        return [newReview, ...filtered];
+      });
+      setRatingValue(0);
+      setHoverRating(0);
+      setReviewComment("");
+    } catch (err) {
+      console.error("Error enviando reseña:", err);
+      setReviewsError(err?.message || "No se pudo publicar la reseña.");
+    } finally {
+      setReviewSubmitting(false);
     }
   };
 
@@ -789,6 +964,109 @@ export default function DetalleVuelo() {
             <div className="dv-description">
               <h3>Descripcion</h3>
               <p>{descriptionText}</p>
+            </div>
+
+            <div className="dv-reviews">
+              <div className="dv-reviews-head">
+                <div>
+                  <h3>Valoraciones</h3>
+                  <p className="dv-reviews-sub">
+                    Opiniones reales de viajeros que ya reservaron este vuelo.
+                  </p>
+                </div>
+                <div className="dv-rating-summary">
+                  {renderStars(Math.round(ratingSummary.average))}
+                  <div className="dv-rating-meta">
+                    <span className="dv-rating-score">{ratingDisplay}</span>
+                    <span className="dv-rating-count">
+                      {ratingSummary.total} valoracion{ratingSummary.total === 1 ? "" : "es"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {reviewsError && <div className="dv-reviews-error">{reviewsError}</div>}
+
+              {reviewsLoading && <p className="dv-review-empty">Cargando valoraciones...</p>}
+
+              {!reviewsLoading && reviews.length === 0 && (
+                <p className="dv-review-empty">Aun no hay valoraciones publicadas.</p>
+              )}
+
+              {!reviewsLoading && reviews.length > 0 && (
+                <div className="dv-review-list">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="dv-review-card">
+                      <div className="dv-review-meta">
+                        {renderStars(review.rating)}
+                        <span className="dv-review-user">{review.userName || "Usuario"}</span>
+                        <span className="dv-review-date">{formatReviewDate(review.createdAt)}</span>
+                      </div>
+                      {review.comment ? (
+                        <p className="dv-review-comment">{review.comment}</p>
+                      ) : (
+                        <p className="dv-review-comment is-empty">Sin comentario adicional.</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="dv-review-form">
+                <h4>Tu reseña</h4>
+                {user && canReview ? (
+                  <>
+                    <div
+                      className="dv-star-input"
+                      onMouseLeave={() => setHoverRating(0)}
+                      role="radiogroup"
+                      aria-label="Selecciona una puntuacion"
+                    >
+                      {[1, 2, 3, 4, 5].map((star) => {
+                        const displayValue = hoverRating || ratingValue;
+                        const filled = star <= displayValue;
+                        return (
+                          <button
+                            key={star}
+                            type="button"
+                            className={`dv-star-btn ${filled ? "is-filled" : ""}`}
+                            onMouseEnter={() => setHoverRating(star)}
+                            onClick={() => setRatingValue(star)}
+                            aria-pressed={ratingValue === star}
+                            aria-label={`${star} estrellas`}
+                          >
+                            {filled ? <FaStar /> : <FaRegStar />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <textarea
+                      className="dv-review-textarea"
+                      value={reviewComment}
+                      onChange={(event) => setReviewComment(event.target.value)}
+                      placeholder="Escribe tu experiencia (opcional)"
+                      rows={4}
+                    />
+                    <button
+                      type="button"
+                      className="dv-review-submit"
+                      onClick={handleReviewSubmit}
+                      disabled={reviewSubmitting}
+                    >
+                      {reviewSubmitting ? "Publicando..." : "Publicar reseña"}
+                    </button>
+                  </>
+                ) : (
+                  <div className="dv-review-gate">
+                    <p>{reviewGateMessage || "Inicia sesion para valorar este vuelo."}</p>
+                    {!user && (
+                      <button type="button" className="dv-review-login" onClick={() => navigate("/login")}>
+                        Iniciar sesion
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {featureItems.length > 0 && (

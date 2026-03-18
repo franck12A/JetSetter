@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import { FaPlane, FaClock, FaCalendarAlt, FaHeart, FaRegHeart, FaTimes, FaFilter } from "react-icons/fa";
+import { FaPlane, FaClock, FaCalendarAlt, FaHeart, FaRegHeart, FaTimes, FaFilter, FaStar } from "react-icons/fa";
 import Paginacion from "../../components/Paginacion/Paginacion";
 import productService from "../../services/productService";
 import { addFavorite as addFavApi, removeFavorite as removeFavApi, getUserFavorites } from "../../services/favoritesApi";
 import { createBooking } from "../../services/bookingsApi";
+import { getReviewsSummary } from "../../services/reviewsApi";
 import { getVueloImage } from "../../utils/images";
 import { inferFlightCategories, hasCategoryMatch } from "../../utils/flightCategories";
 import { getSafeIcon } from "../../utils/iconRegistry";
@@ -139,6 +140,7 @@ export default function Resultados() {
   const [favorites, setFavorites] = useState(getStoredFavorites());
   const [selectedCategories, setSelectedCategories] = useState(() => parseSelectedCategories(filtroCategoria));
   const [filtersOpen, setFiltersOpen] = useState(true);
+  const [reviewSummary, setReviewSummary] = useState({});
   const itemsPerPage = 8;
 
   const dateRange = useMemo(() => {
@@ -216,6 +218,35 @@ export default function Resultados() {
         return a.precio - b.precio;
       });
   }, [baseFiltrados, selectedCategories]);
+
+  useEffect(() => {
+    const ids = Array.from(
+      new Set(resultadosFiltrados.map((v) => v.localProductId).filter(Boolean))
+    );
+    if (!ids.length) {
+      setReviewSummary({});
+      return;
+    }
+
+    let isMounted = true;
+    getReviewsSummary(ids)
+      .then((data) => {
+        if (!isMounted) return;
+        const nextMap = {};
+        (data || []).forEach((item) => {
+          nextMap[item.productId] = item;
+        });
+        setReviewSummary(nextMap);
+      })
+      .catch((err) => {
+        console.error("Error cargando valoraciones:", err);
+        if (isMounted) setReviewSummary({});
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [resultadosFiltrados]);
 
   const resultadosCercanos = useMemo(() => {
     if (!dateRange) return [];
@@ -567,6 +598,9 @@ export default function Resultados() {
               {vuelosPaginados.map((vuelo) => {
                 const user = JSON.parse(localStorage.getItem("user") || "null");
                 const isFavorite = favorites.some((f) => f.uid === vuelo.uid && f.userId === user?.id);
+                const summary = vuelo.localProductId ? reviewSummary[vuelo.localProductId] : null;
+                const avgRating = summary?.averageRating ?? 0;
+                const totalReviews = summary?.totalReviews ?? 0;
 
                 return (
                   <article key={vuelo.uid} className="resultados-card">
@@ -593,6 +627,17 @@ export default function Resultados() {
                       <p>
                         <FaClock /> {vuelo.duracion}
                       </p>
+
+                      <div className="resultados-rating">
+                        <FaStar className="resultados-rating-icon" />
+                        {totalReviews > 0 ? (
+                          <span>
+                            {avgRating.toFixed(1)} ({totalReviews})
+                          </span>
+                        ) : (
+                          <span className="resultados-rating-empty">Sin valoraciones</span>
+                        )}
+                      </div>
 
                       <span className="resultados-category">{vuelo.categoria}</span>
                     </div>
