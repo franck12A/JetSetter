@@ -266,8 +266,7 @@ const normalizeVuelo = (data) => {
   const isExternal = Boolean(data?.isExternal || data?.source === "amadeus" || data?.externalId);
   const rawProductId = data.productId ?? data.id;
   const parsedProductId = Number(rawProductId);
-  const localProductId =
-    !isExternal && Number.isInteger(parsedProductId) && parsedProductId > 0 ? parsedProductId : null;
+  const localProductId = Number.isInteger(parsedProductId) && parsedProductId > 0 ? parsedProductId : null;
 
   return {
     ...data,
@@ -478,26 +477,9 @@ export default function DetalleVuelo() {
     return { average: sum / total, total };
   }, [reviews]);
 
-  const externalRating = useMemo(() => {
-    const value = Number(
-      vuelo?.rating ??
-        vuelo?.score ??
-        vuelo?.reviewScore ??
-        vuelo?.valoracion ??
-        vuelo?.puntuacion ??
-        0
-    );
-    return Number.isFinite(value) ? value : 0;
-  }, [vuelo]);
-
-  const hasExternalRating = Boolean(vuelo?.isExternal) && externalRating > 0;
-  const ratingDisplayValue = ratingSummary.total ? ratingSummary.average : hasExternalRating ? externalRating : 0;
+  const ratingDisplayValue = ratingSummary.total ? ratingSummary.average : 0;
   const ratingDisplay = ratingDisplayValue.toFixed(1);
-  const ratingSourceLabel = ratingSummary.total
-    ? "Valoraciones de usuarios"
-    : hasExternalRating
-      ? "Valoracion Amadeus"
-      : "Sin valoraciones de usuarios recientes";
+  const ratingSourceLabel = ratingSummary.total ? "Valoraciones de usuarios" : "Sin valoraciones recientes";
 
   const bookedDateSet = useMemo(() => new Set(bookedDates), [bookedDates]);
   const disabledDates = useMemo(() => bookedDates.map(fromISODate).filter(Boolean), [bookedDates]);
@@ -616,7 +598,7 @@ export default function DetalleVuelo() {
   }, [vuelo?.localProductId]);
 
   useEffect(() => {
-    if (!vuelo?.localProductId || vuelo?.isExternal) {
+    if (!vuelo?.localProductId) {
       setReviews([]);
       setReviewsError("");
       setReviewsLoading(false);
@@ -645,13 +627,9 @@ export default function DetalleVuelo() {
   }, [vuelo?.localProductId]);
 
   useEffect(() => {
-    if (!vuelo?.localProductId || vuelo?.isExternal) {
+    if (!vuelo?.localProductId) {
       setCanReview(false);
-      setReviewGateMessage(
-        vuelo?.isExternal
-          ? "Este vuelo proviene de Amadeus, aun no admite valoraciones de usuarios."
-          : "Este vuelo no tiene valoraciones disponibles."
-      );
+      setReviewGateMessage("Este vuelo no tiene valoraciones disponibles.");
       return;
     }
 
@@ -667,19 +645,24 @@ export default function DetalleVuelo() {
     getUserBookings()
       .then((bookings) => {
         if (!isMounted) return;
-        const hasBooking = (bookings || []).some((booking) => {
+        const today = getStartOfToday();
+        const hasCompletedBooking = (bookings || []).some((booking) => {
           const bookingProductId =
             booking?.product?.id ??
             booking?.productId ??
             booking?.product?.productId ??
             booking?.product?.product_id;
-          return Number(bookingProductId) === Number(vuelo.localProductId);
+          if (Number(bookingProductId) !== Number(vuelo.localProductId)) return false;
+          const travelDate = booking?.travelDate ?? booking?.dateStr ?? booking?.bookingDate;
+          const travelParsed = parseDateValue(travelDate);
+          if (!travelParsed) return true;
+          return travelParsed <= today;
         });
-        setCanReview(hasBooking);
+        setCanReview(hasCompletedBooking);
         setReviewGateMessage(
-          hasBooking
+          hasCompletedBooking
             ? ""
-            : "Solo puedes valorar si ya finalizaste una reserva para este vuelo."
+            : "Necesitas una reserva completada para dejar tu reseña."
         );
       })
       .catch((err) => {
@@ -781,13 +764,8 @@ export default function DetalleVuelo() {
       return;
     }
 
-    if (vuelo?.isExternal) {
-      setReviewsError("Este vuelo proviene de Amadeus y no admite valoraciones.");
-      return;
-    }
-
     if (!canReview) {
-      setReviewsError("Solo puedes valorar si ya finalizaste una reserva.");
+      setReviewsError("Necesitas una reserva completada para valorar este vuelo.");
       return;
     }
 
@@ -1005,7 +983,7 @@ export default function DetalleVuelo() {
                 <div>
                   <h3>Valoraciones</h3>
                   <p className="dv-reviews-sub">
-                    Opiniones reales de viajeros que ya reservaron este vuelo.
+                    Opiniones de viajeros que ya volaron con nosotros.
                   </p>
                 </div>
                 <div className="dv-rating-summary">
@@ -1020,16 +998,12 @@ export default function DetalleVuelo() {
                 </div>
               </div>
 
-              {reviewsError && !vuelo?.isExternal && <div className="dv-reviews-error">{reviewsError}</div>}
+              {reviewsError && <div className="dv-reviews-error">{reviewsError}</div>}
 
               {reviewsLoading && <p className="dv-review-empty">Cargando valoraciones...</p>}
 
               {!reviewsLoading && reviews.length === 0 && (
-                <p className="dv-review-empty">
-                  {vuelo?.isExternal
-                    ? "No hay valoraciones de usuarios recientes."
-                    : "Aun no hay valoraciones publicadas."}
-                </p>
+                <p className="dv-review-empty">Aun no hay valoraciones publicadas.</p>
               )}
 
               {!reviewsLoading && reviews.length > 0 && (
@@ -1171,7 +1145,7 @@ export default function DetalleVuelo() {
                   <span className="dv-selection-label">Fecha de viaje</span>
                   <strong className="dv-selection-date">{selectedDateLabel}</strong>
                   <p className="dv-selection-helper">
-                    {bookedDatesSummary} Las fechas ocupadas se validan en la interfaz y tambien en el servidor.
+                    {bookedDatesSummary} Las fechas ocupadas se actualizan al instante.
                   </p>
                 </div>
                 <span className={`dv-selection-badge ${selectedDateBooked ? "is-booked" : "is-available"}`}>
@@ -1213,8 +1187,8 @@ export default function DetalleVuelo() {
                     <div className="dv-calendar-panel">
                       <h4 className="dv-calendar-title">Selecciona tu fecha</h4>
                       <p className="dv-calendar-copy">
-                        Elige el dia en el que quieres reservar este vuelo. Si otra persona se adelanta, el backend
-                        bloqueara esa fecha para evitar dobles reservas.
+                        Elige el dia en el que quieres reservar este vuelo. Si alguien reserva antes, esa fecha queda
+                        bloqueada.
                       </p>
                       <div className="dv-calendar-actions">
                         <button
