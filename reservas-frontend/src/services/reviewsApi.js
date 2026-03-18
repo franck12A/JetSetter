@@ -39,7 +39,12 @@ function isTokenExpired(token) {
 
 export async function getProductReviews(productId) {
   if (!productId) return [];
-  const res = await fetch(`${API_URL}/product/${productId}`);
+  const token = getAuthToken();
+  const headers = {};
+  if (token && !isTokenExpired(token)) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  const res = await fetch(`${API_URL}/product/${productId}`, { headers });
   if (!res.ok) {
     const body = await readErrorBody(res);
     throw new Error(body || "No se pudieron obtener las reseñas");
@@ -52,7 +57,12 @@ export async function getReviewsSummary(productIds = []) {
   const ids = Array.isArray(productIds) ? productIds.filter(Boolean) : [];
   if (!ids.length) return [];
   const query = ids.join(",");
-  const res = await fetch(`${API_URL}/summary?productIds=${query}`);
+  const token = getAuthToken();
+  const headers = {};
+  if (token && !isTokenExpired(token)) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  const res = await fetch(`${API_URL}/summary?productIds=${query}`, { headers });
   if (!res.ok) {
     const body = await readErrorBody(res);
     throw new Error(body || "No se pudo obtener el resumen de valoraciones");
