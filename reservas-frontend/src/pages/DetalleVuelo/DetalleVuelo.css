@@ -446,6 +446,20 @@
   border: 1px solid rgba(251, 113, 133, 0.24);
   color: #ffe4e8;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.dv-reviews-retry {
+  border: none;
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  background: rgba(56, 189, 248, 0.18);
+  color: #e5eefb;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .dv-review-empty {

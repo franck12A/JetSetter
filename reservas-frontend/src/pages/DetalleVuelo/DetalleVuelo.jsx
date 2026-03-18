@@ -479,7 +479,7 @@ export default function DetalleVuelo() {
 
   const ratingDisplayValue = ratingSummary.total ? ratingSummary.average : 0;
   const ratingDisplay = ratingDisplayValue.toFixed(1);
-  const ratingSourceLabel = ratingSummary.total ? "Valoraciones de usuarios" : "Sin valoraciones recientes";
+  const ratingSourceLabel = ratingSummary.total ? "Valoraciones de usuarios" : "Sin valoraciones aun";
 
   const bookedDateSet = useMemo(() => new Set(bookedDates), [bookedDates]);
   const disabledDates = useMemo(() => bookedDates.map(fromISODate).filter(Boolean), [bookedDates]);
@@ -597,6 +597,31 @@ export default function DetalleVuelo() {
     loadAvailability(vuelo.localProductId);
   }, [vuelo?.localProductId]);
 
+  const loadReviews = async (productId, { silent = false } = {}) => {
+    if (!productId) {
+      setReviews([]);
+      setReviewsError("");
+      setReviewsLoading(false);
+      return;
+    }
+
+    setReviewsError("");
+    if (!silent) {
+      setReviewsLoading(true);
+    }
+
+    try {
+      const data = await getProductReviews(productId);
+      setReviews(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error cargando reseñas:", err);
+      setReviews([]);
+      setReviewsError("No se pudieron cargar las valoraciones.");
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!vuelo?.localProductId) {
       setReviews([]);
@@ -605,25 +630,7 @@ export default function DetalleVuelo() {
       return;
     }
 
-    let isMounted = true;
-    setReviewsLoading(true);
-    setReviewsError("");
-
-    getProductReviews(vuelo.localProductId)
-      .then((data) => {
-        if (isMounted) setReviews(Array.isArray(data) ? data : []);
-      })
-      .catch((err) => {
-        console.error("Error cargando reseñas:", err);
-        if (isMounted) setReviewsError("No se pudieron cargar las valoraciones.");
-      })
-      .finally(() => {
-        if (isMounted) setReviewsLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
+    loadReviews(vuelo.localProductId);
   }, [vuelo?.localProductId]);
 
   useEffect(() => {
@@ -645,24 +652,19 @@ export default function DetalleVuelo() {
     getUserBookings()
       .then((bookings) => {
         if (!isMounted) return;
-        const today = getStartOfToday();
-        const hasCompletedBooking = (bookings || []).some((booking) => {
+        const hasBooking = (bookings || []).some((booking) => {
           const bookingProductId =
             booking?.product?.id ??
             booking?.productId ??
             booking?.product?.productId ??
             booking?.product?.product_id;
-          if (Number(bookingProductId) !== Number(vuelo.localProductId)) return false;
-          const travelDate = booking?.travelDate ?? booking?.dateStr ?? booking?.bookingDate;
-          const travelParsed = parseDateValue(travelDate);
-          if (!travelParsed) return true;
-          return travelParsed <= today;
+          return Number(bookingProductId) === Number(vuelo.localProductId);
         });
-        setCanReview(hasCompletedBooking);
+        setCanReview(hasBooking);
         setReviewGateMessage(
-          hasCompletedBooking
+          hasBooking
             ? ""
-            : "Necesitas una reserva completada para dejar tu reseña."
+            : "Necesitas una reserva para dejar tu reseña."
         );
       })
       .catch((err) => {
@@ -765,7 +767,7 @@ export default function DetalleVuelo() {
     }
 
     if (!canReview) {
-      setReviewsError("Necesitas una reserva completada para valorar este vuelo.");
+      setReviewsError("Necesitas una reserva para valorar este vuelo.");
       return;
     }
 
@@ -790,6 +792,7 @@ export default function DetalleVuelo() {
         );
         return [newReview, ...filtered];
       });
+      setReviewsError("");
       setRatingValue(0);
       setHoverRating(0);
       setReviewComment("");
@@ -998,11 +1001,22 @@ export default function DetalleVuelo() {
                 </div>
               </div>
 
-              {reviewsError && <div className="dv-reviews-error">{reviewsError}</div>}
+              {reviewsError && (
+                <div className="dv-reviews-error">
+                  <span>{reviewsError}</span>
+                  <button
+                    type="button"
+                    className="dv-reviews-retry"
+                    onClick={() => loadReviews(vuelo?.localProductId, { silent: true })}
+                  >
+                    Reintentar
+                  </button>
+                </div>
+              )}
 
               {reviewsLoading && <p className="dv-review-empty">Cargando valoraciones...</p>}
 
-              {!reviewsLoading && reviews.length === 0 && (
+              {!reviewsLoading && !reviewsError && reviews.length === 0 && (
                 <p className="dv-review-empty">Aun no hay valoraciones publicadas.</p>
               )}
 
