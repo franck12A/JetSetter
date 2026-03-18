@@ -47,6 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 "/api/auth/register",
                 "/api/auth/login/token",
                 "/api/bookings/product",
+                "/api/reviews",
                 "/api/vuelos",
                 "/amadeus"   // sin slash final
         );
