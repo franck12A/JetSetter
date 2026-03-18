@@ -14,9 +14,9 @@ export default function CarouselCard({
   included,
   actions,
 }) {
-  const numericRating =
-    rating != null && !Number.isNaN(Number(rating)) ? Number(rating) : 4.8;
-  const displayRating = numericRating.toFixed(1);
+  const hasRating = rating != null && !Number.isNaN(Number(rating));
+  const numericRating = hasRating ? Number(rating) : null;
+  const displayRating = hasRating ? numericRating.toFixed(1) : "";
   const displayDur = duration || "12h 00m";
   const displayTag = tag || "DIRECT FLIGHT";
   const displayInc = included || "Meals included";
@@ -33,9 +33,11 @@ export default function CarouselCard({
           className="carousel-img"
         />
         {actions ? <div className="carousel-actions">{actions}</div> : null}
-        <div className="carousel-badge">
-          <FaStar className="badge-icon" /> {displayRating}
-        </div>
+        {hasRating ? (
+          <div className="carousel-badge">
+            <FaStar className="badge-icon" /> {displayRating}
+          </div>
+        ) : null}
         <div className="carousel-flight-tag">
           {displayTag}
         </div>
