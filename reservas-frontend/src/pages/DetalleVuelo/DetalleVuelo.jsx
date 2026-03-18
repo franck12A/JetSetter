@@ -263,14 +263,17 @@ const normalizeVuelo = (data) => {
   const duracion = data?.duracion || getFeatureValue([/duracion/i, /duraci\u00f3n/i]) || "Consultar";
   const clase = data?.clase || getFeatureValue([/clase/i]) || "Economica";
   const equipaje = data?.equipaje || getFeatureValue([/equipaje/i, /maleta/i, /bag/i]) || "No incluido";
+  const isExternal = Boolean(data?.isExternal || data?.source === "amadeus" || data?.externalId);
   const rawProductId = data.productId ?? data.id;
   const parsedProductId = Number(rawProductId);
-  const localProductId = Number.isInteger(parsedProductId) && parsedProductId > 0 ? parsedProductId : null;
+  const localProductId =
+    !isExternal && Number.isInteger(parsedProductId) && parsedProductId > 0 ? parsedProductId : null;
 
   return {
     ...data,
     id: data.id ?? data.productId ?? null,
     localProductId,
+    isExternal,
     aerolinea: data.aerolinea || primerSegmento.aerolinea || "Desconocida",
     numeroVuelo: data.numeroVuelo || primerSegmento.numeroVuelo || "000",
     origen: data.origen || route.origen,
@@ -475,7 +478,26 @@ export default function DetalleVuelo() {
     return { average: sum / total, total };
   }, [reviews]);
 
-  const ratingDisplay = ratingSummary.total ? ratingSummary.average.toFixed(1) : "0.0";
+  const externalRating = useMemo(() => {
+    const value = Number(
+      vuelo?.rating ??
+        vuelo?.score ??
+        vuelo?.reviewScore ??
+        vuelo?.valoracion ??
+        vuelo?.puntuacion ??
+        0
+    );
+    return Number.isFinite(value) ? value : 0;
+  }, [vuelo]);
+
+  const hasExternalRating = Boolean(vuelo?.isExternal) && externalRating > 0;
+  const ratingDisplayValue = ratingSummary.total ? ratingSummary.average : hasExternalRating ? externalRating : 0;
+  const ratingDisplay = ratingDisplayValue.toFixed(1);
+  const ratingSourceLabel = ratingSummary.total
+    ? "Valoraciones de usuarios"
+    : hasExternalRating
+      ? "Valoracion Amadeus"
+      : "Sin valoraciones de usuarios recientes";
 
   const bookedDateSet = useMemo(() => new Set(bookedDates), [bookedDates]);
   const disabledDates = useMemo(() => bookedDates.map(fromISODate).filter(Boolean), [bookedDates]);
@@ -594,9 +616,10 @@ export default function DetalleVuelo() {
   }, [vuelo?.localProductId]);
 
   useEffect(() => {
-    if (!vuelo?.localProductId) {
+    if (!vuelo?.localProductId || vuelo?.isExternal) {
       setReviews([]);
       setReviewsError("");
+      setReviewsLoading(false);
       return;
     }
 
@@ -622,9 +645,13 @@ export default function DetalleVuelo() {
   }, [vuelo?.localProductId]);
 
   useEffect(() => {
-    if (!vuelo?.localProductId) {
+    if (!vuelo?.localProductId || vuelo?.isExternal) {
       setCanReview(false);
-      setReviewGateMessage("Este vuelo no tiene valoraciones disponibles.");
+      setReviewGateMessage(
+        vuelo?.isExternal
+          ? "Este vuelo proviene de Amadeus, aun no admite valoraciones de usuarios."
+          : "Este vuelo no tiene valoraciones disponibles."
+      );
       return;
     }
 
@@ -650,7 +677,9 @@ export default function DetalleVuelo() {
         });
         setCanReview(hasBooking);
         setReviewGateMessage(
-          hasBooking ? "" : "Solo puedes valorar si ya finalizaste una reserva para este vuelo."
+          hasBooking
+            ? ""
+            : "Solo puedes valorar si ya finalizaste una reserva para este vuelo."
         );
       })
       .catch((err) => {
@@ -749,6 +778,11 @@ export default function DetalleVuelo() {
 
     if (!vuelo?.localProductId) {
       setReviewsError("Este vuelo no esta disponible para valoraciones.");
+      return;
+    }
+
+    if (vuelo?.isExternal) {
+      setReviewsError("Este vuelo proviene de Amadeus y no admite valoraciones.");
       return;
     }
 
@@ -975,22 +1009,27 @@ export default function DetalleVuelo() {
                   </p>
                 </div>
                 <div className="dv-rating-summary">
-                  {renderStars(Math.round(ratingSummary.average))}
+                  {renderStars(Math.round(ratingDisplayValue))}
                   <div className="dv-rating-meta">
                     <span className="dv-rating-score">{ratingDisplay}</span>
                     <span className="dv-rating-count">
                       {ratingSummary.total} valoracion{ratingSummary.total === 1 ? "" : "es"}
                     </span>
+                    <span className="dv-rating-source">{ratingSourceLabel}</span>
                   </div>
                 </div>
               </div>
 
-              {reviewsError && <div className="dv-reviews-error">{reviewsError}</div>}
+              {reviewsError && !vuelo?.isExternal && <div className="dv-reviews-error">{reviewsError}</div>}
 
               {reviewsLoading && <p className="dv-review-empty">Cargando valoraciones...</p>}
 
               {!reviewsLoading && reviews.length === 0 && (
-                <p className="dv-review-empty">Aun no hay valoraciones publicadas.</p>
+                <p className="dv-review-empty">
+                  {vuelo?.isExternal
+                    ? "No hay valoraciones de usuarios recientes."
+                    : "Aun no hay valoraciones publicadas."}
+                </p>
               )}
 
               {!reviewsLoading && reviews.length > 0 && (

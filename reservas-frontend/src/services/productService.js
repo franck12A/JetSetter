@@ -84,6 +84,8 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20) => {
       return {
         id: vuelo.id,
         productId: vuelo.productId ?? (Number.isInteger(Number(vuelo.id)) ? Number(vuelo.id) : null),
+        source: "amadeus",
+        isExternal: true,
         aerolinea: vuelo.aerolinea || primerSegmento.aerolinea || "Desconocida",
         numeroVuelo: vuelo.numeroVuelo || primerSegmento.numeroVuelo || "000",
         precioTotal: vuelo.precioTotal || vuelo.price || 0,
@@ -139,6 +141,8 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20) => {
      return {
        id: data.id,
        productId: data.productId ?? (Number.isInteger(Number(data.id)) ? Number(data.id) : null),
+       source: "amadeus",
+       isExternal: true,
        aerolinea: data.aerolinea || primerSegmento.aerolinea || "Desconocida",
        numeroVuelo: data.numeroVuelo || primerSegmento.numeroVuelo || "000",
        precioTotal: data.precioTotal || data.price || 0,

@@ -417,6 +417,14 @@
   font-size: 0.78rem;
 }
 
+.dv-rating-source {
+  color: #7dd3fc;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .dv-stars {
   display: inline-flex;
   gap: 0.25rem;
