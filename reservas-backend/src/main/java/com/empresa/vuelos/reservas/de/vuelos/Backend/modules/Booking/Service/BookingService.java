@@ -34,7 +34,8 @@ public class BookingService {
 
     // Crear reserva recibiendo un objeto Booking
     public Booking createBooking(Booking booking) {
-        booking.setStatus("PENDIENTE");
+        // Modo demo: marcamos la reserva como completada al crearla para habilitar valoraciones.
+        booking.setStatus("COMPLETADA");
         booking.setBookingDate(LocalDateTime.now());
         return bookingRepository.save(booking);
     }
@@ -50,7 +51,8 @@ public class BookingService {
         booking.setUser(user);
         booking.setProduct(product);
         booking.setPassengers(passengers);
-        booking.setStatus("PENDIENTE");
+        // Modo demo: marcamos la reserva como completada al crearla para habilitar valoraciones.
+        booking.setStatus("COMPLETADA");
 
         LocalDateTime travelDateTime = (dateStr != null && !dateStr.isEmpty())
                 ? parseBookingDate(dateStr)

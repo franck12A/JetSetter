@@ -1,8 +1,9 @@
-package com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Review.Service;
+﻿package com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Review.Service;
 
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Model.User;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Repository.UserRepository;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Repository.BookingRepository;
+import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Model.Booking;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Product;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.repository.ProductRepository;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Review.Model.Review;
@@ -12,8 +13,10 @@ import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Review.dto.ReviewSu
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -42,8 +45,9 @@ public class ReviewService {
 
         Long resolvedProductId = resolveProductId(productId);
 
-        boolean hasBooking = bookingRepository.existsByUserIdAndProductId(userId, resolvedProductId);
-        if (!hasBooking) {
+        List<Booking> bookings = bookingRepository.findByUserIdAndProductId(userId, resolvedProductId);
+        boolean hasFinalizedBooking = bookings.stream().anyMatch(this::isBookingFinalized);
+        if (!hasFinalizedBooking) {
             throw new IllegalStateException("Debes tener una reserva finalizada para valorar este vuelo.");
         }
 
@@ -93,6 +97,35 @@ public class ReviewService {
         }).toList();
     }
 
+    private boolean isBookingFinalized(Booking booking) {
+        if (booking == null) return false;
+
+        String status = booking.getStatus();
+        if (status != null) {
+            String normalized = status.trim().toUpperCase(Locale.ROOT);
+            if (normalized.equals("FINALIZADA") || normalized.equals("FINALIZADO") ||
+                    normalized.equals("COMPLETADA") || normalized.equals("COMPLETADO") ||
+                    normalized.equals("COMPLETED")) {
+                return true;
+            }
+            if (normalized.contains("CANCEL")) {
+                return false;
+            }
+        }
+
+        LocalDate travelDate = booking.getTravelDate();
+        if (travelDate != null) {
+            return !travelDate.isAfter(LocalDate.now());
+        }
+
+        LocalDateTime bookingDate = booking.getBookingDate();
+        if (bookingDate != null) {
+            return !bookingDate.toLocalDate().isAfter(LocalDate.now());
+        }
+
+        return false;
+    }
+
     private Long resolveProductId(String rawProductId) throws Exception {
         if (rawProductId == null || rawProductId.trim().isEmpty()) {
             throw new IllegalArgumentException("productId es obligatorio");
@@ -114,3 +147,5 @@ public class ReviewService {
         return product.getId();
     }
 }
+
+

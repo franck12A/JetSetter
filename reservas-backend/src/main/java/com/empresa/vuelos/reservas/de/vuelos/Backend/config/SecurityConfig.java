@@ -87,6 +87,7 @@ public class SecurityConfig {
                             .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAuthority("ROLE_ADMIN")
                             .requestMatchers("/api/favorites/**").authenticated()
                             .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
+                            .requestMatchers("/error").permitAll()
                             .requestMatchers("/api/bookings/product/**").permitAll()
                             // Bookings: autenticado (el rol puede variar según origen del auth)
                             .requestMatchers("/api/bookings/**").authenticated()

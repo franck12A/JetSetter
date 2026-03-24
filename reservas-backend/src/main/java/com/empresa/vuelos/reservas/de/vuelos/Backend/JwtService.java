@@ -18,6 +18,8 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String secretKeyString;
 
+    private static final long TOKEN_TTL_MS = 1000L * 60 * 60 * 24 * 7; // 7 dias
+
     private Key key;
 
     @PostConstruct
@@ -33,7 +35,7 @@ public class JwtService {
                 .setSubject(email)
                 .claim("roles", List.of(cleanRole))
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 36000000))
+                .setExpiration(new Date(System.currentTimeMillis() + TOKEN_TTL_MS))
                 .signWith(key)
                 .compact();
 

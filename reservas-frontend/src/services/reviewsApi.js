@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8080/api/reviews";
+﻿const API_URL = "http://localhost:8080/api/reviews";
 
 async function readErrorBody(res) {
   try {
@@ -47,7 +47,7 @@ export async function getProductReviews(productId) {
   const res = await fetch(`${API_URL}/product/${productId}`, { headers });
   if (!res.ok) {
     const body = await readErrorBody(res);
-    throw new Error(body || "No se pudieron obtener las reseñas");
+    throw new Error(body || "No se pudieron obtener las rese\u00f1as");
   }
   const data = await res.json();
   return Array.isArray(data) ? data : [];
@@ -101,3 +101,4 @@ export async function createReview({ productId, rating, comment }) {
 
   return res.json();
 }
+

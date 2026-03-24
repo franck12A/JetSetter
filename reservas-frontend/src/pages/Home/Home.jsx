@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FaPlane, FaClock, FaFilter, FaChair, FaHeart, FaRegHeart, FaShareAlt } from "react-icons/fa";
+import { FaPlane, FaClock, FaFilter, FaChair, FaHeart, FaRegHeart, FaShareAlt, FaStar } from "react-icons/fa";
 
 import Navbar from "../../components/Navbar/Navbar";
 import BuscadorVuelos from "../../components/BuscadorVuelos/BuscadorVuelos";
@@ -14,6 +14,7 @@ import "./Home.css";
 import productService from "../../services/productService";
 import { getUserFavorites, addFavorite as addFavApi, removeFavorite as removeFavApi } from "../../services/favoritesApi";
 import { createBooking } from "../../services/bookingsApi";
+import { getReviewsSummary } from "../../services/reviewsApi";
 import { getSafeIcon } from "../../utils/iconRegistry";
 import { inferFlightCategories } from "../../utils/flightCategories";
 import { getVueloImage } from "../../utils/images";
@@ -63,7 +64,7 @@ export default function Home() {
   const [shareData, setShareData] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
 
-  // ðŸ”¹ Traer vuelos desde la API real
+  // Traer vuelos desde la API real
   const fetchVuelos = async () => {
     try {
       const [productos, amadeusVuelos] = await Promise.all([
@@ -101,6 +102,29 @@ export default function Home() {
         dedup.push(vuelo);
       }
 
+      try {
+        const idsToFetch = dedup.map(resolveLocalProductId).filter(Boolean);
+        if (idsToFetch.length > 0) {
+          const summaries = await getReviewsSummary(idsToFetch);
+          const summariesMap = {};
+          summaries.forEach((s) => {
+            summariesMap[s.productId] = s;
+          });
+          dedup.forEach((vuelo) => {
+            const locId = resolveLocalProductId(vuelo);
+            if (locId && summariesMap[locId]) {
+              vuelo.averageRating = summariesMap[locId].averageRating || 0;
+              vuelo.totalReviews = summariesMap[locId].totalReviews || 0;
+            } else {
+              vuelo.averageRating = 0;
+              vuelo.totalReviews = 0;
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Error al obtener res\u00famenes de valoraciones:", err);
+      }
+
       setVuelos(dedup);
     } catch (err) {
       console.error("Error al obtener vuelos desde productService:", err);
@@ -109,11 +133,11 @@ export default function Home() {
 
 
 
-  // ðŸ”¹ Traer categorÃ­as desde la API
+  // Traer categor\u00edas desde la API
   const fetchCategorias = async () => {
     try {
       const res = await fetch("http://localhost:8080/api/categories");
-      if (!res.ok) throw new Error("Error al cargar categorÃ­as");
+      if (!res.ok) throw new Error("Error al cargar categor\u00edas");
       const data = await res.json();
       // el backend puede enviar { id, name, icon } u otros campos
       const mapped = (data || []).map((c) => {
@@ -124,7 +148,7 @@ export default function Home() {
       });
       setCategorias(mapped);
     } catch (err) {
-      console.error("Error cargando categorÃ­as:", err);
+      console.error("Error cargando categor\u00edas:", err);
     }
   };
 
@@ -141,7 +165,7 @@ export default function Home() {
       window.removeEventListener("vuelosActualizados", handleVuelosActualizados);
   }, []);
 
-  // PaginaciÃ³n
+  // Paginaci\u00f3n
   const totalPages = Math.ceil(vuelos.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -202,8 +226,8 @@ export default function Home() {
               const isFavorite = localProductId ? user?.favorites?.includes(localProductId) : false;
 
               const toggleFavorite = async () => {
-                if (!user || !token) return alert("Debes iniciar sesión para agregar favoritos");
-                if (!localProductId) return alert("Este vuelo de Amadeus no está guardado en la BD.");
+                if (!user || !token) return alert("Debes iniciar sesi\u00f3n para agregar favoritos");
+                if (!localProductId) return alert("Este vuelo de Amadeus no est\u00e1 guardado en la BD.");
                 try {
                   if (isFavorite) {
                     await removeFavApi(localProductId);
@@ -230,13 +254,13 @@ export default function Home() {
                   );
                 } catch (err) {
                   console.error("Error al actualizar favorito:", err);
-                  alert("Tu sesión expiró o no es válida. Iniciá sesión nuevamente.");
+                  alert("Tu sesi\u00f3n expir\u00f3 o no es v\u00e1lida. Inici\u00e1 sesi\u00f3n nuevamente.");
                 }
               };
 
               const reservarVuelo = async () => {
-                if (!user || !token) return alert("Debes iniciar sesión para reservar un vuelo");
-                if (!localProductId) return alert("Este vuelo de Amadeus no está guardado en la BD.");
+                if (!user || !token) return alert("Debes iniciar sesi\u00f3n para reservar un vuelo");
+                if (!localProductId) return alert("Este vuelo de Amadeus no est\u00e1 guardado en la BD.");
                 try {
                   await createBooking({
                     userId: user.id,
@@ -244,7 +268,7 @@ export default function Home() {
                     dateStr: new Date().toISOString(),
                     passengers: 1,
                   });
-                  alert("Reserva realizada correctamente ✈️");
+                  alert("Reserva realizada correctamente \u2708\uFE0F
                 } catch (err) {
                   console.error("Error al reservar:", err);
                 }
@@ -285,7 +309,7 @@ export default function Home() {
 
                     <div className="vnc-details-row">
                       <span className="vnc-duration"><FaClock /> {vuelo.caracteristicas?.[0] || "N/A"}</span>
-                      <span className="vnc-class"><FaChair /> Económica</span>
+                      <span className="vnc-class"><FaChair /> Econ\u00f3mica</span>
                     </div>
 
                     <div className="vnc-actions">

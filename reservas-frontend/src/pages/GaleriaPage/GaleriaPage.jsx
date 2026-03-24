@@ -100,7 +100,7 @@ export default function GaleriaPage() {
       titulo,
       destacado: index === 0,
       badge: "MAS POPULAR",
-      cta: index === GRID_COUNT - 1 ? "Ver m�s" : null,
+      cta: index === GRID_COUNT - 1 ? "Ver m\u00e1s" : null,
     }));
   }, [gridImages, titulo]);
 
@@ -184,7 +184,7 @@ export default function GaleriaPage() {
                 onClick={() => setShowModal(false)}
                 aria-label="Cerrar"
               >
-                �
+                {"\u00d7"}
               </button>
             </div>
             <div className="galeria-modal__grid">

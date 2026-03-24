@@ -42,8 +42,8 @@ const CATEGORY_PRIORITY = [
   "Internacional",
   "Nacional",
   "Playa",
-  "Montana",
-  "Montaña",
+  "Monta\u00f1a",
+  "Monta\u00f1a",
   "Ciudad",
   "Aventura",
   "Lujo",
@@ -53,7 +53,7 @@ const CATEGORY_PRIORITY = [
 
 const getDuration = (vuelo) => {
   if (vuelo.duration) return vuelo.duration;
-  const featureDuration = (vuelo.caracteristicas || []).find((f) => /duraci[oó]n/i.test(String(f)));
+  const featureDuration = (vuelo.caracteristicas || []).find((f) => /duraci[o\u00f3]n/i.test(String(f)));
   return featureDuration || "N/D";
 };
 
@@ -460,7 +460,7 @@ export default function Resultados() {
       ? {
           key: "fecha",
           label: hasSalida && hasRegreso && dateRange.start !== dateRange.end
-            ? `Salida: ${formatFecha(dateRange.start)} · Regreso: ${formatFecha(dateRange.end)}`
+            ? `Salida: ${formatFecha(dateRange.start)} ? Regreso: ${formatFecha(dateRange.end)}
             : hasSalida
               ? `Salida: ${formatFecha(dateRange.start)}`
               : `Regreso: ${formatFecha(dateRange.end)}`,
@@ -488,7 +488,7 @@ export default function Resultados() {
       <div className="main-content resultados-content">
         <div className="resultados-header">
           <div>
-            <h1 className="resultados-title">Resultados de búsqueda</h1>
+            <h1 className="resultados-title">Resultados de b\u00fasqueda</h1>
             <p className="resultados-subtitle">
               {showNearby ? (
                 <>
@@ -590,7 +590,7 @@ export default function Resultados() {
             {!loading && showNearby && (
               <div className="resultados-alert">
                 <strong>No encontramos vuelos exactos para tus fechas.</strong>
-                <span>Te mostramos opciones cercanas dentro de los prÃ³ximos {NEARBY_DAYS} dÃ­as.</span>
+                <span>Te mostramos opciones cercanas dentro de los pr\u00f3ximos {NEARBY_DAYS} d\u00edas.
               </div>
             )}
 
