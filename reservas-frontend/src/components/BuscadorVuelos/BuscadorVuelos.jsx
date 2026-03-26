@@ -205,7 +205,10 @@ export default function BuscadorVuelos({
   return (
     <div className="hero-section">
       <div className="search-wrapper buscador-modern">
-        <h1 className="hero-title">A donde quieres viajar?</h1>
+        <h1 className="hero-title">
+          A donde quieres
+          <span className="title-accent">viajar?</span>
+        </h1>
         <p className="hero-subtitle">
           Selecciona origen, destino y fechas de salida y regreso para encontrar los vuelos mas relevantes.
         </p>
@@ -415,9 +418,10 @@ export default function BuscadorVuelos({
           <div className="search-passengers">
             <div className="passenger-info">
               <div className="field-label">Viajeros y clase</div>
-              <div className="passenger-value">
-                {pasajeros} {pasajeros === 1 ? "Adulto" : "Adultos"}, Económica
-              </div>
+            <div className="passenger-value">
+              <FaUser className="passenger-icon" />
+              {pasajeros} {pasajeros === 1 ? "Adulto" : "Adultos"}, Económica
+            </div>
             </div>
             <div className="passenger-actions">
               <button type="button" className="passenger-btn" onClick={decrementPassengers} aria-label="Restar pasajero">
