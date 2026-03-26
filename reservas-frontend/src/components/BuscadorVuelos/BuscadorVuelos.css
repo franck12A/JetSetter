@@ -57,6 +57,7 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1rem;
   margin-bottom: 1.5rem;
+  align-items: start;
 }
 
 .search-pill {
@@ -98,12 +99,12 @@
 }
 
 .search-pill-passengers .control-label {
-  font-size: 0.85rem;
+  font-size: 0.92rem;
   letter-spacing: 0.01em;
 }
 
 .search-pill-passengers .search-input-number {
-  font-size: 1.2rem;
+  font-size: 1.35rem;
   font-weight: 700;
 }
 
