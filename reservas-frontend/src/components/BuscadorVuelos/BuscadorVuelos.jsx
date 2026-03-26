@@ -82,6 +82,7 @@ export default function BuscadorVuelos({
   const [fechaSalida, setFechaSalida] = useState("");
   const [fechaRegreso, setFechaRegreso] = useState("");
   const [activeDatePicker, setActiveDatePicker] = useState("salida");
+  const [tripType, setTripType] = useState("round");
   const [origen, setOrigen] = useState("");
   const [destino, setDestino] = useState("");
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -185,22 +186,55 @@ export default function BuscadorVuelos({
     }
   };
 
+  const handleTripType = (nextType) => {
+    setTripType(nextType);
+    if (nextType === "oneway") {
+      setFechaRegreso("");
+      setActiveDatePicker("salida");
+    }
+  };
+
+  const decrementPassengers = () => {
+    setPasajeros((prev) => Math.max(1, prev - 1));
+  };
+
+  const incrementPassengers = () => {
+    setPasajeros((prev) => Math.min(9, prev + 1));
+  };
+
   return (
     <div className="hero-section">
-      <div className="search-wrapper">
+      <div className="search-wrapper buscador-modern">
         <h1 className="hero-title">A donde quieres viajar?</h1>
         <p className="hero-subtitle">
           Selecciona origen, destino y fechas de salida y regreso para encontrar los vuelos mas relevantes.
         </p>
 
-        <div className="search-row-full">
-          <div className="search-pill search-pill-control" ref={origenRef}>
-            <FaPlaneDeparture className="pill-icon" />
-            <div className="control-stack">
-              <span className="control-label">Origen</span>
+        <div className="search-tabs">
+          <button
+            type="button"
+            className={`search-tab ${tripType === "round" ? "is-active" : ""}`}
+            onClick={() => handleTripType("round")}
+          >
+            Ida y vuelta
+          </button>
+          <button
+            type="button"
+            className={`search-tab ${tripType === "oneway" ? "is-active" : ""}`}
+            onClick={() => handleTripType("oneway")}
+          >
+            Solo ida
+          </button>
+        </div>
+
+        <div className="search-grid">
+          <div className="search-field" ref={origenRef}>
+            <div className="field-label">Origen</div>
+            <div className="field-control">
+              <FaPlaneDeparture className="field-icon" />
               <button
                 type="button"
-                className="control-trigger"
+                className="field-trigger"
                 onClick={() => setActiveDropdown((prev) => (prev === "origen" ? null : "origen"))}
               >
                 {origen || "Seleccionar origen"}
@@ -249,13 +283,13 @@ export default function BuscadorVuelos({
             )}
           </div>
 
-          <div className="search-pill search-pill-control" ref={destinoRef}>
-            <FaPlaneArrival className="pill-icon" />
-            <div className="control-stack">
-              <span className="control-label">Destino</span>
+          <div className="search-field" ref={destinoRef}>
+            <div className="field-label">Destino</div>
+            <div className="field-control">
+              <FaPlaneArrival className="field-icon" />
               <button
                 type="button"
-                className="control-trigger"
+                className="field-trigger"
                 onClick={() => setActiveDropdown((prev) => (prev === "destino" ? null : "destino"))}
               >
                 {destino || "Seleccionar destino"}
@@ -305,60 +339,38 @@ export default function BuscadorVuelos({
           </div>
         </div>
 
-        <div className="search-row-auto">
-          <div className="search-pill search-pill-control search-pill-passengers">
-            <FaUser className="pill-icon" />
-            <div className="control-stack">
-              <label className="control-label" htmlFor="pasajeros-input">
-                Pasajeros
-              </label>
-              <input
-                id="pasajeros-input"
-                type="number"
-                min="1"
-                max="9"
-                className="search-input-number control-input"
-                value={pasajeros}
-                onChange={(e) => {
-                  const next = Number(e.target.value);
-                  setPasajeros(Number.isInteger(next) && next > 0 ? next : 1);
-                }}
-              />
-            </div>
+        <div className="search-grid">
+          <div className="search-field search-field-dates" ref={fechaRef}>
+            <div className="field-label">Salida</div>
+            <button
+              type="button"
+              className="field-trigger field-trigger-date"
+              onClick={() => {
+                setActiveDatePicker("salida");
+                setActiveDropdown("fecha");
+              }}
+            >
+              <FaRegCalendarAlt className="field-icon" />
+              <span>{salidaLabel || "Seleccionar"}</span>
+            </button>
           </div>
 
-          <div className="search-pill search-pill-control search-pill-date" ref={fechaRef}>
-            <FaRegCalendarAlt className="pill-icon" />
-            <div className="control-stack">
-              <span className="control-label">Salida y regreso</span>
-              <div className="date-buttons">
-                <button
-                  type="button"
-                  className="date-trigger"
-                  onClick={() => {
-                    setActiveDatePicker("salida");
-                    setActiveDropdown("fecha");
-                  }}
-                >
-                  <span className="date-trigger-label">Salida</span>
-                  <span className="date-trigger-value">{salidaLabel || "Seleccionar"}</span>
-                </button>
-                <button
-                  type="button"
-                  className="date-trigger"
-                  onClick={() => {
-                    setActiveDatePicker("regreso");
-                    setActiveDropdown("fecha");
-                  }}
-                >
-                  <span className="date-trigger-label">Regreso</span>
-                  <span className="date-trigger-value">{regresoLabel || "Seleccionar"}</span>
-                </button>
-              </div>
-              <div className="control-hint">
-                {formatDateRangeLabel(fechaSalida, fechaRegreso)}
-              </div>
-            </div>
+          <div className={`search-field search-field-dates ${tripType === "oneway" ? "is-disabled" : ""}`}>
+            <div className="field-label">Regreso</div>
+            <button
+              type="button"
+              className="field-trigger field-trigger-date"
+              onClick={() => {
+                if (tripType === "oneway") return;
+                setActiveDatePicker("regreso");
+                setActiveDropdown("fecha");
+              }}
+              disabled={tripType === "oneway"}
+            >
+              <FaRegCalendarAlt className="field-icon" />
+              <span>{regresoLabel || "Seleccionar"}</span>
+            </button>
+          </div>
 
             {activeDropdown === "fecha" && (
               <div className="date-panel">
@@ -370,7 +382,7 @@ export default function BuscadorVuelos({
                     const startISO = asDateISO(selection?.startDate);
                     const endISO = asDateISO(selection?.endDate);
                     setFechaSalida(startISO);
-                    setFechaRegreso(endISO);
+                    setFechaRegreso(tripType === "oneway" ? "" : endISO);
                     if (startISO && endISO) {
                       setActiveDropdown(null);
                     }
@@ -400,31 +412,22 @@ export default function BuscadorVuelos({
             )}
           </div>
 
-          {categorias.length > 0 && (
-            <div className="search-pill search-pill-control">
-              <div className="control-stack">
-                <label className="control-label" htmlFor="categoria-select">
-                  Categoria
-                </label>
-                <select
-                  id="categoria-select"
-                  value={categoriaSeleccionada}
-                  onChange={(e) => setCategoriaSeleccionada(e.target.value)}
-                  className="search-select control-input"
-                >
-                  <option value="">Categoria</option>
-                  {categorias.map((cat) => {
-                    const name = cat?.name || String(cat || "");
-                    return (
-                      <option key={name} value={name}>
-                        {name}
-                      </option>
-                    );
-                  })}
-                </select>
+          <div className="search-passengers">
+            <div className="passenger-info">
+              <div className="field-label">Viajeros y clase</div>
+              <div className="passenger-value">
+                {pasajeros} {pasajeros === 1 ? "Adulto" : "Adultos"}, Económica
               </div>
             </div>
-          )}
+            <div className="passenger-actions">
+              <button type="button" className="passenger-btn" onClick={decrementPassengers} aria-label="Restar pasajero">
+                -
+              </button>
+              <button type="button" className="passenger-btn" onClick={incrementPassengers} aria-label="Sumar pasajero">
+                +
+              </button>
+            </div>
+          </div>
         </div>
 
         <button onClick={handleBuscar} className="search-btn">

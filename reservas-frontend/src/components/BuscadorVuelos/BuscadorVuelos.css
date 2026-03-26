@@ -7,11 +7,18 @@
 .search-wrapper {
   background-color: #1B2333;
   border-radius: 24px;
-  padding: 2rem;
+  padding: 1.5rem;
   box-shadow: 0 16px 36px rgba(3, 10, 24, 0.45);
   border: 1px solid rgba(73, 195, 255, 0.12);
   position: relative;
   overflow: visible;
+}
+
+.buscador-modern {
+  max-width: 560px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, #1a2433 0%, #17202f 100%);
+  border: 1px solid rgba(56, 189, 248, 0.12);
 }
 
 .search-wrapper::before {
@@ -45,175 +52,137 @@
   max-width: 640px;
 }
 
-.search-row-full {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+.search-tabs {
+  display: flex;
+  gap: 0.5rem;
   margin-bottom: 1rem;
 }
 
-.search-row-auto {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  align-items: stretch;
-  grid-auto-rows: 1fr;
-}
-
-.search-pill {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  background-color: #121826;
+.search-tab {
   border: none;
-  border-radius: 14px;
-  padding: 0.85rem 1rem;
-  transition: box-shadow 0.2s, border-color 0.2s;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(73, 195, 255, 0.08);
-  height: 100%;
-}
-
-.search-pill:hover {
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
-  border-color: rgba(76, 195, 255, 0.35);
-}
-
-.search-pill:focus-within {
-  box-shadow: inset 0 0 0 2px #3b82f6;
-  border-color: rgba(59, 130, 246, 0.6);
-}
-
-.search-pill-control {
-  min-height: 74px;
-}
-
-.search-pill-passengers {
-  min-height: 74px;
-  padding: 0.75rem 1rem;
-  align-items: center;
-}
-
-.search-pill-passengers .control-stack {
-  gap: 0.2rem;
-}
-
-.search-pill-passengers .control-label {
-  font-size: 0.82rem;
-  letter-spacing: 0.01em;
-}
-
-.search-pill-passengers .search-input-number {
-  font-size: 0.98rem;
-  font-weight: 700;
-}
-
-.search-pill-date {
-  padding: 0.7rem 1rem;
-}
-
-.search-pill-date .control-label {
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  background: #101826;
+  color: #9fb2cc;
   font-size: 0.78rem;
-}
-
-.pill-icon {
-  color: #86b6f8;
-  font-size: 1.05rem;
-  flex-shrink: 0;
-  margin-top: 0;
-  align-self: center;
-}
-
-.control-stack {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-width: 0;
-  gap: 0.25rem;
-  justify-content: center;
-  align-items: flex-start;
-}
-
-.control-label {
-  display: none;
-  /* Hide labels matching mockup where they are inside */
-}
-
-.control-trigger {
-  border: none;
-  background: transparent;
-  padding: 0;
-  text-align: left;
-  font-size: 1rem;
-  font-weight: 500;
-  color: #e2e8f0;
-  cursor: pointer;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  line-height: 1.25;
-}
-
-.control-trigger--wrap {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-  word-break: break-word;
-}
-
-
-.date-buttons {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.35rem;
-  width: 100%;
-}
-
-.date-trigger {
-  border: 1px solid rgba(76, 195, 255, 0.12);
-  background: #0f172a;
-  border-radius: 10px;
-  padding: 0.35rem 0.55rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  text-align: left;
-  color: #e2e8f0;
-  cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.date-trigger:hover {
-  border-color: rgba(76, 195, 255, 0.45);
-  box-shadow: inset 0 0 0 1px rgba(76, 195, 255, 0.2);
-}
-
-.date-trigger-label {
-  font-size: 0.66rem;
-  color: #8aa3c7;
   font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.search-tab.is-active {
+  background: #0ea5b7;
+  color: #04121e;
+  box-shadow: 0 6px 16px rgba(14, 165, 183, 0.35);
+}
+
+.search-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 0.9rem;
+}
+
+.search-field,
+.search-passengers {
+  background: #101826;
+  border: 1px solid rgba(73, 195, 255, 0.12);
+  border-radius: 14px;
+  padding: 0.75rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  position: relative;
+}
+
+.search-field:hover,
+.search-passengers:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.field-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
   letter-spacing: 0.08em;
-}
-
-.date-trigger-value {
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-
-.control-hint {
-  font-size: 0.66rem;
   color: #8aa3c7;
+  font-weight: 700;
+}
+
+.field-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.field-icon {
+  color: #7dd3fc;
+  font-size: 1rem;
+}
+
+.field-trigger {
+  border: none;
+  background: transparent;
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.field-trigger:focus {
+  outline: none;
+}
+
+.field-trigger-date {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search-field-dates.is-disabled {
+  opacity: 0.5;
+}
+
+.search-passengers {
+  grid-column: span 2;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.passenger-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.passenger-value {
+  color: #e2e8f0;
+  font-size: 0.95rem;
   font-weight: 600;
 }
 
-.control-trigger:focus {
-  outline: none;
+.passenger-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.passenger-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(125, 211, 252, 0.5);
+  background: #0b1322;
+  color: #7dd3fc;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.passenger-btn:hover {
+  background: #0f1b2e;
 }
 
 .dropdown-panel {
@@ -283,7 +252,7 @@
 .date-panel {
   position: absolute;
   top: calc(100% + 8px);
-  right: 0;
+  left: 0;
   z-index: 60;
   background: #ffffff;
   border: 1px solid #dbe5f3;
@@ -412,12 +381,16 @@
 }
 
 @media (max-width: 768px) {
-  .search-row-full {
+  .search-wrapper {
+    padding: 1.5rem;
+  }
+
+  .search-grid {
     grid-template-columns: 1fr;
   }
 
-  .search-wrapper {
-    padding: 1.5rem;
+  .search-passengers {
+    grid-column: span 1;
   }
 
   .date-panel {
