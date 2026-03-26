@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import { FaPlane, FaClock, FaFilter, FaChair, FaHeart, FaRegHeart, FaShareAlt, FaStar } from "react-icons/fa";
 
@@ -60,7 +60,8 @@ export default function Home() {
   const [categorias, setCategorias] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const [_vuelosFiltrados, setVuelosFiltrados] = useState([]);
+  const [vuelosFiltrados, setVuelosFiltrados] = useState([]);
+  const [hasSearch, setHasSearch] = useState(false);
   const [shareData, setShareData] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -166,14 +167,30 @@ export default function Home() {
   }, []);
 
   // Paginaci\u00f3n
-  const totalPages = Math.ceil(vuelos.length / itemsPerPage);
+  const resultsRef = useRef(null);
+
+  const vuelosParaMostrar = useMemo(
+    () => {
+      if (hasSearch) return vuelosFiltrados;
+      return vuelos;
+    },
+    [vuelosFiltrados, vuelos, hasSearch]
+  );
+
+  const totalPages = Math.ceil(vuelosParaMostrar.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const vuelosPaginados = vuelos.slice(startIndex, endIndex);
+  const vuelosPaginados = vuelosParaMostrar.slice(startIndex, endIndex);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages > 0 ? totalPages : 1);
   }, [totalPages, currentPage]);
+
+  useEffect(() => {
+    if (vuelosFiltrados.length > 0) {
+      setCurrentPage(1);
+    }
+  }, [vuelosFiltrados.length]);
 
   const navigate = useNavigate();
 
@@ -205,6 +222,12 @@ export default function Home() {
           categorias={categorias}
           backendVuelos={vuelos}
           onFiltrar={setVuelosFiltrados}
+          onBuscar={() => {
+            setHasSearch(true);
+            setCurrentPage(1);
+            resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+          navigateOnSearch={false}
         />
         <CategoriasSection
           vuelos={vuelos}
@@ -213,9 +236,9 @@ export default function Home() {
         />
         <Recomendaciones vuelos={vuelos} onShare={openShareModal} />
 
-        <div className="vuelos-paginados-section">
+        <div className="vuelos-paginados-section" ref={resultsRef}>
           <div className="vp-header">
-            <h2>Vuelos disponibles</h2>
+            <h2>{vuelosFiltrados.length > 0 ? "Resultados de busqueda" : "Vuelos disponibles"}</h2>
             <button className="vp-filter-btn"><FaFilter /></button>
           </div>
           <div className="vuelos-paginados-grid">
@@ -330,9 +353,13 @@ export default function Home() {
             })}
           </div>
 
-          {vuelos.length > 0 && (
+          {hasSearch && vuelosParaMostrar.length === 0 && (
+            <p className="vp-empty">No se encontraron vuelos con esos criterios.</p>
+          )}
+
+          {vuelosParaMostrar.length > 0 && (
             <Paginacion
-              totalItems={vuelos.length}
+              totalItems={vuelosParaMostrar.length}
               itemsPerPage={itemsPerPage}
               currentPage={currentPage}
               setCurrentPage={setCurrentPage}

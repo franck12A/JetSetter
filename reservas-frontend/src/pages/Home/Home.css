@@ -125,6 +125,12 @@
   gap: 1.5rem;
 }
 
+.vp-empty {
+  margin-top: 1rem;
+  color: #b7c3d7;
+  font-size: 0.95rem;
+}
+
 /* Card nueva horizontal con imagen full top */
 .vuelo-nuevo-card {
   background: #1B2333;

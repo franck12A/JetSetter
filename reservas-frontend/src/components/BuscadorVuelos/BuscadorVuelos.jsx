@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaPlaneDeparture, FaPlaneArrival, FaUser, FaRegCalendarAlt, FaSearch } from "react-icons/fa";
-import { Calendar } from "react-date-range";
+import { DateRange } from "react-date-range";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import "./BuscadorVuelos.css";
@@ -62,7 +62,14 @@ const normalizeVuelo = (vuelo = {}) => {
   };
 };
 
-export default function BuscadorVuelos({ categorias = [], backendVuelos = [], vuelosRaw = [], onFiltrar }) {
+export default function BuscadorVuelos({
+  categorias = [],
+  backendVuelos = [],
+  vuelosRaw = [],
+  onFiltrar,
+  onBuscar,
+  navigateOnSearch = true,
+}) {
   const navigate = useNavigate();
 
   const sourceVuelos = useMemo(
@@ -84,6 +91,20 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], vu
   const salidaLabel = formatDateLabel(fechaSalida);
   const regresoLabel = formatDateLabel(fechaRegreso);
   const focusLabel = activeDatePicker === "regreso" ? "Regreso" : "Salida";
+
+  const rangeSelection = useMemo(() => {
+    const startDate = fechaSalida
+      ? new Date(`${fechaSalida}T00:00:00`)
+      : new Date();
+    const endDate = fechaRegreso
+      ? new Date(`${fechaRegreso}T00:00:00`)
+      : startDate;
+    return {
+      startDate,
+      endDate,
+      key: "selection",
+    };
+  }, [fechaSalida, fechaRegreso]);
 
   const origenRef = useRef(null);
   const destinoRef = useRef(null);
@@ -149,6 +170,7 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], vu
     });
 
     if (typeof onFiltrar === "function") onFiltrar(filtrados);
+    if (typeof onBuscar === "function") onBuscar({ filtros: { origen, destino, fechaSalida, fechaRegreso, categoriaSeleccionada, pasajeros }, filtrados });
 
     const params = new URLSearchParams();
     if (origen) params.set("origen", origen);
@@ -158,7 +180,9 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], vu
     if (categoriaSeleccionada) params.set("categoria", categoriaSeleccionada);
     if (pasajeros > 1) params.set("pasajeros", String(pasajeros));
 
-    navigate(`/resultados${params.toString() ? `?${params.toString()}` : ""}`);
+    if (navigateOnSearch) {
+      navigate(`/resultados${params.toString() ? `?${params.toString()}` : ""}`);
+    }
   };
 
   return (
@@ -339,38 +363,23 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], vu
             {activeDropdown === "fecha" && (
               <div className="date-panel">
                 <div className="date-panel-head">Seleccionando: {focusLabel}</div>
-                <Calendar
-                  date={
-                    activeDatePicker === "regreso"
-                      ? (fechaRegreso
-                        ? new Date(`${fechaRegreso}T00:00:00`)
-                        : (fechaSalida ? new Date(`${fechaSalida}T00:00:00`) : new Date()))
-                      : (fechaSalida
-                        ? new Date(`${fechaSalida}T00:00:00`)
-                        : (fechaRegreso ? new Date(`${fechaRegreso}T00:00:00`) : new Date()))
-                  }
-                  minDate={
-                    activeDatePicker === "regreso" && fechaSalida
-                      ? new Date(`${fechaSalida}T00:00:00`)
-                      : undefined
-                  }
-                  maxDate={
-                    activeDatePicker === "salida" && fechaRegreso
-                      ? new Date(`${fechaRegreso}T00:00:00`)
-                      : undefined
-                  }
-                  onChange={(nextDate) => {
-                    const nextISO = asDateISO(nextDate);
-                    if (activeDatePicker === "regreso") {
-                      setFechaRegreso(nextISO);
-                      if (!fechaSalida) setFechaSalida(nextISO);
-                    } else {
-                      setFechaSalida(nextISO);
-                      if (fechaRegreso && nextISO > fechaRegreso) setFechaRegreso("");
+                <DateRange
+                  ranges={[rangeSelection]}
+                  onChange={(ranges) => {
+                    const selection = ranges.selection;
+                    const startISO = asDateISO(selection?.startDate);
+                    const endISO = asDateISO(selection?.endDate);
+                    setFechaSalida(startISO);
+                    setFechaRegreso(endISO);
+                    if (startISO && endISO) {
+                      setActiveDropdown(null);
                     }
-                    setActiveDropdown(null);
                   }}
-                  color="#2563eb"
+                  moveRangeOnFirstSelection={false}
+                  minDate={new Date()}
+                  months={2}
+                  direction="horizontal"
+                  rangeColors={["#2563eb"]}
                 />
 
                 {(fechaSalida || fechaRegreso) && (
@@ -420,7 +429,7 @@ export default function BuscadorVuelos({ categorias = [], backendVuelos = [], vu
 
         <button onClick={handleBuscar} className="search-btn">
           <FaSearch className="btn-icon" />
-          Buscar vuelos
+          Realizar busqueda
         </button>
       </div>
     </div>

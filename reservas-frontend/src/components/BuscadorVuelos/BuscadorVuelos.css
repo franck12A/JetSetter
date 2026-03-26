@@ -259,6 +259,7 @@
   border-radius: 14px;
   box-shadow: 0 20px 30px rgba(15, 23, 42, 0.16);
   overflow: hidden;
+  width: max-content;
 }
 
 .date-panel-head {
@@ -281,6 +282,10 @@
 
 .date-panel .rdrMonths {
   gap: 0.5rem;
+}
+
+.date-panel .rdrMonth {
+  width: 280px;
 }
 
 .date-clear-btn {
@@ -323,9 +328,12 @@
 .search-input-number {
   max-width: 120px;
   text-align: left;
-  padding: 0.15rem 0;
+  padding: 0;
   appearance: textfield;
   font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+  height: 1.25em;
+  margin: 0;
 }
 
 .search-input-number::-webkit-outer-spin-button,
@@ -390,5 +398,13 @@
 
   .date-panel .rdrCalendarWrapper {
     width: min(100vw - 3rem, 680px);
+  }
+
+  .date-panel .rdrMonths {
+    flex-direction: column;
+  }
+
+  .date-panel .rdrMonth {
+    width: 100%;
   }
 }
