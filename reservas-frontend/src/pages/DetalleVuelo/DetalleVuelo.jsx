@@ -512,6 +512,9 @@ export default function DetalleVuelo() {
     return Array.from(uniqueMap.values());
   }, [vuelo]);
 
+  const featureHighlights = useMemo(() => featureItems.slice(0, 4), [featureItems]);
+  const featureExtras = useMemo(() => featureItems.slice(4), [featureItems]);
+
   const imageList = useMemo(() => {
     if (!vuelo) return [];
 
@@ -1261,9 +1264,12 @@ export default function DetalleVuelo() {
 
             {featureItems.length > 0 && (
               <div className="dv-features-block">
-                <h3>Caracter\u00edsticas del vuelo</h3>
+                <div className="dv-section-head">
+                  <h3>Detalles del vuelo</h3>
+                  <p>Lo esencial antes de reservar.</p>
+                </div>
                 <div className="dv-features-grid">
-                  {featureItems.map((feature, index) => {
+                  {featureHighlights.map((feature, index) => {
                     const Icon = resolveFeatureIcon(feature.label, feature.iconName);
                     const hasValue = Boolean(feature.value);
 
@@ -1287,11 +1293,41 @@ export default function DetalleVuelo() {
                     );
                   })}
                 </div>
+                {featureExtras.length > 0 && (
+                  <details className="dv-features-more">
+                    <summary>Ver todas las caracter\u00edsticas</summary>
+                    <div className="dv-features-grid is-secondary">
+                      {featureExtras.map((feature, index) => {
+                        const Icon = resolveFeatureIcon(feature.label, feature.iconName);
+                        const hasValue = Boolean(feature.value);
+
+                        return (
+                          <div
+                            key={`${feature.label}-extra-${index}`}
+                            className={`dv-feature-item ${hasValue ? "" : "is-compact"}`}
+                          >
+                            <span className="dv-feature-icon">{Icon ? <Icon /> : null}</span>
+                            <div className="dv-feature-content">
+                              {hasValue ? (
+                                <>
+                                  <span className="dv-feature-label">{feature.label}</span>
+                                  <span className="dv-feature-value">{feature.value}</span>
+                                </>
+                              ) : (
+                                <span className="dv-feature-value">{feature.label}</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </details>
+                )}
               </div>
             )}
 
-            <div className="dv-policies">
-              <h3 className="dv-policies-title">Pol\u00edticas de uso</h3>
+            <details className="dv-policies">
+              <summary className="dv-policies-title">Pol\u00edticas de uso</summary>
               <div className="dv-policies-grid">
                 {POLICY_ITEMS.map((policy) => (
                   <div key={policy.title} className="dv-policy-card">
@@ -1300,7 +1336,7 @@ export default function DetalleVuelo() {
                   </div>
                 ))}
               </div>
-            </div>
+            </details>
 
             <div className="dv-availability">
               <div className="dv-availability-head">

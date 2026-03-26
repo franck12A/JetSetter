@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700&display=swap");
+
 .detalle-page-container {
   min-height: 100vh;
   padding: 1.5rem 2rem 3rem;
@@ -6,6 +8,7 @@
     radial-gradient(circle at 86% 12%, rgba(59, 130, 246, 0.18), transparent 40%),
     linear-gradient(180deg, #050a15 0%, #0b1324 58%, #0b1324 100%);
   color: #e5eefb;
+  font-family: "Manrope", "Segoe UI", sans-serif;
 }
 
 .detalle-header-bar {
@@ -52,6 +55,8 @@
   font-size: clamp(1.3rem, 1vw + 1rem, 1.8rem);
   font-weight: 800;
   color: #f8fbff;
+  font-family: "Sora", "Manrope", sans-serif;
+  letter-spacing: 0.01em;
 }
 
 .dv-header-subtitle {
@@ -177,6 +182,7 @@
   color: #f8fbff;
   line-height: 1.08;
   text-shadow: 0 6px 20px rgba(2, 8, 23, 0.55);
+  font-family: "Sora", "Manrope", sans-serif;
 }
 
 .dv-breadcrumbs {
@@ -264,6 +270,7 @@
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-weight: 800;
+  font-family: "Sora", "Manrope", sans-serif;
 }
 
 .dv-route-title {
@@ -271,6 +278,7 @@
   color: #f8fbff;
   font-size: clamp(1.2rem, 0.8vw + 1rem, 1.55rem);
   font-weight: 800;
+  font-family: "Sora", "Manrope", sans-serif;
 }
 
 .dv-route-sub {
@@ -391,19 +399,54 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.16em;
+  font-family: "Sora", "Manrope", sans-serif;
+}
+
+.dv-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.6rem;
+}
+
+.dv-section-head p {
+  margin: 0;
+  color: #a5b9d6;
+  font-size: 0.9rem;
 }
 
 .dv-policies-title {
-  margin: 0 0 1rem;
+  margin: 0;
   color: #7dd3fc;
   font-size: 0.74rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.16em;
-  text-decoration: underline;
-  text-decoration-color: rgba(56, 189, 248, 0.6);
-  text-decoration-thickness: 2px;
-  text-underline-offset: 6px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.dv-policies-title::-webkit-details-marker {
+  display: none;
+}
+
+.dv-policies-title::after {
+  content: "▾";
+  display: inline-block;
+  margin-left: 0.5rem;
+  transition: transform 0.2s ease;
+}
+
+.dv-policies[open] .dv-policies-title::after {
+  transform: rotate(180deg);
+}
+
+.dv-policies[open] .dv-policies-title {
+  margin-bottom: 1rem;
+}
+
+.dv-policies::marker {
+  content: "";
 }
 
 .dv-policies-grid {
@@ -739,12 +782,56 @@
   .dv-review-layout {
     grid-template-columns: 1fr;
   }
+
+  .dv-features-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .dv-features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 0.85rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.dv-features-grid.is-secondary {
+  margin-top: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.dv-features-more {
+  margin-top: 0.85rem;
+  border-top: 1px solid rgba(56, 189, 248, 0.12);
+  padding-top: 0.85rem;
+}
+
+.dv-features-more summary {
+  cursor: pointer;
+  list-style: none;
+  color: #7dd3fc;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.dv-features-more summary::-webkit-details-marker {
+  display: none;
+}
+
+.dv-features-more summary::marker {
+  content: "";
+}
+
+.dv-features-more summary::after {
+  content: "▾";
+  display: inline-block;
+  margin-left: 0.5rem;
+  transition: transform 0.2s ease;
+}
+
+.dv-features-more[open] summary::after {
+  transform: rotate(180deg);
 }
 
 .dv-feature-item {
