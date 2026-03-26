@@ -98,6 +98,53 @@ const parseDateValue = (value) => {
   return parsed;
 };
 
+const parseDateOnly = (value) => {
+  if (!value) return null;
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null;
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  }
+
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    if (!year || !month || !day) return null;
+    return new Date(year, month - 1, day);
+  }
+
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+};
+
+const isBookingFinalized = (booking, referenceDate = new Date()) => {
+  if (!booking) return false;
+  const status = String(booking.status || "").trim().toUpperCase();
+  if (status) {
+    if (["FINALIZADA", "FINALIZADO", "COMPLETADA", "COMPLETADO", "COMPLETED"].includes(status)) {
+      return true;
+    }
+    if (status.includes("CANCEL")) {
+      return false;
+    }
+  }
+
+  const baseDate =
+    referenceDate instanceof Date && !Number.isNaN(referenceDate.getTime())
+      ? new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate())
+      : getStartOfToday();
+  const travelDate = parseDateOnly(booking.travelDate || booking.travel_date);
+  if (travelDate) return travelDate <= baseDate;
+  const bookingDate = parseDateOnly(booking.bookingDate || booking.booking_date);
+  if (bookingDate) return bookingDate <= baseDate;
+  return false;
+};
+
 const formatTravelDateLabel = (value) => {
   const date = parseDateValue(value);
   if (!date) return "Sin fecha seleccionada";

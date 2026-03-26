@@ -268,7 +268,7 @@ export default function Home() {
                     dateStr: new Date().toISOString(),
                     passengers: 1,
                   });
-                  alert("Reserva realizada correctamente \u2708\uFE0F
+                  alert("Reserva realizada correctamente \u2708\uFE0F");
                 } catch (err) {
                   console.error("Error al reservar:", err);
                 }

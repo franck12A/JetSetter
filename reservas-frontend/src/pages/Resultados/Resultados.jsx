@@ -460,7 +460,7 @@ export default function Resultados() {
       ? {
           key: "fecha",
           label: hasSalida && hasRegreso && dateRange.start !== dateRange.end
-            ? `Salida: ${formatFecha(dateRange.start)} ? Regreso: ${formatFecha(dateRange.end)}
+            ? `Salida: ${formatFecha(dateRange.start)} - Regreso: ${formatFecha(dateRange.end)}`
             : hasSalida
               ? `Salida: ${formatFecha(dateRange.start)}`
               : `Regreso: ${formatFecha(dateRange.end)}`,
@@ -590,7 +590,7 @@ export default function Resultados() {
             {!loading && showNearby && (
               <div className="resultados-alert">
                 <strong>No encontramos vuelos exactos para tus fechas.</strong>
-                <span>Te mostramos opciones cercanas dentro de los pr\u00f3ximos {NEARBY_DAYS} d\u00edas.
+                <span>Te mostramos opciones cercanas dentro de los pr\u00f3ximos {NEARBY_DAYS} d\u00edas.</span>
               </div>
             )}
 
