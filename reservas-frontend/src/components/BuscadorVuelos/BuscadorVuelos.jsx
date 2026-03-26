@@ -356,25 +356,6 @@ export default function BuscadorVuelos({
               <FaRegCalendarAlt className="field-icon" />
               <span>{salidaLabel || "Seleccionar"}</span>
             </button>
-          </div>
-
-          <div className={`search-field search-field-dates ${tripType === "oneway" ? "is-disabled" : ""}`}>
-            <div className="field-label">Regreso</div>
-            <button
-              type="button"
-              className="field-trigger field-trigger-date"
-              onClick={() => {
-                if (tripType === "oneway") return;
-                setActiveDatePicker("regreso");
-                setActiveDropdown("fecha");
-              }}
-              disabled={tripType === "oneway"}
-            >
-              <FaRegCalendarAlt className="field-icon" />
-              <span>{regresoLabel || "Seleccionar"}</span>
-            </button>
-          </div>
-
             {activeDropdown === "fecha" && (
               <div className="date-panel">
                 <div className="date-panel-head">Seleccionando: {focusLabel}</div>
@@ -415,13 +396,30 @@ export default function BuscadorVuelos({
             )}
           </div>
 
+          <div className={`search-field search-field-dates ${tripType === "oneway" ? "is-disabled" : ""}`}>
+            <div className="field-label">Regreso</div>
+            <button
+              type="button"
+              className="field-trigger field-trigger-date"
+              onClick={() => {
+                if (tripType === "oneway") return;
+                setActiveDatePicker("regreso");
+                setActiveDropdown("fecha");
+              }}
+              disabled={tripType === "oneway"}
+            >
+              <FaRegCalendarAlt className="field-icon" />
+              <span>{regresoLabel || "Seleccionar"}</span>
+            </button>
+          </div>
+
           <div className="search-passengers">
             <div className="passenger-info">
               <div className="field-label">Viajeros y clase</div>
-            <div className="passenger-value">
-              <FaUser className="passenger-icon" />
-              {pasajeros} {pasajeros === 1 ? "Adulto" : "Adultos"}, Económica
-            </div>
+              <div className="passenger-value">
+                <FaUser className="passenger-icon" />
+                {pasajeros} {pasajeros === 1 ? "Adulto" : "Adultos"}, Económica
+              </div>
             </div>
             <div className="passenger-actions">
               <button type="button" className="passenger-btn" onClick={decrementPassengers} aria-label="Restar pasajero">
