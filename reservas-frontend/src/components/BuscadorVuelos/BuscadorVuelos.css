@@ -15,10 +15,28 @@
 }
 
 .buscador-modern {
-  max-width: 760px;
+  width: min(100%, 720px);
   margin: 0 auto;
   background: linear-gradient(180deg, #182232 0%, #141c29 100%);
   border: 1px solid rgba(56, 189, 248, 0.14);
+}
+
+@media (min-width: 1200px) {
+  .buscador-modern {
+    width: min(100%, 820px);
+  }
+}
+
+@media (min-width: 1400px) {
+  .buscador-modern {
+    width: min(100%, 900px);
+  }
+}
+
+@media (min-width: 1600px) {
+  .buscador-modern {
+    width: min(100%, 980px);
+  }
 }
 
 .search-wrapper::before {
@@ -90,7 +108,8 @@
 
 .search-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(240px, 240px));
+  justify-content: center;
   gap: 0.7rem;
   margin-bottom: 0.8rem;
 }
@@ -407,6 +426,7 @@
 
   .search-grid {
     grid-template-columns: 1fr;
+    justify-content: stretch;
   }
 
   .search-passengers {
