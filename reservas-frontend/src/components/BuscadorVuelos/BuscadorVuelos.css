@@ -87,6 +87,26 @@
   min-height: 74px;
 }
 
+.search-pill-passengers {
+  min-height: 64px;
+  padding: 0.7rem 1rem;
+  align-items: center;
+}
+
+.search-pill-passengers .control-stack {
+  gap: 0.15rem;
+}
+
+.search-pill-passengers .control-label {
+  font-size: 0.85rem;
+  letter-spacing: 0.01em;
+}
+
+.search-pill-passengers .search-input-number {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
 .pill-icon {
   color: #86b6f8;
   font-size: 1.05rem;

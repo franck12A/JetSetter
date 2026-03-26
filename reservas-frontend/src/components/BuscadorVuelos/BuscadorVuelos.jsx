@@ -306,7 +306,7 @@ export default function BuscadorVuelos({
         </div>
 
         <div className="search-row-auto">
-          <div className="search-pill search-pill-control">
+          <div className="search-pill search-pill-control search-pill-passengers">
             <FaUser className="pill-icon" />
             <div className="control-stack">
               <label className="control-label" htmlFor="pasajeros-input">
@@ -429,7 +429,7 @@ export default function BuscadorVuelos({
 
         <button onClick={handleBuscar} className="search-btn">
           <FaSearch className="btn-icon" />
-          Realizar busqueda
+          Realizar búsqueda
         </button>
       </div>
     </div>

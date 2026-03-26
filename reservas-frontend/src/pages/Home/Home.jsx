@@ -227,7 +227,7 @@ export default function Home() {
             setCurrentPage(1);
             resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
           }}
-          navigateOnSearch={false}
+          navigateOnSearch
         />
         <CategoriasSection
           vuelos={vuelos}
