@@ -327,7 +327,7 @@ export default function BuscadorVuelos({
             </div>
           </div>
 
-          <div className="search-pill search-pill-control" ref={fechaRef}>
+          <div className="search-pill search-pill-control search-pill-date" ref={fechaRef}>
             <FaRegCalendarAlt className="pill-icon" />
             <div className="control-stack">
               <span className="control-label">Salida y regreso</span>
