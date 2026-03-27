@@ -1,98 +1,32 @@
-/* =========================================================
-   🌍 Estilos Globales del Proyecto de Vuelos
-   ---------------------------------------------------------
-   Paleta profesional, moderna y coherente entre secciones
-========================================================= */
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
 
-:root {
-  /* 🎨 Colores principales */
-  --color-primary: #007bff;
-  /* Azul corporativo */
-  --color-primary-dark: #0056b3;
-  /* Azul oscuro */
-  --color-accent: #00b4d8;
-  /* Celeste vibrante */
-  --color-bg: #f7f9fc;
-  /* Fondo suave */
-  --color-text: #1a1a1a;
-  /* Texto principal */
-  --color-muted: #666;
-  /* Texto secundario */
-  --color-white: #fff;
-
-  /* 💫 Sombras y bordes */
-  --shadow-card: 0 6px 18px rgba(0, 0, 0, 0.08);
-  --shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.12);
-  --radius-card: 16px;
-
-  /* 🔠 Tipografía */
-  --font-primary: 'Poppins', sans-serif;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-/* ---------- Reset general ---------- */
-/* src/styles/global.css */
+html {
+  font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
 
-/* Aplica a toda la página */
-html,
-body,
-#root {
+body {
   margin: 0;
-  padding: 0;
-  height: 100%;
-  font-family: 'Poppins', sans-serif;
-  /* Tipografía global */
-  display: flex;
-  flex-direction: column;
+  background: #f8fafc;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-
-/* ---------- Títulos globales ---------- */
-h1,
-h2,
-h3,
-h4 {
-  color: var(--color-primary-dark);
+#root {
+  min-height: 100vh;
 }
 
-/* ---------- Botones globales ---------- */
-button {
-  font-family: var(--font-primary);
-  cursor: pointer;
-  transition: 0.3s ease;
-}
-
-/* ---------- Enlaces ---------- */
 a {
-  text-decoration: none;
   color: inherit;
+  text-decoration: none;
 }
 
-/* ---------- Secciones ---------- */
-section {
-  margin: 3rem auto;
-  max-width: 1300px;
-  padding: 0 1rem;
-}
-
-/* ---------- Swiper general ---------- */
-.swiper-button-prev,
-.swiper-button-next {
-  color: var(--color-primary);
-}
-
-.swiper-pagination-bullet {
-  background: var(--color-primary);
-}
-
-.swiper-pagination-bullet-active {
-  background: var(--color-primary-dark);
-}
-
-/* ---------- Degradado de fondo global ---------- */
-body::before {
-  display: none;
-}
-
-main {
-  flex: 1;
+button {
+  font-family: inherit;
 }

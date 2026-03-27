@@ -329,16 +329,16 @@ export default function Profile() {
 
   if (!user) return (
     <div className="profile-container">
-      <div className="profile-card text-center">
+      <div className="profile-card profile-card--centered">
         <h3>Debes iniciar sesi\u00f3n para ver tu perfil</h3>
-        <a href="/login" className="btn-logout mt-3">Ir al login</a>
+        <a href="/login" className="btn-logout profile-logout-link">Ir al login</a>
       </div>
     </div>
   );
 
   if (loading) return (
     <div className="profile-container">
-      <div className="profile-card text-center">
+      <div className="profile-card profile-card--centered">
         <p>Cargando tus datos...</p>
       </div>
     </div>
@@ -468,7 +468,7 @@ export default function Profile() {
                     <div className="flight-card-body">
                       <h5 className="flight-title">{vuelo.name}</h5>
                       <p className="flight-meta-data"><FaCalendarAlt className="flight-meta-icon" /> {formatBookingDate(fechaValue)}</p>
-                      <div className="flight-footer mt-2">
+                      <div className="flight-footer flight-footer--compact">
                         <span className="flight-price">${vuelo.price}</span>
                         <button className="btn-delete" onClick={() => handleCancelBooking(b.id)} aria-label="Cancelar reserva"><FaTrashAlt /></button>
                       </div>

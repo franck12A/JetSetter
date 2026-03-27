@@ -22,8 +22,8 @@
 }
 
 .imagen {
-  width: 12rem; /* w-48 */
-  height: 8rem; /* h-32 */
+  width: 12rem;
+  height: 8rem;
   object-fit: cover;
   border-radius: 0.75rem;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);

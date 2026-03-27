@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import "./components/VuelosList/VuelosList.css";
 
 function VuelosList() {
   const [vuelos, setVuelos] = useState([]);
@@ -17,19 +18,19 @@ function VuelosList() {
       });
   }, []);
 
-  if (loading) return <p>Cargando vuelos...</p>;
+  if (loading) return <p className="vuelos-list-loading">Cargando vuelos...</p>;
 
   return (
-    <div className="container py-5">
-      <h2 className="text-center mb-4">✈️ Vuelos disponibles</h2>
-      <div className="row g-4">
+    <div className="vuelos-list">
+      <h2 className="vuelos-list-title">✈️ Vuelos disponibles</h2>
+      <div className="vuelos-list-grid">
         {vuelos.map(vuelo => (
-          <div key={vuelo.id} className="col-md-4">
-            <div className="card shadow-sm">
-              <img src={vuelo.imagenUrl} className="card-img-top" alt={vuelo.nombre} />
-              <div className="card-body">
-                <h5 className="card-title">{vuelo.nombre}</h5>
-                <p className="card-text">Precio: ${vuelo.precio}</p>
+          <div key={vuelo.id} className="vuelos-list-item">
+            <div className="vuelos-list-card">
+              <img src={vuelo.imagenUrl} className="vuelos-list-image" alt={vuelo.nombre} />
+              <div className="vuelos-list-body">
+                <h5 className="vuelos-list-name">{vuelo.nombre}</h5>
+                <p className="vuelos-list-desc">Precio: ${vuelo.precio}</p>
               </div>
             </div>
           </div>

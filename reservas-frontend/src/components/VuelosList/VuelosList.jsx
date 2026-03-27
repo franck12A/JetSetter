@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import productService from "../../services/productService";
+import "./VuelosList.css";
 
 function VuelosList() {
   const [vuelos, setVuelos] = useState([]);
@@ -75,32 +76,32 @@ function VuelosList() {
     }
   };
 
-  if (loading) return <p className="text-center py-5">Cargando vuelos...</p>;
+  if (loading) return <p className="vuelos-list-loading">Cargando vuelos...</p>;
 
   return (
-    <div className="container py-5">
-      <h2 className="text-center mb-4">✈️ Vuelos disponibles</h2>
-      <div className="row g-4">
+    <div className="vuelos-list">
+      <h2 className="vuelos-list-title">✈️ Vuelos disponibles</h2>
+      <div className="vuelos-list-grid">
         {vuelos.map((vuelo) => (
-          <div key={vuelo.id} className="col-md-4">
-            <div className="card shadow-sm">
+          <div key={vuelo.id} className="vuelos-list-item">
+            <div className="vuelos-list-card">
               <img
                 src={`http://localhost:8080/images/${vuelo.image}`}
-                className="card-img-top"
+                className="vuelos-list-image"
                 alt={vuelo.name}
                 style={{ height: "200px", objectFit: "cover" }}
               />
-              <div className="card-body">
-                <h5 className="card-title">{vuelo.name}</h5>
-                <p className="card-text">{vuelo.description}</p>
-                <p className="fw-bold">${vuelo.price}</p>
+              <div className="vuelos-list-body">
+                <h5 className="vuelos-list-name">{vuelo.name}</h5>
+                <p className="vuelos-list-desc">{vuelo.description}</p>
+                <p className="vuelos-list-price">${vuelo.price}</p>
 
                 {user && (
                   <button
-                    className={`btn ${user.favorites?.includes(vuelo.id)
-                        ? "btn-danger"
-                        : "btn-outline-danger"
-                      } w-100 mt-2`}
+                    className={`vuelos-list-fav-btn ${user.favorites?.includes(vuelo.id)
+                      ? "is-active"
+                      : ""
+                      }`}
                     onClick={() => toggleFavorite(vuelo.id)}
                   >
                     {user.favorites?.includes(vuelo.id)

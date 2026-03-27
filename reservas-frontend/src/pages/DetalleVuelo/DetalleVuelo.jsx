@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { DayPicker } from "react-day-picker";
 import { es } from "react-day-picker/locale";
@@ -221,11 +221,11 @@ const normalizeText = (value) =>
     .trim();
 
 const FEATURE_LABEL_MAP = [
-  { match: /duracion|tiempo|hora/, label: "Duracion" },
+  { match: /duracion|tiempo|hora/, label: "Duración" },
   { match: /clase|cabina/, label: "Clase" },
   { match: /equipaje|maleta|bag|carry/, label: "Equipaje" },
-  { match: /aerolinea|airline/, label: "Aerol\u00ednea" },
-  { match: /(numero|nro|num)\s*(de)?\s*vuelo/, label: "Numero de vuelo" },
+  { match: /aerolinea|airline/, label: "Aerolínea" },
+  { match: /(numero|nro|num)\s*(de)?\s*vuelo/, label: "Número de vuelo" },
   { match: /escala|escalas|conexion/, label: "Escalas" },
   { match: /ruta/, label: "Ruta" },
   { match: /salida|departure/, label: "Salida" },
@@ -253,10 +253,10 @@ const humanizeFeatureLabel = (raw) => {
 
 const cleanFeatureValue = (value) =>
   String(value || "")
-    .replace(/^(duracion|duraci\u00f3n)( aproximada)?\s*:\s*/i, "")
+    .replace(/^(duracion|duración)( aproximada)?\s*:\s*/i, "")
     .replace(/^clase\s*:\s*/i, "")
     .replace(/^equipaje( incluido)?\s*:\s*/i, "")
-    .replace(/^(aerolinea|aerol\u00ednea)\s*:\s*/i, "")
+    .replace(/^(aerolinea|aerolínea)\s*:\s*/i, "")
     .replace(/^n(umero|ro)?\s*de\s*vuelo\s*:\s*/i, "")
     .replace(/^(salida|llegada)\s*:\s*/i, "")
     .replace(/\s+/g, " ")
@@ -297,8 +297,8 @@ const buildComputedFeatures = (vuelo) => {
 
   const route = vuelo.origen && vuelo.destino ? `${vuelo.origen} -> ${vuelo.destino}` : "";
   addItem("Ruta", route);
-    addItem("Aerol\u00ednea", vuelo.aerolinea);
-  addItem("Numero de vuelo", vuelo.numeroVuelo);
+  addItem("Aerolínea", vuelo.aerolinea);
+  addItem("Número de vuelo", vuelo.numeroVuelo);
 
   const segmentsCount = Array.isArray(vuelo.segmentos) ? vuelo.segmentos.length : 0;
   if (segmentsCount > 0) {
@@ -311,7 +311,7 @@ const buildComputedFeatures = (vuelo) => {
   const llegada = vuelo.fechaLlegadaRaw ? formatDateTime(vuelo.fechaLlegadaRaw) : vuelo.fechaLlegada;
   addItem("Salida", salida);
   addItem("Llegada", llegada);
-  addItem("Duracion", vuelo.duracion);
+  addItem("Duración", vuelo.duracion);
   addItem("Clase", vuelo.clase);
   addItem("Equipaje", vuelo.equipaje);
 
@@ -346,8 +346,8 @@ const normalizeVuelo = (data) => {
     return entry?.value || "";
   };
 
-  const duracion = data?.duracion || getFeatureValue([/duracion/i, /duraci\u00f3n/i]) || "Consultar";
-  const clase = data?.clase || getFeatureValue([/clase/i]) || "Econ\u00f3mica";
+  const duracion = data?.duracion || getFeatureValue([/duracion/i, /duración/i]) || "Consultar";
+  const clase = data?.clase || getFeatureValue([/clase/i]) || "Económica";
   const equipaje = data?.equipaje || getFeatureValue([/equipaje/i, /maleta/i, /bag/i]) || "No incluido";
   const isExternal = Boolean(data?.isExternal || data?.source === "amadeus" || data?.externalId);
   const rawProductId = data.productId ?? data.id;
@@ -415,9 +415,9 @@ const looksTechnicalDescription = (value) => {
 
 const POLICY_ITEMS = [
   {
-    title: "Documentacion y check-in",
+    title: "Documentación y check-in",
     description:
-      "Presenta un documento valido y realiza el check-in dentro de los tiempos indicados por la aerolinea.",
+      "Presenta un documento válido y realiza el check-in dentro de los tiempos indicados por la aerolínea.",
   },
   {
     title: "Equipaje permitido",
@@ -432,7 +432,7 @@ const POLICY_ITEMS = [
   {
     title: "Seguridad y embarque",
     description:
-      "Llega con anticipacion al embarque y respeta las restricciones de seguridad para un abordaje fluido.",
+      "Llega con anticipación al embarque y respeta las restricciones de seguridad para un abordaje fluido.",
   },
 ];
 
@@ -549,12 +549,43 @@ export default function DetalleVuelo() {
     return escalas?.value || "Directo";
   }, [featureItems]);
 
+  const heroSubtitle = useMemo(() => {
+    if (!vuelo) return "";
+
+    const parts = [];
+    if (escalaResumen) {
+      const normalized = normalizeText(escalaResumen);
+      if (normalized === "directo") {
+        parts.push("Vuelo directo");
+      } else {
+        parts.push(`Vuelo con ${escalaResumen.toLowerCase()}`);
+      }
+    }
+
+    if (vuelo.clase) parts.push(vuelo.clase);
+    if (vuelo.aerolinea) parts.push(vuelo.aerolinea);
+
+    const cleaned = parts.filter(Boolean);
+    return cleaned.length > 0 ? cleaned.join(" · ") : "Experiencia premium";
+  }, [escalaResumen, vuelo]);
+
+  const heroTitle = useMemo(() => {
+    if (!vuelo) return "Tu próximo destino";
+    const parts = [];
+    if (vuelo.destino) parts.push(vuelo.destino);
+    if (vuelo.paisDestino && normalizeText(vuelo.paisDestino) !== normalizeText(vuelo.destino)) {
+      parts.push(vuelo.paisDestino);
+    }
+    const merged = parts.filter(Boolean).join(", ");
+    return merged || vuelo.paisDestino || vuelo.destino || "Tu próximo destino";
+  }, [vuelo]);
+
   const descriptionText = useMemo(() => {
     const rawDescription = vuelo?.descripcion || vuelo?.description || "";
     if (!looksTechnicalDescription(rawDescription)) return rawDescription;
 
     const destino = vuelo?.paisDestino || vuelo?.destino || "este destino";
-    return `Viaja hacia ${destino} con ${vuelo?.aerolinea || "tu aerolinea seleccionada"} en una experiencia pensada para resolver la reserva rapido, con informacion clara sobre tu salida, llegada y disponibilidad real.`;
+    return `Viaja hacia ${destino} con ${vuelo?.aerolinea || "tu aerolínea seleccionada"} en una experiencia pensada para resolver la reserva rápido, con información clara sobre tu salida, llegada y disponibilidad real.`;
   }, [vuelo]);
 
   const ratingSummary = useMemo(() => {
@@ -568,7 +599,7 @@ export default function DetalleVuelo() {
 
   const ratingDisplayValue = ratingSummary.total ? ratingSummary.average : 0;
   const ratingDisplay = ratingDisplayValue.toFixed(1);
-  const ratingSourceLabel = ratingSummary.total ? "Valoraciones de usuarios" : "Sin valoraciones a\u00fan";
+  const ratingSourceLabel = ratingSummary.total ? "Valoraciones de usuarios" : "Sin valoraciones aún";
   const quickStats = useMemo(() => {
     if (!vuelo) return [];
     return [
@@ -579,7 +610,7 @@ export default function DetalleVuelo() {
       },
       {
         label: "Clase",
-        value: vuelo.clase || "Econ\u00f3mica",
+        value: vuelo.clase || "Económica",
         icon: FaChair,
       },
       {
@@ -613,7 +644,7 @@ export default function DetalleVuelo() {
   const selectedDateBooked = Boolean(selectedDateISO) && bookedDateSet.has(selectedDateISO);
   const bookedDatesSummary = bookedDates.length
     ? `${bookedDates.length} fecha${bookedDates.length > 1 ? "s" : ""} ya reservada${bookedDates.length > 1 ? "s" : ""}.`
-    : "Todavia no hay fechas reservadas para este vuelo.";
+    : "Todavía no hay fechas reservadas para este vuelo.";
   const bookingButtonLabel = bookingLoading
     ? "Reservando..."
     : selectedDateBooked
@@ -994,9 +1025,11 @@ export default function DetalleVuelo() {
 
   if (loading) {
     return (
-      <div className="detalle-page-container">
-        <div className="detalle-card-wrapper">
-          <p className="dv-availability-state">Cargando detalle del vuelo...</p>
+      <div className="dv-page">
+        <div className="dv-container">
+          <div className="dv-state">
+            <p className="dv-muted">Cargando detalle del vuelo...</p>
+          </div>
         </div>
       </div>
     );
@@ -1004,11 +1037,11 @@ export default function DetalleVuelo() {
 
   if (!vuelo || loadError) {
     return (
-      <div className="detalle-page-container">
-        <div className="detalle-card-wrapper">
-          <div className="dv-availability-error">
-            <span>{loadError || "No se encontro el vuelo."}</span>
-            <button type="button" className="dv-availability-retry" onClick={handleBack}>
+      <div className="dv-page">
+        <div className="dv-container">
+          <div className="dv-state dv-state-error">
+            <p className="dv-muted">{loadError || "No se encontró el vuelo."}</p>
+            <button type="button" className="dv-link-btn" onClick={handleBack}>
               Volver
             </button>
           </div>
@@ -1018,375 +1051,81 @@ export default function DetalleVuelo() {
   }
 
   return (
-    <div className="detalle-page-container">
-      <header className="detalle-header-bar">
-        <div className="detalle-header-inner">
-          <div className="dv-header-left">
-            <h1 className="dv-header-title">
-              {vuelo.origen} {"->"} {vuelo.destino}
-            </h1>
-            <p className="dv-header-subtitle">
-              {vuelo.aerolinea} - {vuelo.numeroVuelo}
-            </p>
+    <div className="dv-page">
+      <div className="dv-container">
+        <section
+          className="dv-hero"
+          style={{ backgroundImage: `url("${heroImage}")` }}
+          role="img"
+          aria-label={`Vuelo ${vuelo.origen} a ${vuelo.destino}`}
+        >
+          <div className="dv-hero-overlay" />
+          <div className="dv-hero-text">
+            <span className="dv-hero-label">Premium Experience</span>
+            <h1 className="dv-hero-title">{heroTitle}</h1>
+            <p className="dv-hero-subtitle">{heroSubtitle}</p>
           </div>
-          <div className="dv-back-right">
-            <button type="button" className="dv-back-btn" onClick={handleBack} aria-label="Volver">
-              <FaChevronLeft />
-            </button>
-          </div>
-        </div>
-      </header>
+        </section>
 
-      <div className="detalle-card-wrapper">
-        <section className="dv-hero">
-          <div className="dv-hero-media">
-            <div className="dv-hero-image">
-              <img
-                src={heroImage}
-                alt={`Vuelo ${vuelo.origen} a ${vuelo.destino}`}
-                onError={(event) => {
-                  event.currentTarget.onerror = null;
-                  event.currentTarget.src = "/assets/avionsito.png";
-                }}
-              />
-              <div className="dv-hero-overlay">
-                <div className="dv-hero-copy">
-                  <span className="dv-hero-badge">JETSET AIR</span>
-                  <h2 className="dv-hero-title">{vuelo.paisDestino || "Tu proximo destino"}</h2>
-                </div>
-              </div>
-            </div>
+        <section className="dv-section dv-description">
+          <h2 className="dv-section-title">Descripción</h2>
+          <p className="dv-description-text">{descriptionText}</p>
+        </section>
 
-            {imageList.length > 1 && (
-              <div className="dv-gallery-row dv-gallery-thumbs">
-                {imageList.map((src, index) => {
-                  const isActive = src === heroImage;
-                  return (
-                    <button
-                      key={`${index}-${src}`}
-                      type="button"
-                      className={`dv-gallery-thumb ${isActive ? "is-active" : ""}`}
-                      onClick={() => setSelectedImage(src)}
-                      aria-label={`Ver imagen ${index + 1} del vuelo`}
-                      aria-pressed={isActive}
-                    >
-                      <img
-                        src={src}
-                        alt={`Vista ${index + 1} de ${vuelo.destino}`}
-                        className="dv-gallery-image"
-                        onError={(event) => {
-                          event.currentTarget.onerror = null;
-                          event.currentTarget.src = "/assets/avionsito.png";
-                        }}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          <div className="dv-hero-side">
-            <div className="dv-meta">
-              <div className="dv-route-block">
-                <span className="dv-breadcrumbs">Destinos / {vuelo.paisDestino || "Destino"}</span>
-                <span className="dv-country">{vuelo.paisDestino || "Destino"}</span>
-                <h2 className="dv-route-title">
-                  {vuelo.origen} - {vuelo.destino}
-                </h2>
-                <p className="dv-route-sub">
-                  {vuelo.aerolinea} - {vuelo.numeroVuelo} / {escalaResumen}
-                </p>
-                <div className="dv-route-rating">
-                  <FaStar />
-                  {ratingSummary.total > 0 ? (
-                    <span>
-                      {ratingDisplay} {"\u00b7"} {ratingSummary.total} valoraci\u00f3n{ratingSummary.total === 1 ? "" : "es"}
-                    </span>
-                  ) : (
-                    <span>Sin valoraciones</span>
-                  )}
-                </div>
-              </div>
-              <button
-                type="button"
-                className={`dv-icon-btn ${isFavorite ? "is-active" : ""}`}
-                onClick={handleFavorite}
-                aria-label={isFavorite ? "Quitar favorito" : "Agregar favorito"}
-              >
-                {isFavorite ? <FaHeart /> : <FaRegHeart />}
-              </button>
-            </div>
-
-            {quickStats.length > 0 && (
-              <div className="dv-quick-cards">
-                {quickStats.map((stat) => {
-                  const Icon = stat.icon;
-                  return (
-                    <div key={stat.label} className="dv-quick-card">
-                      <span className="dv-quick-icon">{Icon ? <Icon /> : null}</span>
-                      <div className="dv-quick-info">
-                        <span className="dv-quick-label">{stat.label}</span>
-                        <span className="dv-quick-value">{stat.value}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            <div className="dv-description">
-              <h3>Descripci\u00f3n</h3>
-              <p>{descriptionText}</p>
-            </div>
-
-            <div className="dv-reviews">
-              <div className="dv-reviews-head">
-                <div>
-                  <h3>Valoraciones</h3>
-                  <p className="dv-reviews-sub">
-                    Opiniones de viajeros que ya volaron con nosotros.
-                  </p>
-                </div>
-                <div className="dv-rating-summary">
-                  {renderStars(Math.round(ratingDisplayValue))}
-                  <div className="dv-rating-meta">
-                      {ratingDisplay} {"\u00b7"} {ratingSummary.total} valoraci\u00f3n{ratingSummary.total === 1 ? "" : "es"}
-                    <span className="dv-rating-count">
-                      {ratingSummary.total} valoraci\u00f3n{ratingSummary.total === 1 ? "" : "es"}
-                    </span>
-                    <span className="dv-rating-source">{ratingSourceLabel}</span>
+        <section className="dv-section dv-features">
+          <h2 className="dv-section-title">Características del vuelo</h2>
+          <div className="dv-features-grid">
+            {featureHighlights.map((feature, index) => {
+              const Icon = resolveFeatureIcon(feature.label, feature.iconName);
+              return (
+                <div key={`${feature.label}-${index}`} className="dv-feature-card">
+                  <span className="dv-feature-icon">{Icon ? <Icon /> : null}</span>
+                  <div className="dv-feature-text">
+                    <span className="dv-feature-title">{feature.label}</span>
+                    {feature.value ? <span className="dv-feature-value">{feature.value}</span> : null}
                   </div>
                 </div>
-              </div>
+              );
+            })}
+          </div>
+        </section>
 
-              {reviewsError && (
-                <div className="dv-reviews-error">
-                  <span>{reviewsError}</span>
-                  <button
-                    type="button"
-                    className="dv-reviews-retry"
-                    onClick={() => loadReviews(vuelo?.localProductId, { silent: true })}
-                  >
-                    Reintentar
-                  </button>
-                </div>
-              )}
+        <section className="dv-section dv-policies">
+          <h2 className="dv-section-title">Políticas de uso</h2>
+          <ul className="dv-policy-list">
+            {POLICY_ITEMS.map((policy) => (
+              <li key={policy.title} className="dv-policy-item">
+                <span className="dv-policy-title">{policy.title}</span>
+                <span className="dv-policy-desc">{policy.description}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
 
-              <div className="dv-review-layout">
-                <div className="dv-review-feed">
-                  {reviewsLoading && <p className="dv-review-empty">Cargando valoraciones...</p>}
-
-                  {!reviewsLoading && !reviewsError && reviews.length === 0 && (
-                    <p className="dv-review-empty">A\u00fan no hay valoraciones publicadas.</p>
-                  )}
-
-                  {!reviewsLoading && reviews.length > 0 && (
-                    <div className="dv-review-list">
-                      {reviews.map((review) => (
-                        <div key={review.id} className="dv-review-card">
-                          <div className="dv-review-meta">
-                            {renderStars(review.rating)}
-                            <span className="dv-review-user">{review.userName || "Usuario"}</span>
-                            <span className="dv-review-date">{formatReviewDate(review.createdAt)}</span>
-                          </div>
-                          {review.comment ? (
-                            <p className="dv-review-comment">{review.comment}</p>
-                          ) : (
-                            <p className="dv-review-comment is-empty">Sin comentario adicional.</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="dv-review-aside">
-                  <div className="dv-review-form">
-                    <h4>Tu rese\u00f1a</h4>
-                    <p className="dv-review-note">Tu experiencia ayuda a otros viajeros.</p>
-                    {user && canReview ? (
-                      <>
-                        <div
-                          className="dv-star-input"
-                          onMouseLeave={() => setHoverRating(0)}
-                          role="radiogroup"
-                          aria-label="Selecciona una puntuaci\u00f3n"
-                        >
-                          {[1, 2, 3, 4, 5].map((star) => {
-                            const displayValue = hoverRating || ratingValue;
-                            const filled = star <= displayValue;
-                            return (
-                              <button
-                                key={star}
-                                type="button"
-                                className={`dv-star-btn ${filled ? "is-filled" : ""}`}
-                                onMouseEnter={() => setHoverRating(star)}
-                                onClick={() => setRatingValue(star)}
-                                aria-pressed={ratingValue === star}
-                                aria-label={`${star} estrellas`}
-                              >
-                                {filled ? <FaStar /> : <FaRegStar />}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        <textarea
-                          className="dv-review-textarea"
-                          value={reviewComment}
-                          onChange={(event) => setReviewComment(event.target.value)}
-                          placeholder="Escribe tu experiencia (opcional)"
-                          rows={4}
-                        />
-                        <button
-                          type="button"
-                          className="dv-review-submit"
-                          onClick={handleReviewSubmit}
-                          disabled={reviewSubmitting}
-                        >
-                          {reviewSubmitting ? "Publicando..." : "Publicar rese\u00f1a"}
-                        </button>
-                      </>
-                    ) : (
-                      <div className="dv-review-gate">
-                        <p>{reviewGateMessage || "Inicia sesi\u00f3n para valorar este vuelo."}</p>
-                        {!user && (
-                          <button type="button" className="dv-review-login" onClick={() => navigate("/login")}>
-                            Iniciar sesi\u00f3n
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+        <section className="dv-section dv-dates">
+          <h2 className="dv-section-title">Disponibilidad y fechas</h2>
+          <div className="dv-dates-card">
+            <div className="dv-dates-info">
+              <span className="dv-dates-label">Fecha seleccionada</span>
+              <strong className="dv-dates-value">{selectedDateLabel}</strong>
+              <p className="dv-dates-help">
+                {selectedDateBooked
+                  ? "Esta fecha está ocupada. Selecciona otra para continuar."
+                  : bookedDatesSummary}
+              </p>
+              <span className={`dv-status ${selectedDateBooked ? "is-booked" : "is-available"}`}>
+                {selectedDateBooked ? "Ocupada" : "Disponible"}
+              </span>
             </div>
+            <div className="dv-dates-picker">
+              {availabilityLoading && <p className="dv-muted">Cargando fechas disponibles...</p>}
 
-            {featureItems.length > 0 && (
-              <div className="dv-features-block">
-                <div className="dv-section-head">
-                  <h3>Detalles del vuelo</h3>
-                  <p>Lo esencial antes de reservar.</p>
-                </div>
-                <div className="dv-features-grid">
-                  {featureHighlights.map((feature, index) => {
-                    const Icon = resolveFeatureIcon(feature.label, feature.iconName);
-                    const hasValue = Boolean(feature.value);
-
-                    return (
-                      <div
-                        key={`${feature.label}-${index}`}
-                        className={`dv-feature-item ${hasValue ? "" : "is-compact"}`}
-                      >
-                        <span className="dv-feature-icon">{Icon ? <Icon /> : null}</span>
-                        <div className="dv-feature-content">
-                          {hasValue ? (
-                            <>
-                              <span className="dv-feature-label">{feature.label}</span>
-                              <span className="dv-feature-value">{feature.value}</span>
-                            </>
-                          ) : (
-                            <span className="dv-feature-value">{feature.label}</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {featureExtras.length > 0 && (
-                  <details className="dv-features-more">
-                    <summary>Ver todas las caracter\u00edsticas</summary>
-                    <div className="dv-features-grid is-secondary">
-                      {featureExtras.map((feature, index) => {
-                        const Icon = resolveFeatureIcon(feature.label, feature.iconName);
-                        const hasValue = Boolean(feature.value);
-
-                        return (
-                          <div
-                            key={`${feature.label}-extra-${index}`}
-                            className={`dv-feature-item ${hasValue ? "" : "is-compact"}`}
-                          >
-                            <span className="dv-feature-icon">{Icon ? <Icon /> : null}</span>
-                            <div className="dv-feature-content">
-                              {hasValue ? (
-                                <>
-                                  <span className="dv-feature-label">{feature.label}</span>
-                                  <span className="dv-feature-value">{feature.value}</span>
-                                </>
-                              ) : (
-                                <span className="dv-feature-value">{feature.label}</span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </details>
-                )}
-              </div>
-            )}
-
-            <details className="dv-policies">
-              <summary className="dv-policies-title">Pol\u00edticas de uso</summary>
-              <div className="dv-policies-grid">
-                {POLICY_ITEMS.map((policy) => (
-                  <div key={policy.title} className="dv-policy-card">
-                    <h4>{policy.title}</h4>
-                    <p>{policy.description}</p>
-                  </div>
-                ))}
-              </div>
-            </details>
-
-            <div className="dv-availability">
-              <div className="dv-availability-head">
-                <h3>Disponibilidad real</h3>
-                <div className="dv-availability-legend">
-                  <span className="dv-legend-item">
-                    <span className="dv-legend-dot is-available" />
-                    Disponible
-                  </span>
-                  <span className="dv-legend-item">
-                    <span className="dv-legend-dot is-booked" />
-                    Ocupada
-                  </span>
-                </div>
-              </div>
-
-              <div className="dv-selection-strip">
-                <div className="dv-selection-copy">
-                  <span className="dv-selection-label">Fecha de viaje</span>
-                  <strong className="dv-selection-date">{selectedDateLabel}</strong>
-                  <p className="dv-selection-helper">
-                    {bookedDatesSummary} Las fechas ocupadas se actualizan al instante.
-                  </p>
-                </div>
-                <span className={`dv-selection-badge ${selectedDateBooked ? "is-booked" : "is-available"}`}>
-                  {selectedDateBooked ? "Ocupada" : "Disponible"}
-                </span>
-              </div>
-
-              {bookingFeedback && (
-                <div className={`dv-feedback is-${bookingFeedback.type}`}>
-                  {bookingFeedback.type === "success" ? <FaCheckCircle /> : <FaExclamationCircle />}
-                  <span>{bookingFeedback.message}</span>
-                </div>
-              )}
-
-              {availabilityLoading && <p className="dv-availability-state">Cargando fechas disponibles...</p>}
-
-              {!availabilityLoading && !vuelo?.localProductId && (
-                <p className="dv-availability-state">
-                  Este vuelo a\u00fan no tiene disponibilidad publicada para reserva directa.
-                </p>
-              )}
-
-              {availabilityError && (
-                <div className="dv-availability-error">
+              {!availabilityLoading && availabilityError && (
+                <div className="dv-inline-error">
                   <span>{availabilityError}</span>
                   <button
                     type="button"
-                    className="dv-availability-retry"
+                    className="dv-link-btn"
                     onClick={() => loadAvailability(vuelo?.localProductId)}
                   >
                     Reintentar
@@ -1395,99 +1134,81 @@ export default function DetalleVuelo() {
               )}
 
               {!availabilityLoading && !availabilityError && vuelo?.localProductId && (
-                <div className="dv-calendar">
-                  <div className="dv-calendar-grid">
-                    <div className="dv-calendar-panel">
-                      <h4 className="dv-calendar-title">Selecciona tu fecha</h4>
-                      <p className="dv-calendar-copy">
-                        Elige el dia en el que quieres reservar este vuelo. Si alguien reserva antes, esa fecha queda
-                        bloqueada.
-                      </p>
-                      <div className="dv-calendar-actions">
-                        <button
-                          type="button"
-                          className={`dv-calendar-toggle ${calendarExpanded ? "is-active" : ""}`}
-                          onClick={() => setCalendarExpanded((prev) => !prev)}
-                        >
-                          {calendarExpanded ? "Ver 1 mes" : "Ver 2 meses"}
-                        </button>
-                        <span className="dv-calendar-hint">
-                          {calendarExpanded ? "Mostrando 2 meses" : "Vista compacta"}
-                        </span>
-                      </div>
-                      <div className={`dv-calendar-shell ${calendarExpanded ? "is-expanded" : "is-collapsed"}`}>
-                        <DayPicker
-                          mode="single"
-                          locale={es}
-                          className={`dv-daypicker ${calendarExpanded ? "is-dual" : "is-single"}`}
-                          selected={selectedTravelDate}
-                          month={visibleMonth}
-                          onMonthChange={setVisibleMonth}
-                          onSelect={handleTravelDateSelect}
-                          disabled={disabledMatchers}
-                          modifiers={calendarModifiers}
-                          modifiersClassNames={{ booked: "dv-day-booked", available: "dv-day-available" }}
-                          numberOfMonths={calendarExpanded ? 2 : 1}
-                          pagedNavigation={calendarExpanded}
-                          showOutsideDays
-                          fixedWeeks
-                          animate
-                          navLayout="around"
-                          components={{
-                            Chevron: ({ orientation, className }) =>
-                              orientation === "left" ? (
-                                <FaChevronLeft className={className} />
-                              ) : (
-                                <FaChevronRight className={className} />
-                              ),
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <DayPicker
+                  mode="single"
+                  locale={es}
+                  className="dv-daypicker"
+                  selected={selectedTravelDate}
+                  month={visibleMonth}
+                  onMonthChange={setVisibleMonth}
+                  onSelect={handleTravelDateSelect}
+                  disabled={disabledMatchers}
+                  modifiers={calendarModifiers}
+                  modifiersClassNames={{ booked: "dv-day-booked", available: "dv-day-available" }}
+                  numberOfMonths={1}
+                  showOutsideDays
+                  fixedWeeks
+                  components={{
+                    Chevron: ({ orientation, className }) =>
+                      orientation === "left" ? (
+                        <FaChevronLeft className={className} />
+                      ) : (
+                        <FaChevronRight className={className} />
+                      ),
+                  }}
+                />
+              )}
+
+              {!availabilityLoading && !availabilityError && !vuelo?.localProductId && (
+                <p className="dv-muted">Este vuelo aún no tiene disponibilidad publicada para reserva directa.</p>
               )}
             </div>
-
-            <div className="dv-price-bar">
-              <div className="dv-price-info">
-                <span>Desde</span>
-                <strong>${vuelo.precioTotal}</strong>
-                <em>por persona</em>
-              </div>
-
-              <div className="dv-price-meta">
-                <span>
-                  <FaCalendarAlt /> Fecha elegida
-                </span>
-                <strong>{selectedDateLabel}</strong>
-                <em>{selectedDateBooked ? "Selecciona otra fecha para continuar." : "Lista para confirmar."}</em>
-              </div>
-
-              <div className="dv-price-actions">
-                <button
-                  type="button"
-                  className={`dv-btn-guardar ${isFavorite ? "is-active" : ""}`}
-                  onClick={handleFavorite}
-                >
-                  {isFavorite ? "Guardado" : "Guardar"}
-                </button>
-                <button className="dv-btn-reservar" onClick={handleBooking} disabled={!canReserve}>
-                  {bookingButtonLabel}
-                </button>
-              </div>
-            </div>
-
-            {galleryId ? (
-              <div className="dv-secondary-actions">
-                <Link to={`/galeria/${galleryId}`} className="dv-btn-galeria-wide">
-                  Ver galeria de imagenes
-                </Link>
-              </div>
-            ) : null}
           </div>
+        </section>
+
+        <section className="dv-section dv-booking">
+          <h2 className="dv-section-title">Reserva</h2>
+          <div className="dv-booking-card">
+            <div className="dv-booking-price">
+              <span className="dv-booking-label">Precio por persona</span>
+              <strong className="dv-booking-amount">${vuelo.precioTotal}</strong>
+              <span className="dv-booking-note">Precio por persona</span>
+            </div>
+            <div className="dv-booking-actions">
+              <button
+                type="button"
+                className={`dv-btn dv-btn-secondary ${isFavorite ? "is-active" : ""}`}
+                onClick={handleFavorite}
+              >
+                {isFavorite ? "Guardado" : "Guardar"}
+              </button>
+              <button type="button" className="dv-btn dv-btn-primary" onClick={handleBooking} disabled={!canReserve}>
+                {bookingButtonLabel}
+              </button>
+            </div>
+          </div>
+          {bookingFeedback && (
+            <div className={`dv-feedback ${bookingFeedback.type === "success" ? "is-success" : "is-error"}`}>
+              {bookingFeedback.type === "success" ? <FaCheckCircle /> : <FaExclamationCircle />}
+              <span>{bookingFeedback.message}</span>
+            </div>
+          )}
+        </section>
+
+        <section className="dv-section dv-gallery">
+          <h2 className="dv-section-title">Galería</h2>
+          {galleryId ? (
+            <Link to={`/galeria/${galleryId}`} className="dv-gallery-button">
+              Ver galería de imágenes
+            </Link>
+          ) : (
+            <button type="button" className="dv-gallery-button" disabled>
+              Galería no disponible
+            </button>
+          )}
         </section>
       </div>
     </div>
   );
 }
+

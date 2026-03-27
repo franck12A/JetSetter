@@ -2,6 +2,7 @@
 import React from "react";
 import AdminPanel from "./components/AdminPanel";
 import Navbar from "./components/Navbar";
+import "./AdminPage.css";
 
 export default function AdminPage() {
   const handleHomeClick = () => {
@@ -11,7 +12,7 @@ export default function AdminPage() {
   return (
     <>
       <Navbar />
-      <div className="text-center my-4">
+      <div className="admin-page-actions">
         <button className="btn btn-primary" onClick={handleHomeClick}>
           Volver al Home
         </button>

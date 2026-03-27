@@ -1,0 +1,98 @@
+.vuelos-list {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 16px;
+}
+
+.vuelos-list-title {
+  margin: 0 0 24px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.vuelos-list-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.vuelos-list-item {
+  display: flex;
+}
+
+.vuelos-list-card {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+.vuelos-list-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.vuelos-list-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vuelos-list-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.vuelos-list-desc {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+.vuelos-list-price {
+  margin: 0;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.vuelos-list-loading {
+  padding: 40px 16px;
+  text-align: center;
+  color: #64748b;
+}
+
+.vuelos-list-fav-btn {
+  margin-top: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  background: transparent;
+  color: #dc2626;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.vuelos-list-fav-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.7);
+}
+
+.vuelos-list-fav-btn.is-active {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.8);
+  color: #b91c1c;
+}
