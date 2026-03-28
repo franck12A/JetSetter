@@ -1,9 +1,9 @@
-﻿package com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Review.Service;
+package com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Review.Service;
 
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Model.User;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Repository.UserRepository;
-import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Repository.BookingRepository;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Model.Booking;
+import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Repository.BookingRepository;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Product;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.repository.ProductRepository;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Review.Model.Review;
@@ -12,8 +12,8 @@ import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Review.Repository.R
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Review.dto.ReviewSummaryResponse;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -28,10 +28,12 @@ public class ReviewService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
 
-    public ReviewService(ReviewRepository reviewRepository,
-                         BookingRepository bookingRepository,
-                         UserRepository userRepository,
-                         ProductRepository productRepository) {
+    public ReviewService(
+            ReviewRepository reviewRepository,
+            BookingRepository bookingRepository,
+            UserRepository userRepository,
+            ProductRepository productRepository
+    ) {
         this.reviewRepository = reviewRepository;
         this.bookingRepository = bookingRepository;
         this.userRepository = userRepository;
@@ -103,9 +105,9 @@ public class ReviewService {
         String status = booking.getStatus();
         if (status != null) {
             String normalized = status.trim().toUpperCase(Locale.ROOT);
-            if (normalized.equals("FINALIZADA") || normalized.equals("FINALIZADO") ||
-                    normalized.equals("COMPLETADA") || normalized.equals("COMPLETADO") ||
-                    normalized.equals("COMPLETED")) {
+            if (normalized.equals("FINALIZADA") || normalized.equals("FINALIZADO")
+                    || normalized.equals("COMPLETADA") || normalized.equals("COMPLETADO")
+                    || normalized.equals("COMPLETED")) {
                 return true;
             }
             if (normalized.contains("CANCEL")) {
@@ -147,5 +149,3 @@ public class ReviewService {
         return product.getId();
     }
 }
-
-

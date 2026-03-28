@@ -1,6 +1,7 @@
 package com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.Service;
 
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Amadeus.Controller.AmadeusController;
+import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Amadeus.support.FlightIdentityUtils;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Amadeus.VueloDTO.FlightOfferDTO;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Amadeus.services.AmadeusService;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Category.Model.Category;
@@ -159,6 +160,96 @@ public class ProductService {
         return productRepository.save(p);
     }
 
+    private String buildFlightSeed(Object... parts) {
+        return Arrays.stream(parts)
+                .filter(Objects::nonNull)
+                .map(String::valueOf)
+                .collect(Collectors.joining("|"));
+    }
+
+    private void applyDepartureDate(Product product, String fecha) {
+        if (fecha == null || fecha.isBlank()) return;
+
+        DateTimeFormatter formatter;
+        if (fecha.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            product.setDepartureDate(LocalDate.parse(fecha, formatter).atStartOfDay());
+        } else if (fecha.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}")) {
+            formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+            product.setDepartureDate(LocalDateTime.parse(fecha, formatter));
+        } else {
+            formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+            product.setDepartureDate(LocalDateTime.parse(fecha, formatter));
+        }
+    }
+
+    private String buildProductDescription(String aerolinea, String numeroVuelo, String fechaSalida, String fechaLlegada) {
+        return "AerolÃ­nea: " + aerolinea +
+                " | Vuelo: " + numeroVuelo +
+                " | Salida: " + fechaSalida +
+                " | Llegada: " + fechaLlegada;
+    }
+
+    private void storeFlightCollections(Product product, List<Map<String, Object>> segmentos, List<String> imagenesUrls) {
+        try {
+            if (segmentos != null) {
+                product.setSegmentosJson(objectMapper.writeValueAsString(segmentos));
+            }
+            if (imagenesUrls != null) {
+                product.setImagenesUrlsJson(objectMapper.writeValueAsString(imagenesUrls));
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void applyFlightOfferMetadata(Product product, FlightOfferDTO dto) {
+        String normalizedName = normalizeRouteLabel("Vuelo " + dto.getOrigen() + " â†’ " + dto.getDestino());
+        List<Map<String, Object>> normalizedSegments = FlightIdentityUtils.normalizeSegments(
+                dto.getSegmentos(),
+                buildFlightSeed("dto", dto.getId(), dto.getOrigen(), dto.getDestino())
+        );
+        Map<String, Object> firstSegment = normalizedSegments.isEmpty() ? null : normalizedSegments.get(0);
+        FlightIdentityUtils.FlightIdentity identity = FlightIdentityUtils.resolve(
+                firstSegment != null ? firstSegment.get("codigoAerolinea") : null,
+                dto.getAerolinea(),
+                dto.getNumeroVuelo(),
+                buildFlightSeed("dto", dto.getId(), dto.getOrigen(), dto.getDestino())
+        );
+
+        product.setExternalId(dto.getId());
+        product.setName(normalizedName);
+        product.setDescription(buildProductDescription(
+                identity.getAirlineName(),
+                identity.getFlightNumber(),
+                dto.getFechaSalida(),
+                dto.getFechaLlegada()
+        ));
+        product.setPrice(dto.getPrecioTotal());
+        product.setCountry(dto.getPaisDestino());
+        product.setAerolinea(identity.getAirlineName());
+        product.setNumeroVuelo(identity.getFlightNumber());
+
+        String mainImage = dto.getImagenPrincipal();
+        if ((mainImage == null || mainImage.isBlank()) && dto.getImagenesUrls() != null && !dto.getImagenesUrls().isEmpty()) {
+            mainImage = dto.getImagenesUrls().get(0);
+        }
+        product.setImage(mainImage);
+
+        if (dto.getFechaSalida() != null) {
+            applyDepartureDate(product, dto.getFechaSalida());
+        }
+
+        storeFlightCollections(product, normalizedSegments, dto.getImagenesUrls());
+    }
+
+    public Product upsertFlightOffer(FlightOfferDTO dto) {
+        Product product = productRepository.findByExternalId(dto.getId()).orElseGet(Product::new);
+        applyFlightOfferMetadata(product, dto);
+        product.setUpdatedAt(LocalDateTime.now());
+        return productRepository.save(product);
+    }
+
     public Product fromFlightOfferDTO(FlightOfferDTO dto) {
         Product product = new Product();
         product.setExternalId(dto.getId());
@@ -226,8 +317,14 @@ public class ProductService {
         dto.setFechaLlegada(product.getDepartureDate() != null ? product.getDepartureDate().plusHours(2).toString() : null); // ejemplo aproximado
 
         // Aerolínea y número de vuelo
-        dto.setAerolinea(product.getAerolinea() != null ? product.getAerolinea() : "Desconocida");
-        dto.setNumeroVuelo(product.getNumeroVuelo() != null ? product.getNumeroVuelo() : "000");
+        FlightIdentityUtils.FlightIdentity identity = FlightIdentityUtils.resolve(
+                null,
+                product.getAerolinea(),
+                product.getNumeroVuelo(),
+                buildFlightSeed("product-map", product.getExternalId(), product.getId())
+        );
+        dto.setAerolinea(identity.getAirlineName());
+        dto.setNumeroVuelo(identity.getFlightNumber());
 
         // Precio
         dto.setPrecioTotal(product.getPrice());

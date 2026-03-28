@@ -1,6 +1,7 @@
 package com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Amadeus.Controller;
 
 import com.amadeus.resources.FlightOfferSearch;
+import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Amadeus.support.FlightIdentityUtils;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.Service.ProductService;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Feature;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -45,6 +46,17 @@ public class AmadeusController {
     private static final List<String> CATEGORIAS = List.of(
             "Economy", "Premium Economy", "Lite", "Executive"
     );
+
+    private String buildFlightSeed(Object... parts) {
+        return Arrays.stream(parts)
+                .filter(Objects::nonNull)
+                .map(String::valueOf)
+                .collect(Collectors.joining("|"));
+    }
+
+    private List<Map<String, Object>> normalizeSegments(List<Map<String, Object>> segmentos, String seed) {
+        return FlightIdentityUtils.normalizeSegments(segmentos, seed);
+    }
 
     public static final Map<String, Map<String, Object>> AEROPUERTOS = Map.ofEntries(
             Map.entry("EZE", Map.of(
@@ -292,17 +304,30 @@ public class AmadeusController {
         }
         vuelo.setCategoria("Internacional");
 
+        String baseSeed = buildFlightSeed("destino", id, origen, destino);
+        FlightIdentityUtils.FlightIdentity mainIdentity = FlightIdentityUtils.resolve(null, null, null, baseSeed);
+        FlightIdentityUtils.FlightIdentity connectionIdentity = FlightIdentityUtils.resolve(
+                mainIdentity.getCarrierCode(),
+                mainIdentity.getAirlineName(),
+                null,
+                baseSeed + "|connection"
+        );
+        vuelo.setAerolinea(mainIdentity.getAirlineName());
+        vuelo.setNumeroVuelo(mainIdentity.getFlightNumber());
+
         // Segmentos simulados
         List<Map<String, Object>> segmentos = new ArrayList<>();
         Map<String, Object> s1 = new HashMap<>();
-        s1.put("aerolinea", "AZ");
-        s1.put("numeroVuelo", String.valueOf(600 + new Random().nextInt(400)));
+        s1.put("codigoAerolinea", mainIdentity.getCarrierCode());
+        s1.put("aerolinea", mainIdentity.getAirlineName());
+        s1.put("numeroVuelo", mainIdentity.getFlightNumber());
         s1.put("salida", "2025-12-05T23:55:00");
         s1.put("llegada", "2025-12-06T07:10:00");
 
         Map<String, Object> s2 = new HashMap<>();
-        s2.put("aerolinea", "AZ");
-        s2.put("numeroVuelo", String.valueOf(300 + new Random().nextInt(200)));
+        s2.put("codigoAerolinea", connectionIdentity.getCarrierCode());
+        s2.put("aerolinea", connectionIdentity.getAirlineName());
+        s2.put("numeroVuelo", connectionIdentity.getFlightNumber());
         s2.put("salida", "2025-12-06T09:34:00");
         s2.put("llegada", "2025-12-06T14:00:00");
 
@@ -326,6 +351,17 @@ public class AmadeusController {
         vuelo.setCategoria("Internacional");
         vuelo.setCaracteristicas(List.of("Duración aproximada: 12h 35m", "Clase: Economy", "Equipaje incluido: Sí"));
 
+        String baseSeed = buildFlightSeed("simulado", id, vuelo.getOrigen(), vuelo.getDestino());
+        FlightIdentityUtils.FlightIdentity mainIdentity = FlightIdentityUtils.resolve(null, null, null, baseSeed);
+        FlightIdentityUtils.FlightIdentity connectionIdentity = FlightIdentityUtils.resolve(
+                mainIdentity.getCarrierCode(),
+                mainIdentity.getAirlineName(),
+                null,
+                baseSeed + "|connection"
+        );
+        vuelo.setAerolinea(mainIdentity.getAirlineName());
+        vuelo.setNumeroVuelo(mainIdentity.getFlightNumber());
+
         // Imagen principal
         vuelo.setImagenPrincipal("/assets/imagenespaises/france_1.webp");
 
@@ -333,14 +369,16 @@ public class AmadeusController {
         List<Map<String, Object>> segmentos = new ArrayList<>();
 
         Map<String, Object> s1 = new HashMap<>();
-        s1.put("aerolinea", "AZ");
-        s1.put("numeroVuelo", "681");
+        s1.put("codigoAerolinea", mainIdentity.getCarrierCode());
+        s1.put("aerolinea", mainIdentity.getAirlineName());
+        s1.put("numeroVuelo", mainIdentity.getFlightNumber());
         s1.put("salida", "2025-12-05T23:55:00");
         s1.put("llegada", "2025-12-06T07:10:00");
 
         Map<String, Object> s2 = new HashMap<>();
-        s2.put("aerolinea", "AZ");
-        s2.put("numeroVuelo", "324");
+        s2.put("codigoAerolinea", connectionIdentity.getCarrierCode());
+        s2.put("aerolinea", connectionIdentity.getAirlineName());
+        s2.put("numeroVuelo", connectionIdentity.getFlightNumber());
         s2.put("salida", "2025-12-06T09:34:00");
         s2.put("llegada", "2025-12-06T14:00:00");
 
@@ -474,16 +512,23 @@ public class AmadeusController {
 
             // Segmento opcional (solo uno representativo)
             Map<String, Object> seg = new HashMap<>();
-            String aerolinea = List.of("AR", "LA", "IB", "AF", "AZ", "KL", "LH", "UX").get(random.nextInt(8));
-            seg.put("aerolinea", aerolinea);
-            seg.put("numeroVuelo", String.valueOf(500 + random.nextInt(400)));
+            FlightIdentityUtils.FlightIdentity identity = FlightIdentityUtils.resolve(
+                    null,
+                    null,
+                    null,
+                    buildFlightSeed("buscar", dto.getId(), origenSeguro, destinoSeguro, fechaSegura)
+            );
+            seg.put("codigoAerolinea", identity.getCarrierCode());
+            seg.put("aerolinea", identity.getAirlineName());
+            seg.put("numeroVuelo", identity.getFlightNumber());
             seg.put("salida", dto.getFechaSalida());
             seg.put("llegada", dto.getFechaLlegada());
             dto.setSegmentos(List.of(seg));
-            dto.setAerolinea(aerolinea);
+            dto.setAerolinea(identity.getAirlineName());
+            dto.setNumeroVuelo(identity.getFlightNumber());
 
             // Persistir (o reusar) Product local para poder favoritear/reservar con ID numerico.
-            Product persisted = productService.saveIfNotExists(dto);
+            Product persisted = productService.upsertFlightOffer(dto);
             if (persisted == null || persisted.getId() == null) {
                 throw new IllegalStateException("No se pudo obtener productId para externalId: " + dto.getId());
             }
@@ -567,7 +612,10 @@ public class AmadeusController {
         dto.setCategoria("Internacional"); // o product.getCategory().getName() si lo tenés
 
         // Segmentos
-        List<Map<String, Object>> segmentos = productService.parseSegmentosPublic(product.getSegmentosJson());
+        List<Map<String, Object>> segmentos = normalizeSegments(
+                productService.parseSegmentosPublic(product.getSegmentosJson()),
+                buildFlightSeed("product-detail", product.getExternalId(), product.getId())
+        );
         dto.setSegmentos(segmentos);
 
         // Normalizar fechas y aerolínea/numeroVuelo
@@ -575,15 +623,27 @@ public class AmadeusController {
             Map<String, Object> primerSegmento = segmentos.get(0);
             Map<String, Object> ultimoSegmento = segmentos.get(segmentos.size() - 1);
 
-            dto.setAerolinea(primerSegmento.getOrDefault("aerolinea", "Desconocida").toString());
-            dto.setNumeroVuelo(primerSegmento.getOrDefault("numeroVuelo", "000").toString());
+            FlightIdentityUtils.FlightIdentity identity = FlightIdentityUtils.resolve(
+                    primerSegmento.get("codigoAerolinea"),
+                    primerSegmento.get("aerolinea"),
+                    primerSegmento.get("numeroVuelo"),
+                    buildFlightSeed("product-detail", product.getExternalId(), product.getId())
+            );
+            dto.setAerolinea(identity.getAirlineName());
+            dto.setNumeroVuelo(identity.getFlightNumber());
 
             dto.setFechaSalida(primerSegmento.get("salida") != null ? primerSegmento.get("salida").toString() : null);
             dto.setFechaLlegada(ultimoSegmento.get("llegada") != null ? ultimoSegmento.get("llegada").toString() : null);
         } else {
             // fallback si no hay segmentos
-            dto.setAerolinea(product.getAerolinea() != null ? product.getAerolinea() : "Desconocida");
-            dto.setNumeroVuelo(product.getNumeroVuelo() != null ? product.getNumeroVuelo() : "000");
+            FlightIdentityUtils.FlightIdentity identity = FlightIdentityUtils.resolve(
+                    null,
+                    product.getAerolinea(),
+                    product.getNumeroVuelo(),
+                    buildFlightSeed("product-detail-fallback", product.getExternalId(), product.getId())
+            );
+            dto.setAerolinea(identity.getAirlineName());
+            dto.setNumeroVuelo(identity.getFlightNumber());
 
             dto.setFechaSalida(product.getDepartureDate() != null ? product.getDepartureDate().toString() : null);
             dto.setFechaLlegada(product.getDepartureDate() != null ? product.getDepartureDate().plusHours(2).toString() : null);
@@ -655,18 +715,36 @@ public class AmadeusController {
         dto.setPaisDestino(product.getCountry() != null ? product.getCountry() : "Desconocido");
         dto.setCountry(product.getCountry() != null ? product.getCountry() : "Desconocido");
         dto.setPrecioTotal(product.getPrice());
-        dto.setAerolinea(product.getAerolinea() != null ? product.getAerolinea() : "Desconocida");
-        dto.setNumeroVuelo(product.getNumeroVuelo() != null ? product.getNumeroVuelo() : "000");
         dto.setFechaSalida(product.getDepartureDate() != null ? product.getDepartureDate().toString() : null);
         dto.setFechaLlegada(product.getDepartureDate() != null ? product.getDepartureDate().plusHours(2).toString() : null);
 
-        List<Map<String, Object>> segmentos = productService.parseSegmentosPublic(product.getSegmentosJson());
+        List<Map<String, Object>> segmentos = normalizeSegments(
+                productService.parseSegmentosPublic(product.getSegmentosJson()),
+                buildFlightSeed("product-summary", product.getExternalId(), product.getId())
+        );
         dto.setSegmentos(segmentos);
         if (!segmentos.isEmpty()) {
             Map<String, Object> primero = segmentos.get(0);
             Map<String, Object> ultimo = segmentos.get(segmentos.size() - 1);
+            FlightIdentityUtils.FlightIdentity identity = FlightIdentityUtils.resolve(
+                    primero.get("codigoAerolinea"),
+                    primero.get("aerolinea"),
+                    primero.get("numeroVuelo"),
+                    buildFlightSeed("product-summary", product.getExternalId(), product.getId())
+            );
+            dto.setAerolinea(identity.getAirlineName());
+            dto.setNumeroVuelo(identity.getFlightNumber());
             dto.setFechaSalida(String.valueOf(primero.getOrDefault("salida", dto.getFechaSalida())));
             dto.setFechaLlegada(String.valueOf(ultimo.getOrDefault("llegada", dto.getFechaLlegada())));
+        } else {
+            FlightIdentityUtils.FlightIdentity identity = FlightIdentityUtils.resolve(
+                    null,
+                    product.getAerolinea(),
+                    product.getNumeroVuelo(),
+                    buildFlightSeed("product-summary-fallback", product.getExternalId(), product.getId())
+            );
+            dto.setAerolinea(identity.getAirlineName());
+            dto.setNumeroVuelo(identity.getFlightNumber());
         }
 
         String codigoPais = "ARG";

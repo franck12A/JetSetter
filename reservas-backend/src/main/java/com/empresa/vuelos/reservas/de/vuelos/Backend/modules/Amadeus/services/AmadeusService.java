@@ -4,6 +4,7 @@ import com.amadeus.Amadeus;
 import com.amadeus.Params;
 import com.amadeus.resources.FlightOfferSearch;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Amadeus.Controller.AmadeusController;
+import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Amadeus.support.FlightIdentityUtils;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Category.Model.Category;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Feature;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Product;
@@ -460,9 +461,16 @@ public class AmadeusService {
                     if (seg == null) {
                         continue;
                     }
+                    FlightIdentityUtils.FlightIdentity identity = FlightIdentityUtils.resolve(
+                            seg.getCarrierCode(),
+                            seg.getCarrierCode(),
+                            seg.getNumber(),
+                            String.valueOf(vuelo.getId())
+                    );
                     Map<String, Object> m = new HashMap<>();
-                    m.put("aerolinea", seg.getCarrierCode());
-                    m.put("numeroVuelo", seg.getNumber());
+                    m.put("codigoAerolinea", identity.getCarrierCode());
+                    m.put("aerolinea", identity.getAirlineName());
+                    m.put("numeroVuelo", identity.getFlightNumber());
 
                     String salidaRaw = seg.getDeparture() != null ? seg.getDeparture().getAt() : null;
                     String llegadaRaw = seg.getArrival() != null ? seg.getArrival().getAt() : null;
@@ -481,8 +489,8 @@ public class AmadeusService {
 
                     if (fechaSalidaPrimera == null) {
                         fechaSalidaPrimera = salida != null ? salida.toString() : salidaRaw;
-                        aerolineaPrincipal = seg.getCarrierCode();
-                        numeroVueloPrincipal = seg.getNumber();
+                        aerolineaPrincipal = identity.getAirlineName();
+                        numeroVueloPrincipal = identity.getFlightNumber();
                     }
                     fechaLlegadaUltima = llegada != null ? llegada.toString() : llegadaRaw;
                     segmentos.add(m);

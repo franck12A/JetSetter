@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
@@ -59,6 +60,22 @@ public class BookingController {
 
         try {
             Long resolvedProductId = bookingService.resolveProductId(request.productId);
+            if (request.returnDateStr != null && !request.returnDateStr.isBlank()) {
+                List<Booking> bookings = bookingService.createBookings(
+                        user.getId(),
+                        resolvedProductId,
+                        request.dateStr,
+                        request.returnDateStr,
+                        request.passengers
+                );
+                Map<String, Object> response = new LinkedHashMap<>();
+                response.put("departureBooking", bookings.get(0));
+                if (bookings.size() > 1) {
+                    response.put("returnBooking", bookings.get(1));
+                }
+                return ResponseEntity.ok(response);
+            }
+
             Booking booking = bookingService.createBooking(
                     user.getId(),
                     resolvedProductId,

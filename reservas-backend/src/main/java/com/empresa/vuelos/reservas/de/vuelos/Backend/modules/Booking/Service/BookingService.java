@@ -8,7 +8,9 @@ import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Produ
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.repository.ProductRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -42,33 +44,36 @@ public class BookingService {
 
     // Crear reserva usando IDs de usuario y producto
     public Booking createBooking(Long userId, Long productId, String dateStr, int passengers) throws Exception {
+        return createBookings(userId, productId, dateStr, null, passengers).get(0);
+    }
+
+    @Transactional
+    public List<Booking> createBookings(Long userId, Long productId, String departureDateStr, String returnDateStr, int passengers) throws Exception {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new Exception("Usuario no encontrado"));
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new Exception("Vuelo no encontrado"));
 
-        Booking booking = new Booking();
-        booking.setUser(user);
-        booking.setProduct(product);
-        booking.setPassengers(passengers);
-        // Modo demo: marcamos la reserva como completada al crearla para habilitar valoraciones.
-        booking.setStatus("COMPLETADA");
+        LocalDate departureDate = parseRequestedTravelDate(departureDateStr);
+        validateAvailability(productId, departureDate);
 
-        LocalDateTime travelDateTime = (dateStr != null && !dateStr.isEmpty())
-                ? parseBookingDate(dateStr)
-                : LocalDateTime.now();
-        LocalDate travelDate = travelDateTime.toLocalDate();
-
-        validateAvailability(productId, travelDate);
-
-        booking.setBookingDate(LocalDateTime.now());
-        booking.setTravelDate(travelDate);
-
-        try {
-            return bookingRepository.saveAndFlush(booking);
-        } catch (DataIntegrityViolationException ex) {
-            throw new IllegalStateException("La fecha seleccionada ya tiene una reserva para este vuelo.");
+        LocalDate returnDate = null;
+        if (returnDateStr != null && !returnDateStr.isBlank()) {
+            returnDate = parseRequestedTravelDate(returnDateStr);
+            if (!returnDate.isAfter(departureDate)) {
+                throw new IllegalArgumentException("La fecha de regreso debe ser posterior a la fecha de salida.");
+            }
+            validateAvailability(productId, returnDate);
         }
+
+        List<Booking> bookings = new ArrayList<>();
+        bookings.add(saveBooking(user, product, departureDate, passengers));
+
+        if (returnDate != null) {
+            bookings.add(saveBooking(user, product, returnDate, passengers));
+        }
+
+        return bookings;
     }
 
     public Long resolveProductId(Object rawProductId) throws Exception {
@@ -144,6 +149,29 @@ public class BookingService {
                 });
 
         if (duplicatedLegacyDate) {
+            throw new IllegalStateException("La fecha seleccionada ya tiene una reserva para este vuelo.");
+        }
+    }
+
+    private LocalDate parseRequestedTravelDate(String dateStr) {
+        LocalDateTime travelDateTime = (dateStr != null && !dateStr.isEmpty())
+                ? parseBookingDate(dateStr)
+                : LocalDateTime.now();
+        return travelDateTime.toLocalDate();
+    }
+
+    private Booking saveBooking(User user, Product product, LocalDate travelDate, int passengers) {
+        Booking booking = new Booking();
+        booking.setUser(user);
+        booking.setProduct(product);
+        booking.setPassengers(passengers);
+        booking.setStatus("COMPLETADA");
+        booking.setBookingDate(LocalDateTime.now());
+        booking.setTravelDate(travelDate);
+
+        try {
+            return bookingRepository.saveAndFlush(booking);
+        } catch (DataIntegrityViolationException ex) {
             throw new IllegalStateException("La fecha seleccionada ya tiene una reserva para este vuelo.");
         }
     }
