@@ -31,4 +31,11 @@ public class CategoryController {
     public ResponseEntity<Category> createCategory(@RequestBody Category category) {
         return ResponseEntity.ok(categoryService.saveCategory(category));
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
+        categoryService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }

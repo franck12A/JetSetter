@@ -30,4 +30,14 @@ export const createFeature = (data) => axios.post(API_URL, data, { headers: getH
 export const updateFeature = (id, data) =>
   axios.put(`${API_URL}/${id}`, data, { headers: getHeaders() });
 
-export const deleteFeature = (id) => axios.delete(`${API_URL}/${id}`, { headers: getHeaders() });
+export const deleteFeature = async (id) => {
+  try {
+    const { data } = await axios.delete(`/api/features/${id}`, { headers: getHeaders() });
+    return data;
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      throw new Error("Característica no encontrada o ya fue eliminada");
+    }
+    throw error;
+  }
+};

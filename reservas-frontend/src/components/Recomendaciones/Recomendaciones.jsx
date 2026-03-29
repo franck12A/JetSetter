@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { FaHeart, FaRegHeart, FaShareAlt } from "react-icons/fa";
 
 import productService from "../../services/productService";
+import { normalizeAirlineName } from "../../utils/flightMetadata";
 import CarouselCard from "../CarouselCard/CarouselCard";
 import { addFavorite, getUserFavorites, removeFavorite } from "../../services/favoritesApi";
 
@@ -96,11 +97,14 @@ export default function Recomendaciones({ vuelos = [], onShare }) {
     const unique = uniqueById(Array.isArray(productos) ? productos : []);
     const shuffled = shuffle(unique);
     return shuffled.slice(0, MAX_RECOS).map((p) => {
-      const nameParts = (p.name || "").split("->").map((s) => s.trim());
+      const airlineName = normalizeAirlineName(p.airlineName || p.aerolinea || p.airline);
+      const flightNumber = p.flightNumber || p.numeroVuelo || p.flight_number || "No disponible";
       return {
         ...p,
-        aerolinea: nameParts[0] || "Desconocida",
-        numeroVuelo: nameParts[1] || "000",
+        airlineName,
+        flightNumber,
+        aerolinea: airlineName,
+        numeroVuelo: flightNumber,
         caracteristicas: p.features?.map((f) => f.name) || ["Clase: Lite", "Equipaje incluido: No"],
       };
     });

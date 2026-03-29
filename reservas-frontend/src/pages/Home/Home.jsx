@@ -15,6 +15,7 @@ import productService from "../../services/productService";
 import { getUserFavorites, addFavorite as addFavApi, removeFavorite as removeFavApi } from "../../services/favoritesApi";
 import { createBooking } from "../../services/bookingsApi";
 import { getReviewsSummary } from "../../services/reviewsApi";
+import { normalizeAirlineName } from "../../utils/flightMetadata";
 import { getSafeIcon } from "../../utils/iconRegistry";
 import { inferFlightCategories } from "../../utils/flightCategories";
 import { getVueloImage } from "../../utils/images";
@@ -44,7 +45,7 @@ const buildSharePayload = (vuelo) => {
     typeof window !== "undefined" && window.location?.origin ? window.location.origin : "";
   const url = localProductId ? `${baseUrl}/vuelo/${localProductId}` : baseUrl || "";
   const priceLabel = vuelo?.precioTotal ? `$${vuelo.precioTotal}` : "precio a consultar";
-  const aerolinea = vuelo?.aerolinea || vuelo?.airline || "";
+  const aerolinea = normalizeAirlineName(vuelo?.airlineName || vuelo?.aerolinea || vuelo?.airline || "");
   const title = `Vuelo ${route.origen} -> ${route.destino}`;
   const description = `Vuelo ${route.origen} -> ${route.destino}${aerolinea ? ` con ${aerolinea}` : ""}. Desde ${priceLabel}.`;
 

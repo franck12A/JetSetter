@@ -1,5 +1,6 @@
 // src/services/vuelosService.js
 import axios from "axios";
+import { normalizeAirlineName } from "../utils/flightMetadata";
 
 const API_URL = "http://localhost:8080";
 
@@ -48,12 +49,30 @@ export const obtenerVuelos = async (origen, destino, fecha) => {
     return data.map((vuelo) => {
       const primerSegmento = vuelo.segmentos?.[0] || {};
       const ultimoSegmento = vuelo.segmentos?.[vuelo.segmentos.length - 1] || {};
+      const airlineName = normalizeAirlineName(
+        vuelo.airlineName ||
+          vuelo.aerolinea ||
+          vuelo.airline ||
+          primerSegmento.airlineName ||
+          primerSegmento.aerolinea ||
+          primerSegmento.airline
+      );
+      const flightNumber =
+        vuelo.flightNumber ||
+        vuelo.numeroVuelo ||
+        vuelo.flight_number ||
+        primerSegmento.flightNumber ||
+        primerSegmento.numeroVuelo ||
+        primerSegmento.flight_number ||
+        "No disponible";
 
       return {
         id: vuelo.id,
         productId: vuelo.productId ?? (Number.isInteger(Number(vuelo.id)) ? Number(vuelo.id) : null),
-        aerolinea: primerSegmento.aerolinea || vuelo.aerolinea || "Desconocida",
-        numeroVuelo: primerSegmento.numeroVuelo || vuelo.numeroVuelo || "000",
+        airlineName,
+        flightNumber,
+        aerolinea: airlineName,
+        numeroVuelo: flightNumber,
         precioTotal: vuelo.precioTotal || 0,
         categorias: vuelo.categorias || (vuelo.categoria ? [vuelo.categoria] : ["Otros"]),
         caracteristicas: vuelo.caracteristicas?.length > 0
@@ -97,12 +116,30 @@ export const obtenerVueloPorId = async (id) => {
     const primerSegmento = data.segmentos?.[0] || {};
     const ultimoSegmento =
       data.segmentos?.[data.segmentos.length - 1] || {};
+    const airlineName = normalizeAirlineName(
+      data.airlineName ||
+        data.aerolinea ||
+        data.airline ||
+        primerSegmento.airlineName ||
+        primerSegmento.aerolinea ||
+        primerSegmento.airline
+    );
+    const flightNumber =
+      data.flightNumber ||
+      data.numeroVuelo ||
+      data.flight_number ||
+      primerSegmento.flightNumber ||
+      primerSegmento.numeroVuelo ||
+      primerSegmento.flight_number ||
+      "No disponible";
 
     return {
       id: data.id,
       productId: data.productId ?? (Number.isInteger(Number(data.id)) ? Number(data.id) : null),
-      aerolinea: data.aerolinea || primerSegmento.aerolinea || "Desconocida",
-      numeroVuelo: data.numeroVuelo || primerSegmento.numeroVuelo || "000",
+      airlineName,
+      flightNumber,
+      aerolinea: airlineName,
+      numeroVuelo: flightNumber,
 
       precioTotal: data.precioTotal || 0,
       categorias: data.categorias || [data.categoria] || ["Otros"],

@@ -6,6 +6,7 @@ import productService from "../../services/productService";
 import { addFavorite as addFavApi, removeFavorite as removeFavApi, getUserFavorites } from "../../services/favoritesApi";
 import { createBooking } from "../../services/bookingsApi";
 import { getReviewsSummary } from "../../services/reviewsApi";
+import { normalizeAirlineName } from "../../utils/flightMetadata";
 import { getVueloImage } from "../../utils/images";
 import { inferFlightCategories, hasCategoryMatch } from "../../utils/flightCategories";
 import { getSafeIcon } from "../../utils/iconRegistry";
@@ -61,15 +62,36 @@ const normalizeVuelo = (vuelo = {}) => {
   const route = splitRoute(vuelo.name);
   const rawProductId = vuelo.productId ?? vuelo.id;
   const parsedProductId = Number(rawProductId);
+  const primerSegmento = vuelo.segmentos?.[0] || {};
   const origen = vuelo.origen || vuelo.origin || route.origen;
   const destino = vuelo.destino || vuelo.destination || route.destino;
   const routeLabel = [origen, destino].filter(Boolean).join(" -> ");
   const nombre = String(vuelo.name || vuelo.nombre || "").trim();
+  const aerolinea = normalizeAirlineName(
+    vuelo.airlineName ||
+      vuelo.aerolinea ||
+      vuelo.airline ||
+      primerSegmento.airlineName ||
+      primerSegmento.aerolinea ||
+      primerSegmento.airline
+  );
+  const numeroVuelo =
+    vuelo.flightNumber ||
+    vuelo.numeroVuelo ||
+    vuelo.flight_number ||
+    primerSegmento.flightNumber ||
+    primerSegmento.numeroVuelo ||
+    primerSegmento.flight_number ||
+    "No disponible";
 
   return {
     ...vuelo,
     uid: `${vuelo.externalId || "local"}-${vuelo.id || vuelo.productId || vuelo.name || Math.random()}`,
     localProductId: Number.isInteger(parsedProductId) && parsedProductId > 0 ? parsedProductId : null,
+    airlineName: aerolinea,
+    flightNumber: numeroVuelo,
+    aerolinea,
+    numeroVuelo,
     origen,
     destino,
     displayName: nombre || routeLabel || "Vuelo sin nombre",

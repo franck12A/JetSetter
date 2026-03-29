@@ -69,13 +69,15 @@ const categoryService = {
   deleteCategory: async (id) => {
     const token = obtenerToken();
     try {
-      const { data } = await axios.delete(`${API_URL}/api/categories/${id}`, {
+      const { data } = await axios.delete(`/api/categories/${id}`, {
         headers: { Authorization: token ? `Bearer ${token}` : undefined }
       });
       return data;
     } catch (error) {
-      console.error("Error al eliminar categoría:", error);
-      return null;
+      if (error.response && error.response.status === 404) {
+        throw new Error("Categoría no encontrada o ya fue eliminada");
+      }
+      throw error;
     }
   },
 

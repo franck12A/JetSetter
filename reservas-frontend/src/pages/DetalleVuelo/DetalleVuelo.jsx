@@ -33,6 +33,7 @@ import productService from "../../services/productService";
 import { addFavorite, getUserFavorites, removeFavorite } from "../../services/favoritesApi";
 import { createBooking, getProductBookedDates, getUserBookings } from "../../services/bookingsApi";
 import { createReview, getProductReviews } from "../../services/reviewsApi";
+import { normalizeAirlineName } from "../../utils/flightMetadata";
 import { getVueloImage } from "../../utils/images";
 import { getSafeIcon } from "../../utils/iconRegistry";
 import "react-day-picker/style.css";
@@ -262,6 +263,14 @@ const cleanFeatureValue = (value) =>
     .replace(/\s+/g, " ")
     .trim();
 
+const normalizeFeatureDisplayValue = (label, value) => {
+  const normalizedLabel = normalizeText(label);
+  if (normalizedLabel === "aerolinea") {
+    return normalizeAirlineName(value);
+  }
+  return value;
+};
+
 const isMeaningful = (value) => {
   const normalized = normalizeText(value);
   if (!normalized) return false;
@@ -282,7 +291,7 @@ const parseFeatureItem = (raw, iconName) => {
   const [head, ...rest] = parts;
   const label = humanizeFeatureLabel(head);
   if (!label) return null;
-  const value = cleanFeatureValue(rest.join(":").trim());
+  const value = normalizeFeatureDisplayValue(label, cleanFeatureValue(rest.join(":").trim()));
   return { label, value, iconName: iconName || head };
 };
 
@@ -353,14 +362,32 @@ const normalizeVuelo = (data) => {
   const rawProductId = data.productId ?? data.id;
   const parsedProductId = Number(rawProductId);
   const localProductId = Number.isInteger(parsedProductId) && parsedProductId > 0 ? parsedProductId : null;
+  const airlineName = normalizeAirlineName(
+    data.airlineName ||
+      data.aerolinea ||
+      data.airline ||
+      primerSegmento.airlineName ||
+      primerSegmento.aerolinea ||
+      primerSegmento.airline
+  );
+  const flightNumber =
+    data.flightNumber ||
+    data.numeroVuelo ||
+    data.flight_number ||
+    primerSegmento.flightNumber ||
+    primerSegmento.numeroVuelo ||
+    primerSegmento.flight_number ||
+    "No disponible";
 
   return {
     ...data,
     id: data.id ?? data.productId ?? null,
     localProductId,
     isExternal,
-    aerolinea: data.aerolinea || primerSegmento.aerolinea || "Desconocida",
-    numeroVuelo: data.numeroVuelo || primerSegmento.numeroVuelo || "000",
+    airlineName,
+    flightNumber,
+    aerolinea: airlineName,
+    numeroVuelo: flightNumber,
     origen: data.origen || route.origen,
     destino: data.destino || route.destino,
     paisDestino: data.paisDestino || data.country || route.destino || "-",
@@ -453,14 +480,16 @@ export default function DetalleVuelo() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
+  const [tripType, setTripType] = useState("oneway");
   const [selectedTravelDate, setSelectedTravelDate] = useState(() => getStartOfToday());
+  const [selectedReturnDate, setSelectedReturnDate] = useState(null);
   const [bookedDates, setBookedDates] = useState([]);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [availabilityError, setAvailabilityError] = useState("");
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingFeedback, setBookingFeedback] = useState(null);
   const [visibleMonth, setVisibleMonth] = useState(() => getStartOfToday());
-  const [calendarExpanded, setCalendarExpanded] = useState(true);
+  const [returnVisibleMonth, setReturnVisibleMonth] = useState(() => getStartOfToday());
   const [selectedImage, setSelectedImage] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
@@ -624,8 +653,9 @@ export default function DetalleVuelo() {
   const bookedDateSet = useMemo(() => new Set(bookedDates), [bookedDates]);
   const disabledDates = useMemo(() => bookedDates.map(fromISODate).filter(Boolean), [bookedDates]);
   const today = useMemo(() => getStartOfToday(), []);
+  const isRoundTrip = tripType === "roundtrip";
   const disabledMatchers = useMemo(() => [{ before: today }, ...disabledDates], [disabledDates, today]);
-  const availableMatcher = useMemo(
+  const departureAvailableMatcher = useMemo(
     () => (date) => {
       if (!date || Number.isNaN(date.getTime())) return false;
       if (date < today) return false;
@@ -635,23 +665,69 @@ export default function DetalleVuelo() {
     },
     [bookedDateSet, today]
   );
-  const calendarModifiers = useMemo(
-    () => ({ booked: disabledDates, available: availableMatcher }),
-    [availableMatcher, disabledDates]
+  const returnDisabledMatchers = useMemo(
+    () => [{ before: selectedTravelDate || today }, ...disabledDates],
+    [disabledDates, selectedTravelDate, today]
+  );
+  const returnAvailableMatcher = useMemo(
+    () => (date) => {
+      if (!date || Number.isNaN(date.getTime())) return false;
+      if (!selectedTravelDate || date < selectedTravelDate) return false;
+      const iso = toISODateLocal(date);
+      if (!iso) return false;
+      return !bookedDateSet.has(iso);
+    },
+    [bookedDateSet, selectedTravelDate]
+  );
+  const departureCalendarModifiers = useMemo(
+    () => ({ booked: disabledDates, available: departureAvailableMatcher }),
+    [departureAvailableMatcher, disabledDates]
+  );
+  const returnCalendarModifiers = useMemo(
+    () => ({ booked: disabledDates, available: returnAvailableMatcher }),
+    [disabledDates, returnAvailableMatcher]
   );
   const selectedDateISO = useMemo(() => toISODateLocal(selectedTravelDate), [selectedTravelDate]);
   const selectedDateLabel = useMemo(() => formatTravelDateLabel(selectedTravelDate), [selectedTravelDate]);
   const selectedDateBooked = Boolean(selectedDateISO) && bookedDateSet.has(selectedDateISO);
+  const selectedReturnDateISO = useMemo(() => toISODateLocal(selectedReturnDate), [selectedReturnDate]);
+  const selectedReturnDateLabel = useMemo(
+    () => formatTravelDateLabel(selectedReturnDate),
+    [selectedReturnDate]
+  );
+  const selectedReturnDateBooked =
+    Boolean(selectedReturnDateISO) && bookedDateSet.has(selectedReturnDateISO);
   const bookedDatesSummary = bookedDates.length
     ? `${bookedDates.length} fecha${bookedDates.length > 1 ? "s" : ""} ya reservada${bookedDates.length > 1 ? "s" : ""}.`
     : "Todavía no hay fechas reservadas para este vuelo.";
+  const availabilitySummary = vuelo?.localProductId
+    ? bookedDatesSummary
+    : "Podés elegir fechas, pero este vuelo todavía no publica reserva directa.";
+  const dateSelectionHelp = selectedDateBooked
+    ? "La fecha de salida seleccionada está ocupada. Selecciona otra para continuar."
+    : isRoundTrip && !selectedReturnDateISO
+      ? "Seleccioná una fecha de regreso para completar el viaje."
+      : isRoundTrip && selectedReturnDateBooked
+        ? "La fecha de regreso seleccionada está ocupada. Elegí otra para continuar."
+        : availabilitySummary;
+  const departureCalendarMonthCount = isRoundTrip ? 1 : 2;
+  const isSelectionIncomplete = !selectedDateISO || (isRoundTrip && !selectedReturnDateISO);
+  const hasUnavailableSelection = selectedDateBooked || (isRoundTrip && selectedReturnDateBooked);
   const bookingButtonLabel = bookingLoading
     ? "Reservando..."
-    : selectedDateBooked
+    : !selectedDateISO
+      ? "Seleccioná salida"
+      : isRoundTrip && !selectedReturnDateISO
+        ? "Seleccioná regreso"
+        : hasUnavailableSelection
       ? "Fecha no disponible"
       : "Reservar ahora";
   const canReserve =
-    Boolean(vuelo?.localProductId) && !availabilityLoading && !bookingLoading && !selectedDateBooked;
+    Boolean(vuelo?.localProductId) &&
+    !availabilityLoading &&
+    !bookingLoading &&
+    !isSelectionIncomplete &&
+    !hasUnavailableSelection;
 
   const checkReviewEligibility = async () => {
     if (!vuelo?.localProductId) {
@@ -709,6 +785,34 @@ export default function DetalleVuelo() {
     const nextDate = parseDateValue(date) || getStartOfToday();
     setSelectedTravelDate(nextDate);
     setVisibleMonth(nextDate);
+    setSelectedReturnDate((current) => {
+      if (!current) return current;
+      return current < nextDate ? null : current;
+    });
+    setReturnVisibleMonth((current) => {
+      if (!current || current < nextDate) return nextDate;
+      return current;
+    });
+    setBookingFeedback(null);
+  };
+
+  const handleReturnDateSelect = (date) => {
+    if (!date) return;
+    const nextDate = parseDateValue(date);
+    if (!nextDate) return;
+    setSelectedReturnDate(nextDate);
+    setReturnVisibleMonth(nextDate);
+    setBookingFeedback(null);
+  };
+
+  const handleTripTypeChange = (event) => {
+    const nextType = event.target.value;
+    setTripType(nextType);
+    if (nextType === "oneway") {
+      setSelectedReturnDate(null);
+    } else if (selectedTravelDate) {
+      setReturnVisibleMonth(selectedTravelDate);
+    }
     setBookingFeedback(null);
   };
 
@@ -771,8 +875,10 @@ export default function DetalleVuelo() {
       const dates = await getProductBookedDates(productId);
       setBookedDates(dates);
     } catch (err) {
-      console.error("Error cargando rese\u00f1as:", err);
-      setAvailabilityError("No se pudo obtener la disponibilidad en este momento.");
+      console.error("Error cargando disponibilidad:", err);
+      setAvailabilityError(
+        "No pudimos obtener las fechas disponibles en este momento. Intentá nuevamente más tarde."
+      );
     } finally {
       setAvailabilityLoading(false);
     }
@@ -833,6 +939,8 @@ export default function DetalleVuelo() {
     const initialDate = getInitialTravelDate(vuelo);
     setSelectedTravelDate(initialDate);
     setVisibleMonth(initialDate);
+    setSelectedReturnDate(null);
+    setReturnVisibleMonth(initialDate);
     setBookingFeedback(null);
   }, [vuelo]);
 
@@ -980,7 +1088,7 @@ export default function DetalleVuelo() {
     if (!selectedDateISO) {
       setBookingFeedback({
         type: "error",
-        message: "Selecciona una fecha de viaje antes de reservar.",
+        message: "Seleccioná una fecha de salida antes de reservar.",
       });
       return;
     }
@@ -989,6 +1097,22 @@ export default function DetalleVuelo() {
       setBookingFeedback({
         type: "error",
         message: "Esa fecha ya esta ocupada. Elige otra para continuar.",
+      });
+      return;
+    }
+
+    if (isRoundTrip && !selectedReturnDateISO) {
+      setBookingFeedback({
+        type: "error",
+        message: "Seleccioná una fecha de regreso para continuar con el viaje ida y vuelta.",
+      });
+      return;
+    }
+
+    if (isRoundTrip && selectedReturnDateBooked) {
+      setBookingFeedback({
+        type: "error",
+        message: "La fecha de regreso seleccionada no está disponible. Elegí otra para continuar.",
       });
       return;
     }
@@ -1007,7 +1131,9 @@ export default function DetalleVuelo() {
       await checkReviewEligibility();
       setBookingFeedback({
         type: "success",
-        message: `Reserva creada para ${selectedDateLabel}.`,
+        message: isRoundTrip
+          ? `Reserva creada para la salida del ${selectedDateLabel}. Regreso seleccionado: ${selectedReturnDateLabel}.`
+          : `Reserva creada para ${selectedDateLabel}.`,
       });
     } catch (err) {
       console.error("Error creando reserva:", err);
@@ -1060,6 +1186,16 @@ export default function DetalleVuelo() {
           aria-label={`Vuelo ${vuelo.origen} a ${vuelo.destino}`}
         >
           <div className="dv-hero-overlay" />
+          <div className="dv-hero-topbar">
+            <button
+              type="button"
+              className="dv-back-button"
+              onClick={handleBack}
+              aria-label="Volver a la página anterior"
+            >
+              <FaChevronLeft />
+            </button>
+          </div>
           <div className="dv-hero-text">
             <span className="dv-hero-label">Premium Experience</span>
             <h1 className="dv-hero-title">{heroTitle}</h1>
@@ -1106,61 +1242,165 @@ export default function DetalleVuelo() {
           <h2 className="dv-section-title">Disponibilidad y fechas</h2>
           <div className="dv-dates-card">
             <div className="dv-dates-info">
-              <span className="dv-dates-label">Fecha seleccionada</span>
-              <strong className="dv-dates-value">{selectedDateLabel}</strong>
-              <p className="dv-dates-help">
-                {selectedDateBooked
-                  ? "Esta fecha está ocupada. Selecciona otra para continuar."
-                  : bookedDatesSummary}
-              </p>
-              <span className={`dv-status ${selectedDateBooked ? "is-booked" : "is-available"}`}>
-                {selectedDateBooked ? "Ocupada" : "Disponible"}
-              </span>
+              <div className="dv-trip-toggle" role="radiogroup" aria-label="Tipo de viaje">
+                <label className={`dv-trip-option ${!isRoundTrip ? "is-active" : ""}`}>
+                  <input
+                    type="radio"
+                    name="tripType"
+                    value="oneway"
+                    checked={!isRoundTrip}
+                    onChange={handleTripTypeChange}
+                  />
+                  <span>Solo ida</span>
+                </label>
+                <label className={`dv-trip-option ${isRoundTrip ? "is-active" : ""}`}>
+                  <input
+                    type="radio"
+                    name="tripType"
+                    value="roundtrip"
+                    checked={isRoundTrip}
+                    onChange={handleTripTypeChange}
+                  />
+                  <span>Ida y vuelta</span>
+                </label>
+              </div>
+
+              <div className="dv-dates-summary-list">
+                <div className="dv-dates-summary-item">
+                  <span className="dv-dates-label">Fecha de salida</span>
+                  <strong className="dv-dates-value">{selectedDateLabel}</strong>
+                  <span className={`dv-status ${selectedDateBooked ? "is-booked" : "is-available"}`}>
+                    {selectedDateBooked ? "Ocupada" : "Disponible"}
+                  </span>
+                </div>
+
+                {isRoundTrip && (
+                  <div className="dv-dates-summary-item">
+                    <span className="dv-dates-label">Fecha de regreso</span>
+                    <strong className="dv-dates-value">{selectedReturnDateLabel}</strong>
+                    <span
+                      className={`dv-status ${
+                        !selectedReturnDateISO
+                          ? "is-pending"
+                          : selectedReturnDateBooked
+                            ? "is-booked"
+                            : "is-available"
+                      }`}
+                    >
+                      {!selectedReturnDateISO
+                        ? "Pendiente"
+                        : selectedReturnDateBooked
+                          ? "Ocupada"
+                          : "Disponible"}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <p className="dv-dates-help">{dateSelectionHelp}</p>
+              <div className="dv-dates-legend" aria-label="Referencia de disponibilidad">
+                <span className="dv-legend-item">
+                  <span className="dv-legend-dot is-available" aria-hidden="true" />
+                  Disponible
+                </span>
+                <span className="dv-legend-item">
+                  <span className="dv-legend-dot is-booked" aria-hidden="true" />
+                  Ocupada
+                </span>
+              </div>
             </div>
             <div className="dv-dates-picker">
               {availabilityLoading && <p className="dv-muted">Cargando fechas disponibles...</p>}
 
               {!availabilityLoading && availabilityError && (
-                <div className="dv-inline-error">
+                <div className="dv-inline-error" role="alert">
                   <span>{availabilityError}</span>
                   <button
                     type="button"
                     className="dv-link-btn"
                     onClick={() => loadAvailability(vuelo?.localProductId)}
                   >
-                    Reintentar
+                    Volver a intentar
                   </button>
                 </div>
               )}
 
-              {!availabilityLoading && !availabilityError && vuelo?.localProductId && (
-                <DayPicker
-                  mode="single"
-                  locale={es}
-                  className="dv-daypicker"
-                  selected={selectedTravelDate}
-                  month={visibleMonth}
-                  onMonthChange={setVisibleMonth}
-                  onSelect={handleTravelDateSelect}
-                  disabled={disabledMatchers}
-                  modifiers={calendarModifiers}
-                  modifiersClassNames={{ booked: "dv-day-booked", available: "dv-day-available" }}
-                  numberOfMonths={1}
-                  showOutsideDays
-                  fixedWeeks
-                  components={{
-                    Chevron: ({ orientation, className }) =>
-                      orientation === "left" ? (
-                        <FaChevronLeft className={className} />
-                      ) : (
-                        <FaChevronRight className={className} />
-                      ),
-                  }}
-                />
-              )}
+              {!availabilityLoading && !availabilityError && (
+                <>
+                  <div className={`dv-dates-picker-grid ${isRoundTrip ? "is-roundtrip" : ""}`}>
+                    <fieldset className="dv-calendar-panel">
+                      <div className="dv-calendar-head">
+                        <span className="dv-dates-label">Fecha de salida</span>
+                      </div>
+                      <DayPicker
+                        mode="single"
+                        locale={es}
+                        className="dv-daypicker"
+                        selected={selectedTravelDate}
+                        month={visibleMonth}
+                        onMonthChange={setVisibleMonth}
+                        onSelect={handleTravelDateSelect}
+                        disabled={disabledMatchers}
+                        modifiers={departureCalendarModifiers}
+                        modifiersClassNames={{ booked: "dv-day-booked", available: "dv-day-available" }}
+                        numberOfMonths={departureCalendarMonthCount}
+                        pagedNavigation={departureCalendarMonthCount > 1}
+                        showOutsideDays
+                        fixedWeeks
+                        components={{
+                          Chevron: ({ orientation, className }) =>
+                            orientation === "left" ? (
+                              <FaChevronLeft className={className} />
+                            ) : (
+                              <FaChevronRight className={className} />
+                            ),
+                        }}
+                      />
+                    </fieldset>
 
-              {!availabilityLoading && !availabilityError && !vuelo?.localProductId && (
-                <p className="dv-muted">Este vuelo aún no tiene disponibilidad publicada para reserva directa.</p>
+                    {isRoundTrip && (
+                      <fieldset
+                        className="dv-calendar-panel"
+                        disabled={!selectedTravelDate}
+                        aria-disabled={!selectedTravelDate}
+                      >
+                        <div className="dv-calendar-head">
+                          <span className="dv-dates-label">Fecha de regreso</span>
+                          {!selectedTravelDate && (
+                            <span className="dv-calendar-hint">Elegí una salida primero</span>
+                          )}
+                        </div>
+                        <DayPicker
+                          mode="single"
+                          locale={es}
+                          className="dv-daypicker"
+                          selected={selectedReturnDate}
+                          month={returnVisibleMonth}
+                          onMonthChange={setReturnVisibleMonth}
+                          onSelect={handleReturnDateSelect}
+                          disabled={selectedTravelDate ? returnDisabledMatchers : [() => true]}
+                          modifiers={returnCalendarModifiers}
+                          modifiersClassNames={{ booked: "dv-day-booked", available: "dv-day-available" }}
+                          numberOfMonths={1}
+                          showOutsideDays
+                          fixedWeeks
+                          components={{
+                            Chevron: ({ orientation, className }) =>
+                              orientation === "left" ? (
+                                <FaChevronLeft className={className} />
+                              ) : (
+                                <FaChevronRight className={className} />
+                              ),
+                          }}
+                        />
+                      </fieldset>
+                    )}
+                  </div>
+
+                  {!vuelo?.localProductId && (
+                    <p className="dv-muted">Este vuelo aún no tiene disponibilidad publicada para reserva directa.</p>
+                  )}
+                </>
               )}
             </div>
           </div>

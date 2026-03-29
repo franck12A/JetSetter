@@ -5,7 +5,14 @@ import "./AdminPanel.css";
 import AdminProductsList from "../../components/AdminProductsList/AdminProductsList";
 import IconPicker from "../../components/IconPicker/IconPicker";
 import { ICON_REGISTRY } from "../../utils/iconRegistry";
-import { MdFlightTakeoff, MdOutlinePublic, MdOutlineCalendarToday, MdOutlineImage, MdOutlineCloudUpload, MdInfoOutline } from "react-icons/md";
+import {
+  MdDeleteOutline,
+  MdFlightTakeoff,
+  MdOutlineCalendarToday,
+  MdOutlineCloudUpload,
+  MdOutlineImage,
+  MdOutlinePublic,
+} from "react-icons/md";
 import productService from "../../services/productService";
 import categoryService from "../../services/categoryService";
 import { getFeatures, createFeature, updateFeature, deleteFeature } from "../../services/featureService";
@@ -77,6 +84,9 @@ export default function AdminPanel() {
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [newCategory, setNewCategory] = useState({ title: "", description: "", imageUrl: "", icon: "" });
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
+  const [categoryDeleteLoading, setCategoryDeleteLoading] = useState(false);
+  const [categoryDeleteFeedback, setCategoryDeleteFeedback] = useState(null);
 
   const [form, setForm] = useState({
     id: null,
@@ -149,6 +159,19 @@ export default function AdminPanel() {
   useEffect(() => {
     setPage(1);
   }, [query]);
+
+  useEffect(() => {
+    if (!categoryToDelete) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && !categoryDeleteLoading) {
+        setCategoryToDelete(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [categoryDeleteLoading, categoryToDelete]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -324,9 +347,19 @@ export default function AdminPanel() {
         ...prev,
         features: (prev.features || []).filter((f) => f.id !== featureId),
       }));
+      alert("Elemento eliminado correctamente");
     } catch (err) {
       console.error("Error eliminando feature:", err);
-      alert("No se pudo eliminar la caracteristica.");
+      if (err.message === "Característica no encontrada o ya fue eliminada") {
+        setAvailableFeatures((prev) => prev.filter((f) => f.id !== featureId));
+        setForm((prev) => ({
+          ...prev,
+          features: (prev.features || []).filter((f) => f.id !== featureId),
+        }));
+        alert("El elemento ya no estaba disponible, se actualizó la lista");
+      } else {
+        alert("No se pudo eliminar. Intentalo nuevamente");
+      }
     }
   };
 
@@ -359,6 +392,71 @@ export default function AdminPanel() {
     duracion: "",
     clase: "",
     equipaje: "", imageUrl: "", icon: "" });
+  };
+
+  const openDeleteCategoryModal = (category) => {
+    setCategoryDeleteFeedback(null);
+    setCategoryToDelete(category);
+  };
+
+  const closeDeleteCategoryModal = () => {
+    if (categoryDeleteLoading) return;
+    setCategoryToDelete(null);
+  };
+
+  const handleConfirmDeleteCategory = async () => {
+    if (!categoryToDelete?.id) return;
+
+    const targetId = Number(categoryToDelete.id);
+
+    setCategoryDeleteLoading(true);
+    setCategoryDeleteFeedback(null);
+
+    try {
+      await categoryService.deleteCategory(targetId);
+
+      setCategories((prev) => {
+        const updated = prev.filter((cat) => Number(cat.id) !== targetId);
+        writeLocalCategories(updated);
+        return updated;
+      });
+
+      setForm((prev) => ({
+        ...prev,
+        category: Number(prev.category) === targetId ? "" : prev.category,
+      }));
+
+      setCategoryDeleteFeedback({
+        type: "success",
+        message: "Elemento eliminado correctamente",
+      });
+      setCategoryToDelete(null);
+    } catch (err) {
+      console.error("Error eliminando categoria:", err);
+      if (err.message === "Categoría no encontrada o ya fue eliminada") {
+        setCategories((prev) => {
+          const updated = prev.filter((cat) => Number(cat.id) !== targetId);
+          writeLocalCategories(updated);
+          return updated;
+        });
+        setForm((prev) => ({
+          ...prev,
+          category: Number(prev.category) === targetId ? "" : prev.category,
+        }));
+        setCategoryDeleteFeedback({
+          type: "success",
+          message: "El elemento ya no estaba disponible, se actualizó la lista",
+        });
+        setCategoryToDelete(null);
+      } else {
+        setCategoryDeleteFeedback({
+          type: "error",
+          message: "No se pudo eliminar. Intentalo nuevamente",
+        });
+      }
+    } finally {
+      setCategoryDeleteLoading(false);
+    }
   };
 
   const clearLocalData = () => {
@@ -494,6 +592,17 @@ export default function AdminPanel() {
           </div>
         </div>
 
+        {categoryDeleteFeedback && (
+          <div
+            className={`admin-feedback-message ${
+              categoryDeleteFeedback.type === "success" ? "is-success" : "is-error"
+            }`}
+            role="status"
+          >
+            {categoryDeleteFeedback.message}
+          </div>
+        )}
+
         {categories.length === 0 ? (
           <p className="no-data">No hay categorias aun.</p>
         ) : (
@@ -503,6 +612,7 @@ export default function AdminPanel() {
                 <th>Icono</th>
                 <th>Nombre</th>
                 <th>Descripcion</th>
+                <th style={{ textAlign: "center" }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -513,6 +623,16 @@ export default function AdminPanel() {
                     <td>{Icon ? <Icon /> : "-"}</td>
                     <td>{cat.name}</td>
                     <td>{cat.description || "-"}</td>
+                    <td style={{ textAlign: "center" }}>
+                      <button
+                        type="button"
+                        className="btn-delete btn-delete-category"
+                        onClick={() => openDeleteCategoryModal(cat)}
+                      >
+                        <MdDeleteOutline aria-hidden="true" />
+                        <span>Eliminar</span>
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -784,6 +904,50 @@ export default function AdminPanel() {
             <div className="modal-buttons">
               <button onClick={() => setShowFeatureModal(false)}>Cancelar</button>
               <button onClick={handleSaveFeature}>Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {categoryToDelete && (
+        <div className="feature-modal-overlay" onClick={closeDeleteCategoryModal}>
+          <div
+            className="feature-modal category-delete-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-category-title"
+            aria-describedby="delete-category-description"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="category-delete-badge" aria-hidden="true">
+              <MdDeleteOutline />
+            </div>
+            <h2 id="delete-category-title">¿Eliminar categoría?</h2>
+            <p id="delete-category-description" className="category-delete-message">
+              Estás a punto de eliminar la categoría <strong>"{categoryToDelete.name || "Sin nombre"}"</strong>.
+            </p>
+            <p className="category-delete-note">
+              Esta acción quitará la categoría del panel. Si todavía hay productos asociados, la eliminación
+              puede no completarse hasta revisarlos.
+            </p>
+
+            <div className="modal-buttons category-delete-actions">
+              <button
+                type="button"
+                className="category-delete-cancel"
+                onClick={closeDeleteCategoryModal}
+                disabled={categoryDeleteLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="category-delete-confirm"
+                onClick={handleConfirmDeleteCategory}
+                disabled={categoryDeleteLoading}
+              >
+                {categoryDeleteLoading ? "Eliminando..." : "Confirmar eliminación"}
+              </button>
             </div>
           </div>
         </div>
