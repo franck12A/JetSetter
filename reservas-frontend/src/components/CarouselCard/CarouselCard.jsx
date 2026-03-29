@@ -18,8 +18,8 @@ export default function CarouselCard({
   const numericRating = hasRating ? Number(rating) : null;
   const displayRating = hasRating ? numericRating.toFixed(1) : "";
   const displayDur = duration || "12h 00m";
-  const displayTag = tag || "DIRECT FLIGHT";
-  const displayInc = included || "Meals included";
+  const displayTag = tag || "VUELO DIRECTO";
+  const displayInc = included || "Comidas incluidas";
 
   // price formatting
   const formattedPrice = price ? (price % 1 === 0 ? price : price.toFixed(2)) : "0";
