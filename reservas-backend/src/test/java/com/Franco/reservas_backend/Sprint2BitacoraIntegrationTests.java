@@ -1,6 +1,7 @@
 package com.Franco.reservas_backend;
 
 import com.empresa.vuelos.reservas.de.vuelos.ReservasDeVuelosApplication;
+import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Repository.UserRepository;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Repository.BookingRepository;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Category.Model.Category;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Category.Repository.CategoryRepository;
@@ -21,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -57,6 +59,9 @@ class Sprint2BitacoraIntegrationTests {
 
     @Autowired
     private FeatureRepository featureRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @MockBean
     private EmailService emailService;
@@ -107,6 +112,32 @@ class Sprint2BitacoraIntegrationTests {
     }
 
     @Test
+    void categoriaDelSistema_noPuedeEliminarse() throws Exception {
+        Category category = createCategory("Sin categoria");
+
+        mockMvc.perform(delete("/api/categories/{id}", category.getId())
+                        .with(user("admin").roles("ADMIN")))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("La categoria 'Sin categoria' es del sistema y no se puede eliminar."));
+    }
+
+    @Test
+    void categoriaConVuelosAsociados_noPuedeEliminarse() throws Exception {
+        Category category = createCategory("Internacional " + UUID.randomUUID());
+
+        mockMvc.perform(post("/api/products")
+                        .with(user("admin").roles("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(buildProductPayload("EZE-MAD " + UUID.randomUUID(), category.getId())))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/api/categories/{id}", category.getId())
+                        .with(user("admin").roles("ADMIN")))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("No se puede eliminar la categoria porque tiene vuelos asociados."));
+    }
+
+    @Test
     void administrarCaracteristicas_crearActualizarEliminar() throws Exception {
         Long featureId = createFeatureAndReturnId("Wifi");
 
@@ -116,6 +147,24 @@ class Sprint2BitacoraIntegrationTests {
                         .content(buildFeaturePayload("Wifi Premium", "wifi")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Wifi Premium"));
+
+        mockMvc.perform(delete("/api/features/{id}", featureId)
+                        .with(user("admin").roles("ADMIN")))
+                .andExpect(status().isOk());
+
+        assertFalse(featureRepository.findById(featureId).isPresent());
+    }
+
+    @Test
+    void eliminarCaracteristica_asociadaAProductos_tambienFunciona() throws Exception {
+        Category category = createCategory("Premium " + UUID.randomUUID());
+        Long featureId = createFeatureAndReturnId("Equipaje");
+
+        mockMvc.perform(post("/api/products")
+                        .with(user("admin").roles("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(buildProductPayload("EZE-ROM " + UUID.randomUUID(), category.getId(), List.of(featureId))))
+                .andExpect(status().isOk());
 
         mockMvc.perform(delete("/api/features/{id}", featureId)
                         .with(user("admin").roles("ADMIN")))
@@ -148,6 +197,21 @@ class Sprint2BitacoraIntegrationTests {
                 .andExpect(jsonPath("$.message").value("Registro exitoso, email enviado"))
                 .andExpect(jsonPath("$.user.email").value(email))
                 .andExpect(jsonPath("$.user.role").value("ROLE_USER"));
+    }
+
+    @Test
+    void registrarUsuario_conDatosInvalidos_fallaConBadRequest() throws Exception {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("firstName", "Ana");
+        payload.put("lastName", "Suarez");
+        payload.put("email", "ana-test.com");
+        payload.put("password", "123");
+        payload.put("confirmPassword", "456");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -185,6 +249,43 @@ class Sprint2BitacoraIntegrationTests {
                 .andExpect(jsonPath("$.token").isNotEmpty())
                 .andExpect(jsonPath("$.user.email").value("admin@vuelos.com"))
                 .andExpect(jsonPath("$.user.role").value("ROLE_ADMIN"));
+    }
+
+    @Test
+    void adminPuedeActualizarRolDeUsuario() throws Exception {
+        String email = "user_" + UUID.randomUUID() + "@test.com";
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(buildRegisterPayload(email, "Mora", "Lopez")))
+                .andExpect(status().isOk());
+
+        Long userId = userRepository.findByEmail(email).orElseThrow().getId();
+
+        mockMvc.perform(put("/api/auth/{userId}/role", userId)
+                        .with(user("admin@vuelos.com").roles("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"role\":\"ROLE_ADMIN\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.role").value("ROLE_ADMIN"));
+    }
+
+    @Test
+    void usuarioNoAdmin_noPuedeActualizarRoles() throws Exception {
+        String email = "user_" + UUID.randomUUID() + "@test.com";
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(buildRegisterPayload(email, "Mora", "Lopez")))
+                .andExpect(status().isOk());
+
+        Long userId = userRepository.findByEmail(email).orElseThrow().getId();
+
+        mockMvc.perform(put("/api/auth/{userId}/role", userId)
+                        .with(user("otro-user@test.com").roles("USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"role\":\"ROLE_ADMIN\"}"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -229,15 +330,32 @@ class Sprint2BitacoraIntegrationTests {
         return objectMapper.writeValueAsString(payload);
     }
 
-    private String buildProductPayload(String name, Long categoryId) throws Exception {
+    private String buildProductPayload(String routeLabel, Long categoryId) throws Exception {
+        return buildProductPayload(routeLabel, categoryId, List.of());
+    }
+
+    private String buildProductPayload(String routeLabel, Long categoryId, List<Long> featureIds) throws Exception {
+        String[] parts = routeLabel.split("\\s*(?:->|-)\\s*", 2);
+        String origin = parts.length > 0 && !parts[0].isBlank() ? parts[0].trim() : "Buenos Aires";
+        String destination = parts.length > 1 && !parts[1].isBlank() ? parts[1].trim() : "Madrid";
+        int flightSuffix = 1000 + Math.abs(routeLabel.hashCode()) % 9000;
+
         Map<String, Object> payload = new HashMap<>();
-        payload.put("name", name);
+        payload.put("origin", origin);
+        payload.put("destination", destination);
         payload.put("description", "Vuelo de prueba");
         payload.put("price", 1200.50);
         payload.put("image", "https://example.com/image.jpg");
         payload.put("categoryId", categoryId);
-        payload.put("country", "Argentina");
         payload.put("departureDate", "2026-01-15");
+        payload.put("airline", "JetSetter Air");
+        payload.put("flightNumber", "JS" + flightSuffix);
+        payload.put("status", "ACTIVE");
+        payload.put("features", featureIds.stream().map(id -> {
+            Map<String, Object> feature = new HashMap<>();
+            feature.put("id", id);
+            return feature;
+        }).toList());
         return objectMapper.writeValueAsString(payload);
     }
 

@@ -6,7 +6,7 @@ import {
   FaCog, FaQuestionCircle, FaChevronRight, FaStar, FaRegStar
 } from "react-icons/fa";
 import { addFavorite, removeFavorite, getUserFavorites } from "../../services/favoritesApi";
-import { getUserBookings, cancelBooking, createBooking } from "../../services/bookingsApi";
+import { getUserBookings, cancelBooking } from "../../services/bookingsApi";
 import productService from "../../services/productService";
 import { createReview, getProductReviews } from "../../services/reviewsApi";
 import { getVueloImage } from "../../utils/images";
@@ -32,7 +32,24 @@ const formatBookingDate = (value) => {
   if (!value) return "Fecha pendiente";
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "Fecha pendiente";
-  return parsed.toLocaleDateString("es-AR");
+  return parsed.toLocaleDateString("es-AR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const formatBookingDateTime = (value) => {
+  if (!value) return "Fecha pendiente";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "Fecha pendiente";
+  return parsed.toLocaleString("es-AR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 const parseDateOnly = (value) => {
@@ -104,12 +121,38 @@ const isTokenExpired = (token) => {
   }
 };
 
+const formatUseDateRange = (travelDate, returnDate) => {
+  if (!travelDate) return "Sin fechas de uso";
+  const start = formatBookingDate(travelDate);
+  if (!returnDate) return start;
+  return `${start} - ${formatBookingDate(returnDate)}`;
+};
+
+const sortBookingsByDate = (items = []) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return [...items].sort((a, b) => {
+    const aDate = parseDateOnly(a?.travelDate || a?.bookingDate);
+    const bDate = parseDateOnly(b?.travelDate || b?.bookingDate);
+    const aTime = aDate?.getTime() || 0;
+    const bTime = bDate?.getTime() || 0;
+    const aIsPast = aDate ? aDate < today : false;
+    const bIsPast = bDate ? bDate < today : false;
+
+    if (aIsPast !== bIsPast) {
+      return aIsPast ? 1 : -1;
+    }
+
+    return aIsPast ? bTime - aTime : aTime - bTime;
+  });
+};
+
 export default function Profile() {
   const [favorites, setFavorites] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user] = useState(() => JSON.parse(localStorage.getItem("user")));
-  const [token] = useState(() => localStorage.getItem("token"));
   const [reviewsByProduct, setReviewsByProduct] = useState({});
   const [reviewForms, setReviewForms] = useState({});
   const [reviewStatus, setReviewStatus] = useState({});
@@ -163,7 +206,7 @@ export default function Profile() {
       setFavorites(enrichedFavs);
       setBookings(enrichedBookings);
     }).finally(() => setLoading(false));
-  }, []); // vac\u00eda: solo se ejecuta 1 vez
+  }, []); // vacía: solo se ejecuta 1 vez
 
   useEffect(() => {
     if (!user || bookings.length === 0) {
@@ -192,7 +235,7 @@ export default function Profile() {
         getProductReviews(id)
           .then((data) => ({ id, data }))
           .catch((err) => {
-          console.error("Error cargando rese\u00f1as:", err);
+          console.error("Error cargando reseñas:", err);
             return { id, data: [] };
           })
       )
@@ -251,16 +294,6 @@ export default function Profile() {
     }
   };
 
-  // Reservas
-  const handleCreateBooking = async (productId, dateStr, passengers = 1) => {
-    try {
-      const booking = await createBooking({ userId: user.id, productId, dateStr, passengers });
-      setBookings(prev => [...prev, booking]);
-    } catch (err) {
-      console.error("Error creating booking:", err);
-    }
-  };
-
   const handleCancelBooking = async (bookingId) => {
     try {
       await cancelBooking(bookingId);
@@ -282,7 +315,7 @@ export default function Profile() {
     if (!tokenValue || isTokenExpired(tokenValue)) {
       setReviewStatus((prev) => ({
         ...prev,
-        [productId]: { type: "error", message: "Tu sesi\u00f3n expir\u00f3. Inici\u00e1 sesi\u00f3n nuevamente." },
+        [productId]: { type: "error", message: "Tu sesión expiró. Iniciá sesión nuevamente." },
       }));
       navigate("/login");
       return;
@@ -295,7 +328,7 @@ export default function Profile() {
     if (!rating) {
       setReviewStatus((prev) => ({
         ...prev,
-        [productId]: { type: "error", message: "Seleccion\u00e1 una puntuaci\u00f3n." },
+        [productId]: { type: "error", message: "Seleccioná una puntuación." },
       }));
       return;
     }
@@ -314,14 +347,14 @@ export default function Profile() {
       setReviewsByProduct((prev) => ({ ...prev, [productId]: newReview }));
       setReviewStatus((prev) => ({
         ...prev,
-        [productId]: { type: "success", message: "Rese\u00f1a guardada." },
+        [productId]: { type: "success", message: "Reseña guardada." },
       }));
     } catch (err) {
       setReviewStatus((prev) => ({
         ...prev,
         [productId]: {
           type: "error",
-          message: err?.message || "No se pudo guardar la rese\u00f1a.",
+          message: err?.message || "No se pudo guardar la reseña.",
         },
       }));
     }
@@ -330,7 +363,7 @@ export default function Profile() {
   if (!user) return (
     <div className="profile-container">
       <div className="profile-card profile-card--centered">
-        <h3>Debes iniciar sesi\u00f3n para ver tu perfil</h3>
+        <h3>Debes iniciar sesión para ver tu perfil</h3>
         <a href="/login" className="btn-logout profile-logout-link">Ir al login</a>
       </div>
     </div>
@@ -344,6 +377,10 @@ export default function Profile() {
     </div>
   );
 
+  const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Mi Perfil";
+  const avatarLetter = user?.firstName?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || "U";
+  const visibleBookings = sortBookingsByDate(bookings);
+
   return (
     <div className="profile-page-container">
       {/* HEADER NAV */}
@@ -351,8 +388,8 @@ export default function Profile() {
         <button className="ptn-back" onClick={() => navigate(-1)}>
           <FaChevronLeft />
         </button>
-        <span className="ptn-title">Profile</span>
-        <button className="ptn-logout" onClick={handleLogout}>Cerrar sesi\u00f3n</button>
+        <span className="ptn-title">Perfil</span>
+        <button className="ptn-logout" onClick={handleLogout}>Cerrar sesión</button>
       </div>
 
       <div className="profile-wrapper">
@@ -360,11 +397,11 @@ export default function Profile() {
         <div className="profile-user-info">
           <div className="pui-avatar-wrapper">
             <div className="pui-avatar">
-              {user.username?.charAt(0).toUpperCase() || "U"}
+              {avatarLetter}
             </div>
             <button className="pui-edit-btn"><FaPen /></button>
           </div>
-          <h2 className="pui-name">{user.username || "Mi Perfil"}</h2>
+          <h2 className="pui-name">{displayName}</h2>
           <p className="pui-email">{user.email || "sin correo"}</p>
         </div>
 
@@ -391,7 +428,7 @@ export default function Profile() {
           {favorites.length === 0 ? (
             <div className="pcs-empty-state">
               <div className="pcs-empty-icon"><FaRegHeart /></div>
-              <p>No tienes vuelos favoritos a\u00fan.</p>
+              <p>No tienes vuelos favoritos aún.</p>
             </div>
           ) : (
             <div className="card-grid">
@@ -433,16 +470,15 @@ export default function Profile() {
             <span className="pcs-title-icon"><FaPlaneDeparture /></span>
             Mis reservas
           </h3>
-          {bookings.length === 0 ? (
+          {visibleBookings.length === 0 ? (
             <div className="pcs-empty-state">
               <div className="pcs-empty-icon"><FaTicketAlt /></div>
               <p>No tienes reservas registradas.</p>
             </div>
           ) : (
             <div className="card-grid bookings-grid">
-              {bookings.map((b, idx) => {
+              {visibleBookings.map((b, idx) => {
                 const vuelo = b.product || b;
-                const fechaValue = b.travelDate ?? b.dateStr ?? b.bookingDate;
                 const isFinalized = isBookingFinalized(b);
                 const esFuturo = !isFinalized;
                 const productId = resolveProductId(vuelo) || resolveProductId(b);
@@ -453,7 +489,7 @@ export default function Profile() {
                   <div key={`book-${b.id}-${idx}`} className="card flight-card booking-card">
                     <div className="flight-card-header">
                       <span className={`badge ${esFuturo ? "badge-next" : "badge-past"}`}>
-                        {esFuturo ? "Pr\u00f3ximo vuelo" : "Completado"}
+                        {esFuturo ? "Próximo vuelo" : "Completado"}
                       </span>
                       <img
                         src={getVueloImage(vuelo)}
@@ -467,7 +503,15 @@ export default function Profile() {
                     </div>
                     <div className="flight-card-body">
                       <h5 className="flight-title">{vuelo.name}</h5>
-                      <p className="flight-meta-data"><FaCalendarAlt className="flight-meta-icon" /> {formatBookingDate(fechaValue)}</p>
+                      <p className="flight-meta-data">
+                        <FaCalendarAlt className="flight-meta-icon" /> Reserva: {formatBookingDateTime(b.bookingDate)}
+                      </p>
+                      <p className="flight-meta-data">
+                        <FaPlaneDeparture className="flight-meta-icon" /> Uso: {formatUseDateRange(b.travelDate, b.returnDate)}
+                      </p>
+                      <p className="flight-meta-data">
+                        <FaPlane className="flight-meta-icon" /> {vuelo.aerolinea || "Aerolínea a confirmar"}
+                      </p>
                       <div className="flight-footer flight-footer--compact">
                         <span className="flight-price">${vuelo.price}</span>
                         <button className="btn-delete" onClick={() => handleCancelBooking(b.id)} aria-label="Cancelar reserva"><FaTrashAlt /></button>
@@ -484,7 +528,7 @@ export default function Profile() {
                       {isFinalized ? (
                         <div className="booking-review">
                           <div className="booking-review-head">
-                            <span>Tu valoraci\u00f3n</span>
+                            <span>Tu valoración</span>
                             {reviewInfo && (
                               <span className="booking-review-date">
                                 Publicada {formatBookingDate(reviewInfo.createdAt)}
@@ -492,13 +536,13 @@ export default function Profile() {
                             )}
                           </div>
                           {reviewsLoading && (
-                            <span className="booking-review-loading">Cargando rese\u00f1as...</span>
+                            <span className="booking-review-loading">Cargando reseñas...</span>
                           )}
                           {!productId ? (
                             <p className="booking-review-disabled">Este vuelo no admite valoraciones.</p>
                           ) : (
                             <>
-                              <div className="booking-review-stars" role="radiogroup" aria-label="Puntuaci\u00f3n">
+                              <div className="booking-review-stars" role="radiogroup" aria-label="Puntuación">
                                 {[1, 2, 3, 4, 5].map((star) => {
                                   const filled = star <= (reviewForm.rating || 0);
                                   return (
@@ -520,7 +564,7 @@ export default function Profile() {
                                 rows={3}
                                 value={reviewForm.comment || ""}
                                 onChange={(e) => updateReviewForm(productId, { comment: e.target.value })}
-                                placeholder="Cont\u00e1 tu experiencia (opcional)"
+                                placeholder="Contá tu experiencia (opcional)"
                               />
                               <button
                                 type="button"
@@ -531,8 +575,8 @@ export default function Profile() {
                                 {reviewState?.type === "loading"
                                   ? "Guardando..."
                                   : reviewInfo
-                                    ? "Actualizar rese\u00f1a"
-                                    : "Publicar rese\u00f1a"}
+                                    ? "Actualizar reseña"
+                                    : "Publicar reseña"}
                               </button>
                               {reviewState?.message && (
                                 <span className={`booking-review-message ${reviewState.type}`}>
@@ -543,7 +587,7 @@ export default function Profile() {
                           )}
                         </div>
                       ) : (
-                        <p className="booking-review-disabled">Podr\u00e1s valorar cuando finalice tu viaje.</p>
+                        <p className="booking-review-disabled">Podrás valorar cuando finalice tu viaje.</p>
                       )}
                     </div>
                   </div>

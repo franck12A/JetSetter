@@ -3,7 +3,14 @@ const API_URL = "http://localhost:8080/api/bookings";
 async function readErrorBody(res) {
   try {
     const text = await res.text();
-    return String(text || "").trim();
+    const normalized = String(text || "").trim();
+    if (!normalized) return "";
+    try {
+      const parsed = JSON.parse(normalized);
+      return parsed?.message || parsed?.error || normalized;
+    } catch {
+      return normalized;
+    }
   } catch {
     return "";
   }
@@ -65,8 +72,9 @@ function normalizeDateStr(dateStr) {
   return direct;
 }
 
-export async function createBooking({ productId, dateStr, passengers = 1 }) {
+export async function createBooking({ productId, dateStr, returnDateStr = "", passengers = 1 }) {
   const normalizedDateStr = normalizeDateStr(dateStr);
+  const normalizedReturnDateStr = normalizeDateStr(returnDateStr);
   const token = getAuthToken();
   if (!token) throw new Error("No autenticado");
   if (isTokenExpired(token)) throw new Error("Token expirado");
@@ -80,6 +88,7 @@ export async function createBooking({ productId, dateStr, passengers = 1 }) {
     body: JSON.stringify({
       productId,
       dateStr: normalizedDateStr,
+      returnDateStr: normalizedReturnDateStr || null,
       passengers,
     }),
   });

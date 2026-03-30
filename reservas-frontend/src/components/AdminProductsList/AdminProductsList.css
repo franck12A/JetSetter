@@ -1,15 +1,13 @@
-/* Contenedor general */
 .admin-products-list {
   width: 100%;
   margin-top: 1.5rem;
-  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-family: "Inter", "Segoe UI", sans-serif;
   background: #111827;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid #1f2a44;
 }
 
-/* Tabla profesional oscura */
 .admin-table {
   width: 100%;
   border-collapse: separate;
@@ -41,10 +39,6 @@
   font-weight: 500;
 }
 
-.admin-table tbody tr {
-  transition: background 0.2s ease;
-}
-
 .admin-table tbody tr:hover {
   background-color: #0f172a;
 }
@@ -53,7 +47,6 @@
   border-bottom: none;
 }
 
-/* Specific Columns */
 .admin-td-id {
   color: #64748b;
   font-family: monospace;
@@ -75,7 +68,6 @@
   font-size: 0.95rem;
 }
 
-/* Status Pill */
 .status-pill {
   display: inline-block;
   padding: 0.25rem 0.75rem;
@@ -93,63 +85,49 @@
 }
 
 .status-pill.draft {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: rgba(148, 163, 184, 0.18);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.28);
 }
 
-/* Actions */
 .admin-td-actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
+.status-toggle-btn,
 .icon-btn-action {
+  border-radius: 999px;
+  border: 1px solid #2d4265;
   background: transparent;
-  border: none;
-  color: #64748b;
-  font-size: 1.1rem;
+  color: #cbd5e1;
+  font-size: 0.82rem;
   cursor: pointer;
-  transition: color 0.2s ease;
-  padding: 0.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
+  transition: all 0.2s ease;
+  padding: 0.45rem 0.8rem;
 }
 
-.icon-btn-action:hover {
+.status-toggle-btn:hover:not(:disabled),
+.icon-btn-action:hover:not(:disabled) {
   color: #f8fafc;
   background: #1f2a44;
 }
 
-.icon-btn-action.delete:hover {
+.status-toggle-btn:disabled,
+.icon-btn-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.icon-btn-action.delete:hover:not(:disabled) {
   color: #ef4444;
   background: rgba(239, 68, 68, 0.1);
 }
 
-/* Paginación (si se usa la antigua) - adaptada a dark */
-.admin-products-pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  background: #0f172a;
-  border-top: 1px solid #1f2a44;
-}
-
-.admin-products-pagination-left {
-  color: #64748b;
-  font-size: 0.85rem;
-}
-
-.admin-products-pagination-right {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.admin-page-btn, .admin-products-pagination-right button {
+.admin-page-btn,
+.admin-products-pagination-right button {
   background: #111827;
   border: 1px solid #1f2a44;
   color: #cbd5e1;
@@ -161,12 +139,14 @@
   transition: all 0.2s ease;
 }
 
-.admin-page-btn:hover:not(:disabled), .admin-products-pagination-right button:hover:not(:disabled) {
+.admin-page-btn:hover:not(:disabled),
+.admin-products-pagination-right button:hover:not(:disabled) {
   background: #1f2a44;
   color: #f8fafc;
 }
 
-.admin-page-btn:disabled, .admin-products-pagination-right button:disabled {
+.admin-page-btn:disabled,
+.admin-products-pagination-right button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

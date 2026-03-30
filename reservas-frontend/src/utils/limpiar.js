@@ -2,7 +2,7 @@
 export function limpiar(str) {
   return str
     ?.normalize("NFD")               // separar acentos
-    .replace(/[\u0300-\u036f]/g, "") // quitar acentos
+    .replace(/[̀-ͯ]/g, "") // quitar acentos
     .trim()
     .toLowerCase() || "";
 }

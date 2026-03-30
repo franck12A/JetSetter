@@ -1,0 +1,144 @@
+.reserva-confirm-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at top, rgba(34, 197, 94, 0.12), transparent 32%),
+    linear-gradient(180deg, #07101d 0%, #0b1220 100%);
+}
+
+.reserva-confirm-card {
+  width: min(720px, 100%);
+  padding: 2rem;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.12), transparent 42%),
+    rgba(11, 18, 32, 0.94);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  box-shadow: 0 28px 48px rgba(2, 8, 23, 0.5);
+  color: #e5eefb;
+  text-align: center;
+}
+
+.reserva-confirm-icon {
+  width: 74px;
+  height: 74px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.3rem;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.reserva-confirm-card h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.6rem);
+}
+
+.reserva-confirm-subtitle {
+  margin: 0.9rem auto 1.4rem;
+  max-width: 560px;
+  color: #afc0d8;
+  line-height: 1.65;
+}
+
+.reserva-confirm-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 1.25rem;
+}
+
+.reserva-confirm-item {
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(8, 14, 26, 0.86);
+  border: 1px solid rgba(56, 189, 248, 0.14);
+  text-align: left;
+}
+
+.reserva-confirm-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.reserva-confirm-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.05rem;
+  border-radius: 20px;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  text-align: left;
+}
+
+.reserva-confirm-note p {
+  margin: 0;
+  color: #dbeafe;
+  line-height: 1.55;
+}
+
+.reserva-confirm-actions {
+  margin-top: 1.35rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.reserva-confirm-primary,
+.reserva-confirm-secondary {
+  min-width: 190px;
+  padding: 0.9rem 1.15rem;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  text-decoration: none;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.reserva-confirm-primary {
+  border: none;
+  color: #f8fafc;
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+}
+
+.reserva-confirm-secondary {
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  color: #e5eefb;
+  background: rgba(11, 18, 32, 0.86);
+}
+
+@media (max-width: 640px) {
+  .reserva-confirm-card {
+    padding: 1.5rem 1.1rem;
+  }
+
+  .reserva-confirm-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reserva-confirm-actions {
+    flex-direction: column;
+  }
+
+  .reserva-confirm-primary,
+  .reserva-confirm-secondary {
+    width: 100%;
+  }
+}

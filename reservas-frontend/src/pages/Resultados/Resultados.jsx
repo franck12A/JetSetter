@@ -16,7 +16,7 @@ const normalizeText = (value = "") =>
   String(value || "")
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .trim();
 
 const toISODate = (value) => {
@@ -28,7 +28,7 @@ const toISODate = (value) => {
 
 const splitRoute = (name = "") => {
   const clean = String(name || "").replace(/^Vuelo\s+/i, "").trim();
-  const parts = clean.split(/->|\u2192/).map((p) => p.trim()).filter(Boolean);
+  const parts = clean.split(/->|→/).map((p) => p.trim()).filter(Boolean);
   if (parts.length >= 2) return { origen: parts[0], destino: parts[1] };
   return { origen: clean || "N/A", destino: "N/A" };
 };
@@ -43,8 +43,8 @@ const CATEGORY_PRIORITY = [
   "Internacional",
   "Nacional",
   "Playa",
-  "Monta\u00f1a",
-  "Monta\u00f1a",
+  "Montaña",
+  "Montaña",
   "Ciudad",
   "Aventura",
   "Lujo",
@@ -54,7 +54,7 @@ const CATEGORY_PRIORITY = [
 
 const getDuration = (vuelo) => {
   if (vuelo.duration) return vuelo.duration;
-  const featureDuration = (vuelo.caracteristicas || []).find((f) => /duraci[o\u00f3]n/i.test(String(f)));
+  const featureDuration = (vuelo.caracteristicas || []).find((f) => /duraci[oó]n/i.test(String(f)));
   return featureDuration || "N/D";
 };
 
@@ -510,7 +510,7 @@ export default function Resultados() {
       <div className="main-content resultados-content">
         <div className="resultados-header">
           <div>
-            <h1 className="resultados-title">Resultados de b\u00fasqueda</h1>
+            <h1 className="resultados-title">Resultados de búsqueda</h1>
             <p className="resultados-subtitle">
               {showNearby ? (
                 <>
@@ -612,7 +612,7 @@ export default function Resultados() {
             {!loading && showNearby && (
               <div className="resultados-alert">
                 <strong>No encontramos vuelos exactos para tus fechas.</strong>
-                <span>Te mostramos opciones cercanas dentro de los pr\u00f3ximos {NEARBY_DAYS} d\u00edas.</span>
+                <span>Te mostramos opciones cercanas dentro de los próximos {NEARBY_DAYS} días.</span>
               </div>
             )}
 

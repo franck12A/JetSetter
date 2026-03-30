@@ -2,12 +2,11 @@ package com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Category.Controlle
 
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Category.Model.Category;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Category.Service.CategoryService;
-import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Category.Service.FileService;
+import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -26,9 +25,14 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.getAllCategories());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Category> getCategoryById(@PathVariable Long id) {
+        return ResponseEntity.ok(categoryService.getById(id));
+    }
+
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Category> createCategory(@RequestBody Category category) {
+    public ResponseEntity<Category> createCategory(@Valid @RequestBody Category category) {
         return ResponseEntity.ok(categoryService.saveCategory(category));
     }
 

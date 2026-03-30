@@ -1,9 +1,7 @@
-// src/services/categoryService.js
 import axios from "axios";
 
 const API_URL = "http://localhost:8080";
 
-// ---------------- TOKEN ----------------
 const obtenerToken = () => {
   try {
     const directToken = localStorage.getItem("token");
@@ -20,67 +18,57 @@ const obtenerToken = () => {
   }
 };
 
-// ---------------- CATEGORY SERVICE ----------------
-const categoryService = {
+const getHeaders = () => {
+  const token = obtenerToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
-  // Obtener todas las categorías
+const parseApiError = (error, fallback) => {
+  const payload = error?.response?.data;
+  if (typeof payload === "string" && payload.trim()) return payload;
+  if (payload?.message) return payload.message;
+  if (payload?.error) return payload.error;
+  return fallback;
+};
+
+const categoryService = {
   getAll: async () => {
-    const token = obtenerToken();
     try {
-      const { data } = await axios.get(`${API_URL}/api/categories`, {
-        headers: { Authorization: token ? `Bearer ${token}` : undefined }
-      });
-      return data;
+      const { data } = await axios.get(`${API_URL}/api/categories`, { headers: getHeaders() });
+      return Array.isArray(data) ? data : [];
     } catch (error) {
-      console.error("Error al obtener categorías:", error);
+      console.error("Error al obtener categorias:", error);
       return [];
     }
   },
 
-  // Obtener categoría por ID
   getById: async (id) => {
-    const token = obtenerToken();
     try {
-      const { data } = await axios.get(`${API_URL}/api/categories/${id}`, {
-        headers: { Authorization: token ? `Bearer ${token}` : undefined }
-      });
+      const { data } = await axios.get(`${API_URL}/api/categories/${id}`, { headers: getHeaders() });
       return data;
     } catch (error) {
-      console.error("Error al obtener categoría por ID:", error);
+      console.error("Error al obtener categoria por ID:", error);
       return null;
     }
   },
 
-  // Crear categoría
   createCategory: async (category) => {
-    const token = obtenerToken();
     try {
-      const { data } = await axios.post(`${API_URL}/api/categories`, category, {
-        headers: { Authorization: token ? `Bearer ${token}` : undefined }
-      });
+      const { data } = await axios.post(`${API_URL}/api/categories`, category, { headers: getHeaders() });
       return data;
     } catch (error) {
-      console.error("Error al crear categoría:", error);
-      return null;
+      throw new Error(parseApiError(error, "No se pudo crear la categoria."));
     }
   },
 
-  // Eliminar categoría
   deleteCategory: async (id) => {
-    const token = obtenerToken();
     try {
-      const { data } = await axios.delete(`/api/categories/${id}`, {
-        headers: { Authorization: token ? `Bearer ${token}` : undefined }
-      });
+      const { data } = await axios.delete(`${API_URL}/api/categories/${id}`, { headers: getHeaders() });
       return data;
     } catch (error) {
-      if (error.response && error.response.status === 404) {
-        throw new Error("Categoría no encontrada o ya fue eliminada");
-      }
-      throw error;
+      throw new Error(parseApiError(error, "No se pudo eliminar la categoria."));
     }
   },
-
 };
 
 export default categoryService;

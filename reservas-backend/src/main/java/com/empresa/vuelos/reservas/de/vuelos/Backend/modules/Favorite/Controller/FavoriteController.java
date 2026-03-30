@@ -9,6 +9,7 @@ import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Favorite.Model.Favo
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Favorite.Service.FavoriteService;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.Service.ProductService;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Product;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -35,7 +36,7 @@ public class FavoriteController {
     // Agregar favorito
     @PostMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<String> addFavorite(@RequestBody FavoriteRequest request,
+    public ResponseEntity<String> addFavorite(@Valid @RequestBody FavoriteRequest request,
                                               Authentication authentication) {
         String email = authentication.getName();
         System.out.println("🔑 Usuario logueado: " + email);
@@ -64,7 +65,7 @@ public class FavoriteController {
     // Eliminar favorito
     @DeleteMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<String> removeFavorite(@RequestBody FavoriteRequest request,
+    public ResponseEntity<String> removeFavorite(@Valid @RequestBody FavoriteRequest request,
                                                  Authentication authentication) {
         String email = authentication.getName();
         System.out.println("❌ Usuario eliminando favorito: " + email);

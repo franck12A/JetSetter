@@ -3,11 +3,13 @@ import React from "react";
 export default function InputField({
   label,
   name,
-  type,
+  type = "text",
   value,
   onChange,
   error,
   placeholder,
+  autoComplete,
+  inputMode,
 }) {
   return (
     <div className="auth-input-wrapper">
@@ -22,10 +24,14 @@ export default function InputField({
         value={value}
         placeholder={placeholder}
         onChange={onChange}
+        autoComplete={autoComplete}
+        inputMode={inputMode}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${name}-error` : undefined}
         className={`auth-input ${error ? "is-error" : ""}`}
       />
 
-      {error && <p className="auth-inline-error">{error}</p>}
+      {error && <p id={`${name}-error`} className="auth-inline-error">{error}</p>}
     </div>
   );
 }

@@ -14,15 +14,24 @@ function getHeaders(contextToken) {
   };
 }
 
+async function parseErrorPayload(res, fallbackMessage) {
+  const text = await res.text();
+  if (!text) return fallbackMessage;
+  try {
+    const data = JSON.parse(text);
+    return data?.error || data?.message || fallbackMessage;
+  } catch {
+    return text || fallbackMessage;
+  }
+}
+
 async function parseResponse(res, fallbackMessage) {
   if (res.status === 401 || res.status === 403) {
-    const message = await res.text();
-    throw new Error(message || "UNAUTHORIZED");
+    throw new Error("UNAUTHORIZED");
   }
 
   if (!res.ok) {
-    const message = await res.text();
-    throw new Error(message || fallbackMessage);
+    throw new Error(await parseErrorPayload(res, fallbackMessage));
   }
 
   if (res.status === 204) return null;
@@ -67,12 +76,14 @@ export async function listUsers(contextToken) {
 }
 
 export async function updateUserRole({ userId, role, token }) {
-  const res = await fetch(`${API_URL}/${userId}/role?role=${encodeURIComponent(role)}`, {
+  const res = await fetch(`${API_URL}/${userId}/role`, {
     method: "PUT",
     headers: getHeaders(token),
+    body: JSON.stringify({ role }),
   });
 
-  await parseResponse(res, "No se pudo actualizar el rol");
+  const payload = await parseResponse(res, "No se pudo actualizar el rol");
+  return payload ? normalizeUser(payload) : null;
 }
 
 export async function deleteUser({ userId, token }) {
@@ -81,5 +92,5 @@ export async function deleteUser({ userId, token }) {
     headers: getHeaders(token),
   });
 
-  await parseResponse(res, "No se pudo eliminar el usuario");
+  return parseResponse(res, "No se pudo eliminar el usuario");
 }

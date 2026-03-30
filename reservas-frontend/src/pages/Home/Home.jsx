@@ -22,7 +22,7 @@ import { getVueloImage } from "../../utils/images";
 
 const splitRoute = (name = "") => {
   const clean = name.replace(/^Vuelo\s+/i, "");
-  const parts = clean.split(/->|\u2192/).map((p) => p.trim()).filter(Boolean);
+  const parts = clean.split(/->|→/).map((p) => p.trim()).filter(Boolean);
   if (parts.length >= 2) {
     return { origen: parts[0], destino: parts[1] };
   }
@@ -83,7 +83,7 @@ export default function Home() {
         ...splitRoute(p.name),
         fechaSalida: p.departureDate,
         fechaLlegada: null,
-        categorias: [p.category?.name || "Otros"],
+        categorias: [p.category?.name || "Sin categoria"],
         caracteristicas: p.features?.map((f) => f.title || f.name) || [],
         imagenPrincipal: p.image || p.imagesBase64?.[0] || "/assets/default.jpg",
         precioTotal: p.price,
@@ -124,7 +124,7 @@ export default function Home() {
           });
         }
       } catch (err) {
-        console.error("Error al obtener res\u00famenes de valoraciones:", err);
+        console.error("Error al obtener resúmenes de valoraciones:", err);
       }
 
       setVuelos(dedup);
@@ -135,11 +135,11 @@ export default function Home() {
 
 
 
-  // Traer categor\u00edas desde la API
+  // Traer categorías desde la API
   const fetchCategorias = async () => {
     try {
       const res = await fetch("http://localhost:8080/api/categories");
-      if (!res.ok) throw new Error("Error al cargar categor\u00edas");
+      if (!res.ok) throw new Error("Error al cargar categorías");
       const data = await res.json();
       // el backend puede enviar { id, name, icon } u otros campos
       const mapped = (data || []).map((c) => {
@@ -150,7 +150,7 @@ export default function Home() {
       });
       setCategorias(mapped);
     } catch (err) {
-      console.error("Error cargando categor\u00edas:", err);
+      console.error("Error cargando categorías:", err);
     }
   };
 
@@ -167,7 +167,7 @@ export default function Home() {
       window.removeEventListener("vuelosActualizados", handleVuelosActualizados);
   }, []);
 
-  // Paginaci\u00f3n
+  // Paginación
   const resultsRef = useRef(null);
 
   const vuelosParaMostrar = useMemo(
@@ -250,8 +250,8 @@ export default function Home() {
               const isFavorite = localProductId ? user?.favorites?.includes(localProductId) : false;
 
               const toggleFavorite = async () => {
-                if (!user || !token) return alert("Debes iniciar sesi\u00f3n para agregar favoritos");
-                if (!localProductId) return alert("Este vuelo de Amadeus no est\u00e1 guardado en la BD.");
+                if (!user || !token) return alert("Debes iniciar sesión para agregar favoritos");
+                if (!localProductId) return alert("Este vuelo de Amadeus no está guardado en la BD.");
                 try {
                   if (isFavorite) {
                     await removeFavApi(localProductId);
@@ -278,13 +278,13 @@ export default function Home() {
                   );
                 } catch (err) {
                   console.error("Error al actualizar favorito:", err);
-                  alert("Tu sesi\u00f3n expir\u00f3 o no es v\u00e1lida. Inici\u00e1 sesi\u00f3n nuevamente.");
+                  alert("Tu sesión expiró o no es válida. Iniciá sesión nuevamente.");
                 }
               };
 
               const reservarVuelo = async () => {
-                if (!user || !token) return alert("Debes iniciar sesi\u00f3n para reservar un vuelo");
-                if (!localProductId) return alert("Este vuelo de Amadeus no est\u00e1 guardado en la BD.");
+                if (!user || !token) return alert("Debes iniciar sesión para reservar un vuelo");
+                if (!localProductId) return alert("Este vuelo de Amadeus no está guardado en la BD.");
                 try {
                   await createBooking({
                     userId: user.id,
@@ -292,7 +292,7 @@ export default function Home() {
                     dateStr: new Date().toISOString(),
                     passengers: 1,
                   });
-                  alert("Reserva realizada correctamente \u2708\uFE0F");
+                  alert("Reserva realizada correctamente ✈️");
                 } catch (err) {
                   console.error("Error al reservar:", err);
                 }
@@ -333,7 +333,7 @@ export default function Home() {
 
                     <div className="vnc-details-row">
                       <span className="vnc-duration"><FaClock /> {vuelo.caracteristicas?.[0] || "N/A"}</span>
-                      <span className="vnc-class"><FaChair /> Econ\u00f3mica</span>
+                      <span className="vnc-class"><FaChair /> Económica</span>
                     </div>
 
                     <div className="vnc-actions">
@@ -373,4 +373,5 @@ export default function Home() {
     </div>
   );
 }
+
 

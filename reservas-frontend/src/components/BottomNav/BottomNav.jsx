@@ -6,7 +6,7 @@ import './BottomNav.css';
 export default function BottomNav() {
     const location = useLocation();
     const pathname = location.pathname;
-    const isAdminRoute = pathname.startsWith('/admin') || pathname.startsWith('/administracion') || pathname.startsWith('/administraci\u00f3n');
+    const isAdminRoute = pathname.startsWith('/admin') || pathname.startsWith('/administracion') || pathname.startsWith('/administración');
     const adminRoot = pathname.startsWith('/admin') ? '/admin' : '/administracion';
 
     if (isAdminRoute) {

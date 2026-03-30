@@ -1,103 +1,105 @@
-// src/pages/AdminPanel/AdminUsersPage.jsx
-import React, { useEffect, useState, useContext, useCallback, useMemo } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaChevronLeft, FaRegBell, FaSearch, FaUserPlus, FaTimes } from "react-icons/fa";
+import { FaChevronLeft, FaRegBell, FaSearch, FaTimes } from "react-icons/fa";
 import AdminUsersList from "../AdminUsersList/AdminUsersList";
 import { AuthContext } from "../../context/AuthContext";
-import { listUsers, updateUserRole, deleteUser } from "../../services/adminUsersService";
+import { deleteUser, listUsers, updateUserRole } from "../../services/adminUsersService";
 import "./AdminUsersPage.css";
 
 export default function AdminUsersPage() {
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [feedback, setFeedback] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("Todos");
+  const [savingRoleId, setSavingRoleId] = useState(null);
+  const [deletingUserId, setDeletingUserId] = useState(null);
 
-  const { token, logout } = useContext(AuthContext);
+  const { token, logout, user } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const currentUser = JSON.parse(localStorage.getItem("user")) || { username: "JS" };
-  const initials = currentUser.username ? currentUser.username.slice(0, 2).toUpperCase() : "JS";
+  const currentUser = user || JSON.parse(localStorage.getItem("user") || "{}");
+  const initials = currentUser?.firstName
+    ? `${currentUser.firstName[0] || ""}${currentUser.lastName?.[0] || ""}`.toUpperCase()
+    : (currentUser?.username || currentUser?.email || "JS").slice(0, 2).toUpperCase();
 
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-
       const data = await listUsers(token);
       setUsuarios(data);
     } catch (err) {
       console.error("Error al cargar usuarios:", err);
-
       if (err.message === "UNAUTHORIZED") {
         logout();
-        setError("No autorizado. Volve a iniciar sesion.");
+        setError("No autorizado. Vuelve a iniciar sesion.");
       } else {
         setError(err.message || "Error al cargar usuarios");
       }
     } finally {
       setLoading(false);
     }
-  }, [token, logout]);
+  }, [logout, token]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
-  const handleEditRole = async (user) => {
-    const newRole = user.role === "ROLE_ADMIN" ? "ROLE_USER" : "ROLE_ADMIN";
-
+  const handleSaveRole = async (targetUser, nextRole) => {
+    setFeedback(null);
+    setSavingRoleId(targetUser.id);
     try {
-      await updateUserRole({ userId: user.id, role: newRole, token });
-      await fetchUsers();
+      const updatedUser = await updateUserRole({ userId: targetUser.id, role: nextRole, token });
+      setUsuarios((prev) => prev.map((userItem) => (userItem.id === targetUser.id ? updatedUser : userItem)));
+      setFeedback({ type: "success", message: `Rol actualizado para ${updatedUser.fullName}.` });
     } catch (err) {
-      alert(err.message);
+      setFeedback({ type: "error", message: err.message || "No se pudo actualizar el rol." });
+    } finally {
+      setSavingRoleId(null);
     }
   };
 
   const handleDeleteUser = async (userId) => {
     if (!window.confirm("Seguro que quieres eliminar este usuario?")) return;
-
+    setFeedback(null);
+    setDeletingUserId(userId);
     try {
       await deleteUser({ userId, token });
-      setUsuarios((prev) => prev.filter((u) => u.id !== userId));
+      setUsuarios((prev) => prev.filter((userItem) => userItem.id !== userId));
+      setFeedback({ type: "success", message: "Usuario eliminado correctamente." });
     } catch (err) {
-      alert(err.message);
+      setFeedback({ type: "error", message: err.message || "No se pudo eliminar el usuario." });
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
-  const filteredUsers = useMemo(
-    () =>
-      usuarios.filter((u) => {
-        const fullName = `${u.firstName || ""} ${u.lastName || ""} ${u.username || ""}`.toLowerCase();
-        const email = (u.email || "").toLowerCase();
-        const searchLow = searchTerm.trim().toLowerCase();
-        const matchesSearch = fullName.includes(searchLow) || email.includes(searchLow);
+  const filteredUsers = useMemo(() => usuarios.filter((userItem) => {
+    const searchLow = searchTerm.trim().toLowerCase();
+    const fullName = `${userItem.firstName || ""} ${userItem.lastName || ""} ${userItem.username || ""}`.toLowerCase();
+    const email = (userItem.email || "").toLowerCase();
+    const matchesSearch = !searchLow || fullName.includes(searchLow) || email.includes(searchLow);
 
-        let matchesRole = true;
-        if (filterRole === "Admin") matchesRole = u.role === "ROLE_ADMIN";
-        if (filterRole === "Editor") matchesRole = u.role === "ROLE_EDITOR";
-        if (filterRole === "User") matchesRole = u.role === "ROLE_USER";
+    let matchesRole = true;
+    if (filterRole === "Administrador") matchesRole = userItem.role === "ROLE_ADMIN";
+    if (filterRole === "Usuario") matchesRole = userItem.role === "ROLE_USER";
 
-        return matchesSearch && matchesRole;
-      }),
-    [usuarios, searchTerm, filterRole]
-  );
+    return matchesSearch && matchesRole;
+  }), [filterRole, searchTerm, usuarios]);
 
-  const summary = useMemo(() => {
-    const admin = usuarios.filter((u) => u.role === "ROLE_ADMIN").length;
-    const editor = usuarios.filter((u) => u.role === "ROLE_EDITOR").length;
-    const user = usuarios.filter((u) => u.role === "ROLE_USER").length;
-    return { total: usuarios.length, admin, editor, user };
-  }, [usuarios]);
+  const summary = useMemo(() => ({
+    total: usuarios.length,
+    admin: usuarios.filter((userItem) => userItem.role === "ROLE_ADMIN").length,
+    user: usuarios.filter((userItem) => userItem.role === "ROLE_USER").length,
+  }), [usuarios]);
 
   if (loading) return <p className="loading">Cargando usuarios...</p>;
   if (error) return <p className="error">{error}</p>;
 
   return (
     <div className="admin-users-container">
-      {/* HEADER TOP */}
       <div className="au-header-top">
         <div className="au-header-left">
           <Link to="/" className="au-home-logo-link" aria-label="Ir al inicio">
@@ -114,7 +116,6 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      {/* SEARCH Y FILTROS */}
       <div className="admin-filters-top">
         <div className="au-search-bar">
           <FaSearch className="au-search-icon" />
@@ -122,7 +123,7 @@ export default function AdminUsersPage() {
             type="text"
             placeholder="Buscar por nombre o email..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(event) => setSearchTerm(event.target.value)}
           />
           {searchTerm && (
             <button className="au-clear-search" onClick={() => setSearchTerm("")} type="button" aria-label="Limpiar busqueda">
@@ -132,7 +133,7 @@ export default function AdminUsersPage() {
         </div>
 
         <div className="au-filter-pills">
-          {["Todos", "Admin", "Editor", "User"].map((role) => (
+          {["Todos", "Administrador", "Usuario"].map((role) => (
             <button
               key={role}
               className={`au-pill ${filterRole === role ? "active" : ""}`}
@@ -144,37 +145,39 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
+      {feedback && (
+        <div className={`au-feedback ${feedback.type === "success" ? "is-success" : "is-error"}`} role="status">
+          {feedback.message}
+        </div>
+      )}
+
       <div className="au-summary-grid">
         <div className="au-summary-card">
           <span>Total</span>
           <strong>{summary.total}</strong>
         </div>
         <div className="au-summary-card">
-          <span>Admins</span>
+          <span>Administradores</span>
           <strong>{summary.admin}</strong>
         </div>
         <div className="au-summary-card">
-          <span>Editors</span>
-          <strong>{summary.editor}</strong>
-        </div>
-        <div className="au-summary-card">
-          <span>Users</span>
+          <span>Usuarios</span>
           <strong>{summary.user}</strong>
         </div>
       </div>
 
       <div className="au-results-head">
-        <p>
-          Mostrando <strong>{filteredUsers.length}</strong> de <strong>{usuarios.length}</strong> usuarios
-        </p>
+        <p>Mostrando <strong>{filteredUsers.length}</strong> de <strong>{usuarios.length}</strong> usuarios</p>
       </div>
 
-      <AdminUsersList usuarios={filteredUsers} onEditRole={handleEditRole} onDelete={handleDeleteUser} />
-
-      {/* FLOATING ACTION BUTTON PARA ANADIR USUARIO */}
-      <button className="au-fab-add" onClick={() => alert("Proximamente: Anadir nuevo usuario")}>
-        <FaUserPlus />
-      </button>
+      <AdminUsersList
+        usuarios={filteredUsers}
+        onSaveRole={handleSaveRole}
+        onDelete={handleDeleteUser}
+        savingRoleId={savingRoleId}
+        deletingUserId={deletingUserId}
+        currentUserId={currentUser?.id}
+      />
     </div>
   );
 }

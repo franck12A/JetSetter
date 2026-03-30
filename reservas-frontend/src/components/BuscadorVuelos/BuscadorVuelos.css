@@ -1,4 +1,4 @@
-﻿.hero-section {
+.hero-section {
   padding: 0;
   max-width: 100%;
   margin: 0 auto 2rem;
@@ -372,29 +372,31 @@
 
 .search-btn {
   width: 100%;
-  background: linear-gradient(135deg, #0ea5b7, #22d3ee);
-  color: #04121e;
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  color: #ffffff;
   border: none;
   border-radius: 12px;
-  padding: 0.85rem;
-  font-size: 0.95rem;
-  font-weight: 800;
+  padding: 1rem 1.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.2s, filter 0.2s;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  box-shadow: 0 12px 26px rgba(14, 165, 183, 0.3);
+  transition: all 0.25s ease;
+  letter-spacing: 0.03em;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
 }
 
 .search-btn:hover {
-  filter: brightness(1.05);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.45);
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
 }
 
 .search-btn:active {
-  transform: scale(0.99);
+  transform: translateY(1px);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
 }
 
 .btn-icon {

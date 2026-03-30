@@ -108,7 +108,7 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20) => {
         aerolinea: airlineName,
         numeroVuelo: flightNumber,
         precioTotal: vuelo.precioTotal || vuelo.price || 0,
-        categorias: vuelo.categorias || (vuelo.category ? [vuelo.category.name] : ["Otros"]),
+        categorias: vuelo.categorias || (vuelo.category ? [vuelo.category.name] : ["Sin categoria"]),
         caracteristicas,
         imagenPrincipal: vuelo.imagenPrincipal || vuelo.image || "/assets/default.jpg",
         imagenesPais: vuelo.imagenesPais || vuelo.imagesBase64 || ["/assets/default.jpg"],
@@ -185,7 +185,7 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20) => {
        aerolinea: airlineName,
        numeroVuelo: flightNumber,
        precioTotal: data.precioTotal || data.price || 0,
-       categorias: data.categorias || (data.category ? [data.category.name] : ["Otros"]),
+       categorias: data.categorias || (data.category ? [data.category.name] : ["Sin categoria"]),
        caracteristicas,
        imagenPrincipal: data.imagenPrincipal || data.image || "/assets/default.jpg",
        imagenesPais: data.imagenesPais || data.imagesBase64 || ["/assets/default.jpg"],
@@ -232,6 +232,11 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20) => {
     return data;
   },
 
+  updateProductStatus: async (id, status) => {
+    const { data } = await axios.patch(`${API_URL}/api/products/${id}/status`, { status }, { headers: getHeaders() });
+    return data;
+  },
+
   deleteProduct: async (id) => {
     const { data } = await axios.delete(`${API_URL}/api/products/${id}`, { headers: getHeaders() });
     return data;
@@ -270,5 +275,6 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20) => {
 };
 
 export default productService;
+
 
 

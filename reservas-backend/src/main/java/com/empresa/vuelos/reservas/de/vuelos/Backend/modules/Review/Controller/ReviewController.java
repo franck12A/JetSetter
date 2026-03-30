@@ -7,6 +7,7 @@ import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Review.Service.Revi
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Review.dto.ReviewRequest;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Review.dto.ReviewResponse;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Review.dto.ReviewSummaryResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -40,7 +41,7 @@ public class ReviewController {
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ReviewResponse> createReview(@RequestBody ReviewRequest request,
+    public ResponseEntity<ReviewResponse> createReview(@Valid @RequestBody ReviewRequest request,
                                                        Authentication authentication) throws Exception {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
