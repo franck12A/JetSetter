@@ -14,6 +14,8 @@ import Register from "./pages/Register/Register.jsx";
 import Login from "./pages/Login/Login";
 import Profile from "./pages/Profile/Profile";
 import AdminUsersPage from "./pages/AdminPanel/AdminUsersPage";
+import Reserva from "./pages/Reserva/Reserva.jsx";
+import ReservaConfirmacion from "./pages/ReservaConfirmacion/ReservaConfirmacion.jsx";
 import FloatingWhatsApp from "./components/FloatingWhatsApp/FloatingWhatsApp";
 
 import "./app.css";
@@ -34,6 +36,8 @@ function App() {
         <Route path="/resultados" element={<Resultados />} />
         <Route path="/vuelo/:id" element={<DetalleVuelo />} />
         <Route path="/galeria/:id" element={<GaleriaPage />} />
+        <Route path="/reserva/:id" element={<Reserva />} />
+        <Route path="/reserva/confirmacion/:id" element={<ReservaConfirmacion />} />
 
         {/* 🔒 Protegidas (requieren login) */}
         <Route
