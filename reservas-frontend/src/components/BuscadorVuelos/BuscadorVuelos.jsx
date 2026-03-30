@@ -8,7 +8,7 @@ import "./BuscadorVuelos.css";
 
 const splitRoute = (name = "") => {
   const clean = String(name || "").replace(/^Vuelo\s+/i, "").trim();
-  const parts = clean.split(/->|\u2192/).map((p) => p.trim()).filter(Boolean);
+  const parts = clean.split(/->|→/).map((p) => p.trim()).filter(Boolean);
   if (parts.length >= 2) {
     return { origen: parts[0], destino: parts[1] };
   }
@@ -19,7 +19,7 @@ const normalizeText = (value = "") =>
   String(value || "")
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .trim();
 
 const asDateISO = (value) => {

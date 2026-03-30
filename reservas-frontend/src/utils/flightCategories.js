@@ -2,7 +2,7 @@ const normalizeText = (value = "") =>
   String(value || "")
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .trim();
 
 const toTitle = (value = "") => {
@@ -45,7 +45,7 @@ const CATEGORY_KEYWORDS = {
     "recife",
     "beach",
   ],
-  Montana: [
+  Montaña: [
     "bariloche",
     "andes",
     "alpes",

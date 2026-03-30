@@ -14,11 +14,13 @@ import java.util.Optional;
 public interface ProductRepository extends JpaRepository<Product, Long> {
     Optional<Product> findByName(String name);
     Optional<Product> findByExternalId(String externalId);
+    Optional<Product> findByNumeroVueloIgnoreCaseAndDepartureDate(String numeroVuelo, LocalDateTime departureDate);
+    List<Product> findByFeatures_Id(Long featureId);
     Page<Product> findByExternalIdStartingWith(String prefix, Pageable pageable);
     List<Product> findByExternalIdStartingWithOrderByCreatedAtDesc(String prefix);
     long countByExternalIdStartingWith(String prefix);
+    long countByCategoryId(Long categoryId);
+    boolean existsByCategoryId(Long categoryId);
     void deleteByExternalIdStartingWithAndCreatedAtBefore(String prefix, LocalDateTime cutoff);
     void deleteByIdIn(List<Long> ids);
-
-    // JpaRepository ya te da métodos como save(), findAll(), findById(), deleteById()
 }

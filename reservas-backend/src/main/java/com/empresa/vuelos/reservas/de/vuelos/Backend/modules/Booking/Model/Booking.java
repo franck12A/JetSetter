@@ -2,6 +2,7 @@ package com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Model;
 
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Model.User;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Product;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
@@ -20,14 +21,17 @@ public class Booking {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"password", "favorites"})
     private User user;
 
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
+    @JsonIgnoreProperties({"favoritedBy"})
     private Product product;
 
     private LocalDate travelDate;
 
+    private LocalDate returnDate;
 
     private LocalDateTime bookingDate = LocalDateTime.now();
     private int passengers;
@@ -70,5 +74,13 @@ public class Booking {
 
     public void setTravelDate(LocalDate travelDate) {
         this.travelDate = travelDate;
+    }
+
+    public LocalDate getReturnDate() {
+        return returnDate;
+    }
+
+    public void setReturnDate(LocalDate returnDate) {
+        this.returnDate = returnDate;
     }
 }

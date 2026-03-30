@@ -2,7 +2,10 @@ package com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.Service;
 
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.dto.FeatureDTO;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Feature;
+import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Product;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.repository.FeatureRepository;
+import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.repository.ProductRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,9 +14,11 @@ import java.util.List;
 public class FeatureService {
 
     private final FeatureRepository repo;
+    private final ProductRepository productRepository;
 
-    public FeatureService(FeatureRepository repo) {
+    public FeatureService(FeatureRepository repo, ProductRepository productRepository) {
         this.repo = repo;
+        this.productRepository = productRepository;
     }
 
     public List<Feature> getAll() {
@@ -29,16 +34,28 @@ public class FeatureService {
 
     public Feature update(Long id, FeatureDTO dto) {
         Feature f = repo.findById(id).orElseThrow(() ->
-                new RuntimeException("Feature no encontrada con id " + id)
+                new IllegalArgumentException("Caracteristica no encontrada con id " + id)
         );
         f.setName(dto.getName());
         f.setIcon(dto.getIcon());
         return repo.save(f);
     }
 
-
+    @Transactional
     public void delete(Long id) {
-        repo.deleteById(id);
+        Feature feature = repo.findById(id).orElseThrow(() ->
+                new IllegalArgumentException("Caracteristica no encontrada con id " + id)
+        );
+
+        List<Product> products = productRepository.findByFeatures_Id(id);
+        for (Product product : products) {
+            product.getFeatures().removeIf(item -> item.getId().equals(id));
+        }
+        if (!products.isEmpty()) {
+            productRepository.saveAll(products);
+        }
+
+        repo.delete(feature);
     }
 
     // ---------------------------
@@ -47,7 +64,7 @@ public class FeatureService {
 
     public Feature getById(Long id) {
         return repo.findById(id).orElseThrow(() ->
-                new RuntimeException("Feature no encontrada con id " + id)
+                new IllegalArgumentException("Caracteristica no encontrada con id " + id)
         );
     }
 

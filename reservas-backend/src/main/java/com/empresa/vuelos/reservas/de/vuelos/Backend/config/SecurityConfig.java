@@ -1,7 +1,7 @@
 package com.empresa.vuelos.reservas.de.vuelos.Backend.config;
 
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Service.CustomUserDetailsService;
-import com.empresa.vuelos.reservas.de.vuelos.Backend.config.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,26 +15,14 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
-    private static final List<String> PUBLIC_PATHS = List.of(
-            "/api/auth/login/token",
-            "/api/auth/register",
-            "/amadeus",
-            "/amadeus/",
-            "/amadeus/buscar",
-            "/api/products",
-            "/api/products/",
-            "/api/categories",
-            "/api/categories/"
-    );
-
 
     public SecurityConfig(JwtAuthenticationFilter jwtFilter) {
         this.jwtFilter = jwtFilter;
@@ -42,19 +30,15 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
-        System.out.println("🔐 Inicializando SecurityFilterChain...");
-
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
                     config.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
-                    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(List.of("*"));
                     config.setExposedHeaders(List.of("*"));
                     config.setAllowCredentials(true);
-                    System.out.println("🌐 Configuración CORS aplicada para request: " + request.getRequestURI());
                     return config;
                 }))
                 .exceptionHandling(ex -> ex
@@ -71,49 +55,36 @@ public class SecurityConfig {
                             response.getWriter().write("{\"error\":\"FORBIDDEN\",\"path\":\"" + request.getRequestURI() + "\"}");
                         })
                 )
-                .authorizeHttpRequests(auth -> {
-                    System.out.println("🛡 Configurando rutas públicas y privadas...");
-                    auth
-                            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                            .requestMatchers("/api/auth/register", "/api/auth/login/token").permitAll()
-                            .requestMatchers(HttpMethod.GET, "/api/auth/all").permitAll()
-                            .requestMatchers(HttpMethod.DELETE, "/api/auth/**").permitAll()
-                            .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
-                            .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-                            .requestMatchers(HttpMethod.GET, "/api/images/**").permitAll()
-                            .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
-                            .requestMatchers(HttpMethod.POST, "/api/products/**").hasAuthority("ROLE_ADMIN")
-                            .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAuthority("ROLE_ADMIN")
-                            .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAuthority("ROLE_ADMIN")
-                            .requestMatchers("/api/favorites/**").authenticated()
-                            .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
-                            .requestMatchers("/error").permitAll()
-                            .requestMatchers("/api/bookings/product/**").permitAll()
-                            // Bookings: autenticado (el rol puede variar según origen del auth)
-                            .requestMatchers("/api/bookings/**").authenticated()
-                            .requestMatchers("/vuelos/**", "/api/vuelos/**").permitAll()
-                            .requestMatchers("/amadeus/vuelos/**").permitAll()
-                            .requestMatchers("/amadeus/**").permitAll()
-                            .requestMatchers("/imagenes/**").permitAll()
-                            .requestMatchers("/amadeus/buscar").permitAll()
-                            .anyRequest().authenticated();
-                })
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login/token", "/api/auth/resend-confirmation").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/images/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/products/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/favorites/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
+                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/api/bookings/product/**").permitAll()
+                        .requestMatchers("/api/bookings/**").authenticated()
+                        .requestMatchers("/vuelos/**", "/api/vuelos/**").permitAll()
+                        .requestMatchers("/amadeus/vuelos/**").permitAll()
+                        .requestMatchers("/amadeus/**").permitAll()
+                        .requestMatchers("/imagenes/**").permitAll()
+                        .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
-        System.out.println("✅ SecurityFilterChain cargada correctamente");
         return http.build();
     }
 
-
     @Bean
     public AuthenticationManager authManager(HttpSecurity http, CustomUserDetailsService uds) throws Exception {
-        AuthenticationManagerBuilder authBuilder =
-                http.getSharedObject(AuthenticationManagerBuilder.class);
-
-        authBuilder
-                .userDetailsService(uds)
-                .passwordEncoder(passwordEncoder());
-
+        AuthenticationManagerBuilder authBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+        authBuilder.userDetailsService(uds).passwordEncoder(passwordEncoder());
         return authBuilder.build();
     }
 

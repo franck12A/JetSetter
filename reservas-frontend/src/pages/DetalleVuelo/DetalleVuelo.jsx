@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { DayPicker } from "react-day-picker";
 import { es } from "react-day-picker/locale";
@@ -31,7 +31,7 @@ import {
 
 import productService from "../../services/productService";
 import { addFavorite, getUserFavorites, removeFavorite } from "../../services/favoritesApi";
-import { createBooking, getProductBookedDates, getUserBookings } from "../../services/bookingsApi";
+import { getProductBookedDates, getUserBookings } from "../../services/bookingsApi";
 import { createReview, getProductReviews } from "../../services/reviewsApi";
 import { normalizeAirlineName } from "../../utils/flightMetadata";
 import { getVueloImage } from "../../utils/images";
@@ -42,7 +42,7 @@ import "./DetalleVuelo.css";
 const parseRouteName = (name, fallbackCountry = "-") => {
   const raw = name || "";
   const parts = raw
-    .split(/->|\u2192/)
+    .split(/->|→/)
     .map((part) => part.trim())
     .filter(Boolean);
 
@@ -217,7 +217,7 @@ const getInitialTravelDate = (vuelo) => {
 const normalizeText = (value) =>
   String(value || "")
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
     .trim();
 
@@ -697,6 +697,21 @@ export default function DetalleVuelo() {
   );
   const selectedReturnDateBooked =
     Boolean(selectedReturnDateISO) && bookedDateSet.has(selectedReturnDateISO);
+  const selectedRangeIncludesBookedDate = useMemo(() => {
+    if (!isRoundTrip || !selectedDateISO || !selectedReturnDateISO) return false;
+
+    const start = parseDateOnly(selectedDateISO);
+    const end = parseDateOnly(selectedReturnDateISO);
+    if (!start || !end) return false;
+
+    const cursor = new Date(start.getTime());
+    while (cursor <= end) {
+      if (bookedDateSet.has(toISODateLocal(cursor))) return true;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return false;
+  }, [bookedDateSet, isRoundTrip, selectedDateISO, selectedReturnDateISO]);
   const bookedDatesSummary = bookedDates.length
     ? `${bookedDates.length} fecha${bookedDates.length > 1 ? "s" : ""} ya reservada${bookedDates.length > 1 ? "s" : ""}.`
     : "Todavía no hay fechas reservadas para este vuelo.";
@@ -707,14 +722,22 @@ export default function DetalleVuelo() {
     ? "La fecha de salida seleccionada está ocupada. Selecciona otra para continuar."
     : isRoundTrip && !selectedReturnDateISO
       ? "Seleccioná una fecha de regreso para completar el viaje."
+      : isRoundTrip && selectedRangeIncludesBookedDate
+        ? "El rango seleccionado incluye fechas no disponibles. Ajustá tu viaje para continuar."
       : isRoundTrip && selectedReturnDateBooked
         ? "La fecha de regreso seleccionada está ocupada. Elegí otra para continuar."
         : availabilitySummary;
   const departureCalendarMonthCount = isRoundTrip ? 1 : 2;
   const isSelectionIncomplete = !selectedDateISO || (isRoundTrip && !selectedReturnDateISO);
-  const hasUnavailableSelection = selectedDateBooked || (isRoundTrip && selectedReturnDateBooked);
+  const hasUnavailableSelection =
+    selectedDateBooked ||
+    (isRoundTrip && (selectedReturnDateBooked || selectedRangeIncludesBookedDate));
   const bookingButtonLabel = bookingLoading
     ? "Reservando..."
+    : !user
+      ? "Reservar"
+      : !vuelo?.localProductId
+        ? "Reserva no disponible"
     : !selectedDateISO
       ? "Seleccioná salida"
       : isRoundTrip && !selectedReturnDateISO
@@ -725,9 +748,14 @@ export default function DetalleVuelo() {
   const canReserve =
     Boolean(vuelo?.localProductId) &&
     !availabilityLoading &&
-    !bookingLoading &&
-    !isSelectionIncomplete &&
-    !hasUnavailableSelection;
+    (
+      !user ||
+      (
+        !bookingLoading &&
+        !isSelectionIncomplete &&
+        !hasUnavailableSelection
+      )
+    );
 
   const checkReviewEligibility = async () => {
     if (!vuelo?.localProductId) {
@@ -739,13 +767,13 @@ export default function DetalleVuelo() {
     const token = getStoredToken();
     if (!user || !token) {
       setCanReview(false);
-      setReviewGateMessage("Inicia sesi\u00f3n para valorar este vuelo.");
+      setReviewGateMessage("Inicia sesión para valorar este vuelo.");
       return;
     }
 
     if (isTokenExpired(token)) {
       setCanReview(false);
-      setReviewGateMessage("Tu sesi\u00f3n expir\u00f3. Inicia sesi\u00f3n nuevamente.");
+      setReviewGateMessage("Tu sesión expiró. Inicia sesión nuevamente.");
       return;
     }
 
@@ -766,14 +794,14 @@ export default function DetalleVuelo() {
       if (hasBooking) {
         setReviewGateMessage("");
       } else {
-        setReviewGateMessage("Necesitas una reserva finalizada para dejar tu rese\u00f1a.");
+        setReviewGateMessage("Necesitas una reserva finalizada para dejar tu reseña.");
       }
     } catch (err) {
       console.error("Error validando reservas:", err);
       setCanReview(false);
       const rawMessage = String(err?.message || "");
       if (/token|autenticado|sesion/i.test(rawMessage)) {
-        setReviewGateMessage("Tu sesi\u00f3n expir\u00f3. Inicia sesi\u00f3n nuevamente.");
+        setReviewGateMessage("Tu sesión expiró. Inicia sesión nuevamente.");
       } else {
         setReviewGateMessage("No pudimos validar tu reserva en este momento.");
       }
@@ -911,7 +939,7 @@ export default function DetalleVuelo() {
       const data = await getProductReviews(productId);
       setReviews(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Error cargando rese\u00f1as:", err);
+      console.error("Error cargando reseñas:", err);
       setReviews([]);
       setReviewsError("No se pudieron cargar las valoraciones.");
     } finally {
@@ -960,7 +988,7 @@ export default function DetalleVuelo() {
           return prev === next ? prev : next;
         });
       } catch (err) {
-      console.error("Error cargando rese\u00f1as:", err);
+      console.error("Error cargando reseñas:", err);
       }
     };
 
@@ -977,7 +1005,7 @@ export default function DetalleVuelo() {
 
   const handleFavorite = async () => {
     if (!user) {
-      alert("Debes iniciar sesi\u00f3n para agregar favoritos.");
+      alert("Debes iniciar sesión para agregar favoritos.");
       navigate("/login");
       return;
     }
@@ -1012,32 +1040,32 @@ export default function DetalleVuelo() {
 
   const handleReviewSubmit = async () => {
     if (!user) {
-      alert("Debes iniciar sesi\u00f3n para valorar este vuelo.");
+      alert("Debes iniciar sesión para valorar este vuelo.");
       navigate("/login");
       return;
     }
 
     const token = getStoredToken();
     if (!token || isTokenExpired(token)) {
-      setReviewsError("Tu sesi\u00f3n expir\u00f3. Inicia sesi\u00f3n nuevamente.");
+      setReviewsError("Tu sesión expiró. Inicia sesión nuevamente.");
       navigate("/login");
       return;
     }
 
     if (!vuelo?.localProductId) {
-      setReviewsError("Este vuelo no est\u00e1 disponible para valoraciones.");
+      setReviewsError("Este vuelo no está disponible para valoraciones.");
       return;
     }
 
     if (!canReview) {
       setReviewsError(
-        reviewGateMessage || "Necesitas una reserva finalizada para dejar tu rese\u00f1a."
+        reviewGateMessage || "Necesitas una reserva finalizada para dejar tu reseña."
       );
       return;
     }
 
     if (!ratingValue) {
-      setReviewsError("Selecciona una puntuaci\u00f3n antes de publicar tu rese\u00f1a.");
+      setReviewsError("Selecciona una puntuación antes de publicar tu reseña.");
       return;
     }
 
@@ -1062,8 +1090,8 @@ export default function DetalleVuelo() {
       setHoverRating(0);
       setReviewComment("");
     } catch (err) {
-      console.error("Error enviando rese\u00f1a:", err);
-      const message = err?.message || "No se pudo publicar la rese\u00f1a.";
+      console.error("Error enviando reseña:", err);
+      const message = err?.message || "No se pudo publicar la reseña.";
       setReviewsError(message);
       if (/token|autenticado|sesion/i.test(String(message))) {
         navigate("/login");
@@ -1075,13 +1103,26 @@ export default function DetalleVuelo() {
 
   const handleBooking = async () => {
     if (!user) {
-      alert("Debes iniciar sesi\u00f3n para reservar un vuelo.");
-      navigate("/login");
+      navigate("/login", {
+        state: {
+          message:
+            "Debes iniciar sesión para realizar una reserva. Si no tienes cuenta, puedes registrarte.",
+          redirectTo: `/reserva/${vuelo?.localProductId || id}`,
+          redirectState: {
+            vuelo,
+            bookingSelection: {
+              tripType: isRoundTrip ? "roundtrip" : "oneway",
+              travelDateISO: selectedDateISO,
+              returnDateISO: selectedReturnDateISO,
+            },
+          },
+        },
+      });
       return;
     }
 
     if (!vuelo?.localProductId) {
-      alert("Este vuelo no est\u00e1 disponible para reserva directa.");
+      alert("Este vuelo no está disponible para reserva directa.");
       return;
     }
 
@@ -1117,33 +1158,25 @@ export default function DetalleVuelo() {
       return;
     }
 
-    setBookingLoading(true);
-    setBookingFeedback(null);
-
-    try {
-      await createBooking({
-        productId: vuelo.localProductId,
-        dateStr: selectedDateISO,
-        passengers: 1,
-      });
-
-      await loadAvailability(vuelo.localProductId);
-      await checkReviewEligibility();
-      setBookingFeedback({
-        type: "success",
-        message: isRoundTrip
-          ? `Reserva creada para la salida del ${selectedDateLabel}. Regreso seleccionado: ${selectedReturnDateLabel}.`
-          : `Reserva creada para ${selectedDateLabel}.`,
-      });
-    } catch (err) {
-      console.error("Error creando reserva:", err);
+    if (isRoundTrip && selectedRangeIncludesBookedDate) {
       setBookingFeedback({
         type: "error",
-        message: err?.message || "No se pudo completar la reserva.",
+        message: "El rango seleccionado incluye fechas no disponibles. Ajusta las fechas antes de continuar.",
       });
-    } finally {
-      setBookingLoading(false);
+      return;
     }
+
+    setBookingFeedback(null);
+    navigate(`/reserva/${vuelo.localProductId}`, {
+      state: {
+        vuelo,
+        bookingSelection: {
+          tripType: isRoundTrip ? "roundtrip" : "oneway",
+          travelDateISO: selectedDateISO,
+          returnDateISO: selectedReturnDateISO,
+        },
+      },
+    });
   };
 
   const heroImage = selectedImage || imageList[0] || "/assets/avionsito.png";
@@ -1197,7 +1230,7 @@ export default function DetalleVuelo() {
             </button>
           </div>
           <div className="dv-hero-text">
-            <span className="dv-hero-label">Premium Experience</span>
+            <span className="dv-hero-label">Experiencia Premium</span>
             <h1 className="dv-hero-title">{heroTitle}</h1>
             <p className="dv-hero-subtitle">{heroSubtitle}</p>
           </div>

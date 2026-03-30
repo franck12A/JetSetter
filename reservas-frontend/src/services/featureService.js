@@ -1,4 +1,4 @@
-import axios from "axios";
+﻿import axios from "axios";
 
 const API_URL = "http://localhost:8080/api/features";
 
@@ -23,6 +23,14 @@ function getHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function extractErrorMessage(error, fallback) {
+  const payload = error?.response?.data;
+  if (typeof payload === "string" && payload.trim()) return payload;
+  if (payload?.message) return payload.message;
+  if (payload?.error) return payload.error;
+  return fallback;
+}
+
 export const getFeatures = () => axios.get(API_URL, { headers: getHeaders() });
 
 export const createFeature = (data) => axios.post(API_URL, data, { headers: getHeaders() });
@@ -32,12 +40,12 @@ export const updateFeature = (id, data) =>
 
 export const deleteFeature = async (id) => {
   try {
-    const { data } = await axios.delete(`/api/features/${id}`, { headers: getHeaders() });
+    const { data } = await axios.delete(`${API_URL}/${id}`, { headers: getHeaders() });
     return data;
   } catch (error) {
-    if (error.response && error.response.status === 404) {
-      throw new Error("Característica no encontrada o ya fue eliminada");
+    if (error?.response?.status === 404) {
+      throw new Error("Caracteristica no encontrada o ya fue eliminada.");
     }
-    throw error;
+    throw new Error(extractErrorMessage(error, "No se pudo eliminar la caracteristica."));
   }
 };

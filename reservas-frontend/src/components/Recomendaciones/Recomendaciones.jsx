@@ -179,7 +179,7 @@ export default function Recomendaciones({ vuelos = [], onShare }) {
   return (
     <section className="recomendaciones-section">
       <div className="reco-header">
-        <h2 className="titulo-reco">Destinos populares</h2>
+        <h2 className="titulo-reco">Destinos Populares</h2>
         <a href="#/resultados" className="ver-todas-reco">Ver todos</a>
       </div>
       <div className="reco-wrapper">

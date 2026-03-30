@@ -47,7 +47,7 @@ export async function getProductReviews(productId) {
   const res = await fetch(`${API_URL}/product/${productId}`, { headers });
   if (!res.ok) {
     const body = await readErrorBody(res);
-    throw new Error(body || "No se pudieron obtener las rese\u00f1as");
+    throw new Error(body || "No se pudieron obtener las reseñas");
   }
   const data = await res.json();
   return Array.isArray(data) ? data : [];

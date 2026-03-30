@@ -1,10 +1,39 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import AuthLayout from "../../components/auth/AuthLayout";
 import AuthCard from "../../components/auth/AuthCard";
 import InputField from "../../components/auth/InputField";
 import PrimaryButton from "../../components/auth/PrimaryButton";
-import { motion } from "framer-motion";
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateRegisterForm(form) {
+  const errors = {};
+
+  if (!form.firstName.trim()) errors.firstName = "El nombre es obligatorio.";
+  if (!form.lastName.trim()) errors.lastName = "El apellido es obligatorio.";
+
+  if (!form.email.trim()) {
+    errors.email = "El email es obligatorio.";
+  } else if (!EMAIL_PATTERN.test(form.email.trim())) {
+    errors.email = "Ingresa un email valido.";
+  }
+
+  if (!form.password) {
+    errors.password = "La contrasena es obligatoria.";
+  } else if (form.password.length < 6) {
+    errors.password = "Debe tener al menos 6 caracteres.";
+  }
+
+  if (!form.confirmPassword) {
+    errors.confirmPassword = "Confirma tu contrasena.";
+  } else if (form.confirmPassword !== form.password) {
+    errors.confirmPassword = "Las contrasenas no coinciden.";
+  }
+
+  return errors;
+}
 
 export default function Register() {
   const [form, setForm] = useState({
@@ -14,7 +43,7 @@ export default function Register() {
     password: "",
     confirmPassword: "",
   });
-
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -23,8 +52,16 @@ export default function Register() {
   const [resendMessage, setResendMessage] = useState("");
   const [resendError, setResendError] = useState("");
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => {
+      if (!prev[name]) return prev;
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+    setError("");
   };
 
   const parseErrorMessage = async (res, fallback) => {
@@ -38,27 +75,18 @@ export default function Register() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError("");
     setSuccess("");
     setResendMessage("");
     setResendError("");
 
-    if (!form.firstName || !form.lastName || !form.email || !form.password || !form.confirmPassword) {
-      return setError("Completa todos los campos.");
-    }
-
-    if (!form.email.includes("@")) {
-      return setError("El correo electronico no es valido.");
-    }
-
-    if (form.password.length < 6) {
-      return setError("La contrasena debe tener al menos 6 caracteres.");
-    }
-
-    if (form.password !== form.confirmPassword) {
-      return setError("Las contrasenas no coinciden.");
+    const validationErrors = validateRegisterForm(form);
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) {
+      setError("Revisa los campos marcados antes de continuar.");
+      return;
     }
 
     setLoading(true);
@@ -72,19 +100,20 @@ export default function Register() {
 
       if (!res.ok) {
         const msg = await parseErrorMessage(res, "No se pudo registrar.");
-        setLoading(false);
-        return setError(msg);
+        setError(msg);
+        return;
       }
 
-      const emailForResend = form.email;
+      const emailForResend = form.email.trim();
       setRegisteredEmail(emailForResend);
       setSuccess(`Registro exitoso. Te enviamos un correo a ${emailForResend}.`);
       setForm({ firstName: "", lastName: "", email: "", password: "", confirmPassword: "" });
-    } catch (err) {
+      setErrors({});
+    } catch {
       setError("Error de conexion con el servidor.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const handleResend = async () => {
@@ -103,65 +132,73 @@ export default function Register() {
       if (!res.ok) {
         const msg = await parseErrorMessage(res, "No se pudo reenviar el email.");
         setResendError(msg);
-        setResendLoading(false);
         return;
       }
 
       setResendMessage("Listo. Te reenviamos el email de confirmacion.");
-    } catch (err) {
+    } catch {
       setResendError("Error de conexion con el servidor.");
+    } finally {
+      setResendLoading(false);
     }
-
-    setResendLoading(false);
   };
 
   return (
     <AuthLayout>
       <AuthCard title="JetSetter" subtitle="Crea tu cuenta para empezar a viajar">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <InputField
             label="Nombre"
             name="firstName"
-            type="text"
             placeholder="Juan"
             value={form.firstName}
             onChange={handleChange}
+            error={errors.firstName}
+            autoComplete="given-name"
           />
 
           <InputField
             label="Apellido"
             name="lastName"
-            type="text"
             placeholder="Perez"
             value={form.lastName}
             onChange={handleChange}
+            error={errors.lastName}
+            autoComplete="family-name"
           />
 
           <InputField
-            label="Email"
+            label="Correo electrónico"
             name="email"
-            type="email"
+            type="text"
             placeholder="tuemail@gmail.com"
             value={form.email}
             onChange={handleChange}
+            error={errors.email}
+            autoComplete="email"
+            inputMode="email"
           />
 
           <InputField
-            label="Contrasena"
+            label="Contraseña"
             name="password"
             type="password"
             placeholder="********"
             value={form.password}
             onChange={handleChange}
+            error={errors.password}
+            autoComplete="new-password"
           />
 
           <InputField
-            label="Confirmar contrasena"
+            label="Confirmar contraseña"
             name="confirmPassword"
             type="password"
             placeholder="********"
             value={form.confirmPassword}
             onChange={handleChange}
+            error={errors.confirmPassword}
+            autoComplete="new-password"
           />
 
           <PrimaryButton loading={loading}>Crear cuenta</PrimaryButton>
@@ -206,7 +243,7 @@ export default function Register() {
         </form>
 
         <p className="auth-switch">
-          Ya tienes cuenta? <Link to="/login">Iniciar sesion</Link>
+          ¿Ya tienes cuenta? <Link to="/login">Iniciar sesión</Link>
         </p>
       </AuthCard>
     </AuthLayout>

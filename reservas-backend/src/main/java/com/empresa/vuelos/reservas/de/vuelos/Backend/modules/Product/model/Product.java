@@ -2,10 +2,10 @@ package com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model;
 
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Model.User;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Category.Model.Category;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -15,13 +15,12 @@ import java.util.Set;
 public class Product {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)  // ← AUTOGENERADO
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Setter
     @Column(unique = true)
     private String externalId;
-
 
     @Setter
     private String name;
@@ -52,24 +51,28 @@ public class Product {
     @Setter
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    @Setter
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ProductStatus status = ProductStatus.DRAFT;
+
     @ElementCollection
     @Lob
     private List<String> imagesBase64;
 
     @Lob
     @Column
-    private String segmentosJson;  // JSON de los segmentos
+    private String segmentosJson;
 
     @Lob
     @Column
-    private String imagenesUrlsJson;  // JSON de todas las URLs de imágenes
+    private String imagenesUrlsJson;
 
     @Setter
     private String aerolinea;
 
     @Setter
     private String numeroVuelo;
-
 
     @ManyToMany
     @JoinTable(
@@ -85,10 +88,10 @@ public class Product {
 
     @Setter
     @ManyToMany(mappedBy = "favorites")
+    @JsonIgnore
     private Set<User> favoritedBy = new HashSet<>();
     public Set<User> getFavoritedBy() { return favoritedBy; }
 
-    // Getters
     public Long getId() { return id; }
     public String getExternalId() { return externalId; }
     public String getName() { return name; }
@@ -101,13 +104,11 @@ public class Product {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public List<String> getImagesBase64() { return imagesBase64; }
-
     public String getAerolinea() { return aerolinea; }
     public String getNumeroVuelo() { return numeroVuelo; }
-
     public String getSegmentosJson() { return segmentosJson; }
     public void setSegmentosJson(String segmentosJson) { this.segmentosJson = segmentosJson; }
-
     public String getImagenesUrlsJson() { return imagenesUrlsJson; }
     public void setImagenesUrlsJson(String imagenesUrlsJson) { this.imagenesUrlsJson = imagenesUrlsJson; }
+    public ProductStatus getStatus() { return status; }
 }

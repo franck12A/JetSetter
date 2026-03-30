@@ -2,36 +2,29 @@ package com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.Controller
 
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Amadeus.VueloDTO.FlightOfferDTO;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Amadeus.services.AmadeusService;
-import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Category.Service.CategoryService;
-
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.Service.FeatureService;
+import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.Service.ProductService;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.dto.FeatureDTO;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.dto.ProductDTO;
+import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.dto.ProductStatusUpdateRequest;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Feature;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.model.Product;
-import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Product.Service.ProductService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.beans.factory.annotation.Value;
+import jakarta.validation.Valid;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "http://localhost:5173")
@@ -41,151 +34,52 @@ public class ProductController {
 
     private final ProductService productService;
     private final FeatureService featureService;
-    private final CategoryService categoryService;
     private final AmadeusService amadeusService;
 
+    private final String uploadDir = "C:/Users/Franc/Desktop/reservas-de-vuelosimg/images/";
 
-
-    // Carpeta para guardar las imágenes
-    private final String UPLOAD_DIR = "C:/Users/Franc/Desktop/reservas-de-vuelosimg/images/";
-
-    public ProductController(ProductService productService, FeatureService featureService, CategoryService categoryService, AmadeusService amadeusService) {
+    public ProductController(ProductService productService,
+                             FeatureService featureService,
+                             AmadeusService amadeusService) {
         this.productService = productService;
         this.featureService = featureService;
-        this.categoryService = categoryService;
         this.amadeusService = amadeusService;
     }
 
-    // --- Crear producto ---
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> createProduct(@RequestBody ProductDTO productDTO) {
-
-        System.out.println("➡️ Intentando crear product");
-
-        if (productService.existsByName(productDTO.getName())) {
-            return ResponseEntity.badRequest().body("❌ Error: El nombre del vuelo ya está en uso.");
-        }
-
-        Product product = new Product();
-        product.setName(productDTO.getName());
-        product.setDescription(productDTO.getDescription());
-        product.setPrice(productDTO.getPrice());
-        product.setImage(productDTO.getImage());
-        // Categoría
-        if (productDTO.getCategoryId() != null) {
-            var category = categoryService.getById(productDTO.getCategoryId());
-            product.setCategory(category);
-        } else {
-            return ResponseEntity.badRequest().body("❌ categoryId es obligatorio");
-        }
-
-        product.setCountry(productDTO.getCountry());
-
-        if (productDTO.getDepartureDate() != null && !productDTO.getDepartureDate().isEmpty()) {
-            String fecha = productDTO.getDepartureDate();
-
-            LocalDateTime salida;
-
-            if (fecha.length() == 10) {
-                // Formato yyyy-MM-dd
-                salida = LocalDate.parse(fecha).atStartOfDay();
-            } else {
-                // Formato yyyy-MM-ddTHH:mm
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
-                salida = LocalDateTime.parse(fecha, formatter);
-            }
-
-            product.setDepartureDate(salida);
-
-        }
-
-
-        // Features
-        Set<Feature> features = new HashSet<>();
-        if (productDTO.getFeatures() != null) {
-            for (FeatureDTO f : productDTO.getFeatures()) {
-                if (f.getId() != null) {
-                    features.add(featureService.getById(f.getId()));
-                } else {
-                    Feature newF = new Feature();
-                    newF.setName(f.getName());
-                    newF.setIcon(f.getIcon());
-                    features.add(featureService.save(newF));
-                }
-            }
-        }
-        product.setFeatures(features);
-
-        // Imágenes Base64
-        if (productDTO.getImagesBase64() != null) {
-            product.setImagesBase64(productDTO.getImagesBase64());
-        }
-
-        Product savedProduct = productService.saveProduct(product);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Product> createProduct(@Valid @RequestBody ProductDTO productDTO) {
+        Product savedProduct = productService.createProduct(productDTO, resolveFeatures(productDTO.getFeatures()));
         return ResponseEntity.ok(savedProduct);
     }
 
-
-
-
-
-    // --- Listar todos los productos ---
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {
-        return ResponseEntity.ok(productService.getAllProducts());
-    }
-
-// --- Actualizar producto ---
-@PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-public ResponseEntity<Product> updateProduct(
-        @PathVariable Long id,
-        @RequestBody ProductDTO productDTO
-) {
-
-    Product updatedProduct = new Product();
-    updatedProduct.setName(productDTO.getName());
-    updatedProduct.setDescription(productDTO.getDescription());
-    updatedProduct.setPrice(productDTO.getPrice());
-    updatedProduct.setImage(productDTO.getImage());
-    if (productDTO.getCategoryId() != null) {
-        var category = categoryService.getById(productDTO.getCategoryId());
-        updatedProduct.setCategory(category);
-    }
-    updatedProduct.setCountry(productDTO.getCountry());
-
-    if (productDTO.getDepartureDate() != null && !productDTO.getDepartureDate().isEmpty()) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
-        updatedProduct.setDepartureDate(LocalDateTime.parse(productDTO.getDepartureDate(), formatter));
-    }
-
-
-    // Features
-    Set<Feature> features = new HashSet<>();
-    if (productDTO.getFeatures() != null) {
-        for (FeatureDTO f : productDTO.getFeatures()) {
-            if (f.getId() != null) {
-                features.add(featureService.getById(f.getId()));
-            } else {
-                Feature newF = new Feature();
-                newF.setName(f.getName());
-                newF.setIcon(f.getIcon());
-                features.add(featureService.save(newF));
-            }
+        boolean isAdmin = isAdminRequest();
+        List<Product> products = productService.getAllProducts();
+        if (!isAdmin) {
+            products = products.stream()
+                    .filter(productService::isPubliclyVisible)
+                    .collect(Collectors.toList());
         }
-    }
-    updatedProduct.setFeatures(features);
-
-    // Imágenes Base64
-    if (productDTO.getImagesBase64() != null) {
-        updatedProduct.setImagesBase64(productDTO.getImagesBase64());
+        return ResponseEntity.ok(products);
     }
 
-    Product savedProduct = productService.updateProduct(id, updatedProduct);
-    return ResponseEntity.ok(savedProduct);
-}
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductDTO productDTO) {
+        Product savedProduct = productService.updateProduct(id, productDTO, resolveFeatures(productDTO.getFeatures()));
+        return ResponseEntity.ok(savedProduct);
+    }
 
+    @PatchMapping(value = "/{id}/status", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Product> updateProductStatus(@PathVariable Long id,
+                                                       @Valid @RequestBody ProductStatusUpdateRequest request) {
+        Product savedProduct = productService.updateStatus(id, productService.resolveStatus(request.getStatus()));
+        return ResponseEntity.ok(savedProduct);
+    }
 
-    // --- Eliminar producto ---
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteProduct(@PathVariable Long id) {
@@ -193,61 +87,90 @@ public ResponseEntity<Product> updateProduct(
         return ResponseEntity.ok("Producto eliminado correctamente");
     }
 
-    // --- Productos aleatorios ---
     @GetMapping("/random")
     public ResponseEntity<List<Product>> getRandomProducts(@RequestParam(defaultValue = "3") int count) {
-        return ResponseEntity.ok(productService.getRandomProducts(count));
+        List<Product> products = productService.getAllProducts().stream()
+                .filter(productService::isPubliclyVisible)
+                .collect(Collectors.toList());
+
+        java.util.Collections.shuffle(products);
+        if (products.size() > count) {
+            products = products.subList(0, count);
+        }
+        return ResponseEntity.ok(products);
     }
 
-    // --- Buscar productos por nombre o fecha ---
     @GetMapping("/search")
-    public ResponseEntity<List<Product>> searchProducts(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String departureDate // yyyy-MM-dd
-    ) {
+    public ResponseEntity<List<Product>> searchProducts(@RequestParam(required = false) String name,
+                                                        @RequestParam(required = false) String departureDate) {
         LocalDate fecha = null;
         if (departureDate != null && !departureDate.isEmpty()) {
             fecha = LocalDate.parse(departureDate);
         }
+
+        boolean isAdmin = isAdminRequest();
         List<Product> filteredProducts = productService.getProductsFilteredByDate(name, fecha);
+
+        if (!isAdmin) {
+            filteredProducts = filteredProducts.stream()
+                    .filter(productService::isPubliclyVisible)
+                    .collect(Collectors.toList());
+        }
         return ResponseEntity.ok(filteredProducts);
     }
 
-
-
-    // --- Obtener producto por ID ---
     @GetMapping("/{id}")
     public ResponseEntity<Product> getProductById(@PathVariable Long id) {
         Product product = productService.getProductById(id);
-        if (product != null) {
-            return ResponseEntity.ok(product);
-        } else {
+        if (product == null) {
             return ResponseEntity.notFound().build();
         }
+        if (!isAdminRequest() && !productService.isPubliclyVisible(product)) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(product);
     }
 
-    // --- Servir imágenes estáticas ---
     @GetMapping("/images/{filename:.+}")
     public ResponseEntity<Resource> getImage(@PathVariable String filename) throws IOException {
-        Path file = Paths.get(UPLOAD_DIR).resolve(filename);
+        Path file = Paths.get(uploadDir).resolve(filename);
         Resource resource = new UrlResource(file.toUri());
         if (resource.exists() || resource.isReadable()) {
             return ResponseEntity.ok(resource);
-        } else {
-            return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/buscar")
     public List<Product> buscarVuelos(@RequestParam String origen,
                                       @RequestParam String destino,
                                       @RequestParam String fecha) throws Exception {
-
         List<FlightOfferDTO> vuelos = amadeusService.buscarVuelos(origen, destino, fecha);
-
-        // Guardar todos siempre
         return productService.procesarYGuardarVuelos(vuelos);
     }
 
+    private Set<Feature> resolveFeatures(List<FeatureDTO> featureDTOs) {
+        Set<Feature> features = new HashSet<>();
+        if (featureDTOs == null) {
+            return features;
+        }
 
+        for (FeatureDTO featureDTO : featureDTOs) {
+            if (featureDTO.getId() != null) {
+                features.add(featureService.getById(featureDTO.getId()));
+                continue;
+            }
+
+            Feature newFeature = new Feature();
+            newFeature.setName(featureDTO.getName());
+            newFeature.setIcon(featureDTO.getIcon());
+            features.add(featureService.save(newFeature));
+        }
+        return features;
+    }
+
+    private boolean isAdminRequest() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    }
 }

@@ -1,19 +1,26 @@
 package com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Gmail;
 
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Service
 public class EmailService {
 
     private final JavaMailSender mailSender;
     private final String from = "enricifranco6@gmail.com";
+
+    @Value("${app.provider.whatsapp:+54 11 5555-0101}")
+    private String providerWhatsapp;
+
+    @Value("${app.provider.email:soporte@jetsetter.com}")
+    private String providerEmail;
 
 
 
@@ -40,6 +47,35 @@ public class EmailService {
 
         } catch (Exception e) {
             System.err.println("⚠ Error enviando email: " + e.getMessage());
+        }
+    }
+
+    public void sendBookingConfirmationEmail(String to,
+                                             String customerName,
+                                             String productName,
+                                             LocalDateTime bookingDate,
+                                             LocalDate travelDate,
+                                             LocalDate returnDate,
+                                             String providerName,
+                                             String flightNumber) {
+        try {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
+            helper.setFrom(from);
+            helper.setTo(to);
+            helper.setSubject("Reserva confirmada en JetSetter");
+            helper.setText(buildBookingConfirmationTemplate(
+                    customerName,
+                    productName,
+                    bookingDate,
+                    travelDate,
+                    returnDate,
+                    providerName,
+                    flightNumber
+            ), true);
+            mailSender.send(msg);
+        } catch (Exception e) {
+            System.err.println("⚠ Error enviando email de reserva: " + e.getMessage());
         }
     }
 
@@ -178,6 +214,95 @@ public class EmailService {
 
     private String escape(String s) {
         return s == null ? "" : s.replace("<", "&lt;").replace(">", "&gt;");
+    }
+
+    private String buildBookingConfirmationTemplate(String customerName,
+                                                    String productName,
+                                                    LocalDateTime bookingDate,
+                                                    LocalDate travelDate,
+                                                    LocalDate returnDate,
+                                                    String providerName,
+                                                    String flightNumber) {
+        DateTimeFormatter bookingFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        String travelDateLabel = travelDate != null ? travelDate.format(dateFormatter) : "No definida";
+        String returnDateLabel = returnDate != null ? returnDate.format(dateFormatter) : "Sin regreso";
+        String bookingDateLabel = bookingDate != null ? bookingDate.format(bookingFormatter) : "No definida";
+        String providerLabel = providerName != null && !providerName.isBlank() ? providerName : "JetSetter";
+        String flightLabel = flightNumber != null && !flightNumber.isBlank() ? flightNumber : "A confirmar";
+
+        return """
+                <!DOCTYPE html>
+                <html lang="es">
+                <head>
+                  <meta charset="UTF-8">
+                  <title>Reserva confirmada</title>
+                </head>
+                <body style="margin:0; padding:0; background:#f5f7fb; font-family:Arial, sans-serif; color:#1f2937;">
+                  <table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0;">
+                    <tr>
+                      <td align="center">
+                        <table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(15,23,42,0.08);">
+                          <tr>
+                            <td style="padding:28px 36px; background:linear-gradient(135deg,#0f172a,#1d4ed8); color:#ffffff;">
+                              <h1 style="margin:0; font-size:28px;">Reserva realizada con éxito</h1>
+                              <p style="margin:10px 0 0; font-size:15px; opacity:0.9;">Hola {{CUSTOMER_NAME}}, ya confirmamos tu reserva.</p>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="padding:28px 36px;">
+                              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                                <tr>
+                                  <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; color:#6b7280;">Producto</td>
+                                  <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:700;">{{PRODUCT_NAME}}</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; color:#6b7280;">Fecha de reserva</td>
+                                  <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:700;">{{BOOKING_DATE}}</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; color:#6b7280;">Salida</td>
+                                  <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:700;">{{TRAVEL_DATE}}</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; color:#6b7280;">Regreso</td>
+                                  <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:700;">{{RETURN_DATE}}</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; color:#6b7280;">Proveedor</td>
+                                  <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:700;">{{PROVIDER_NAME}}</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; color:#6b7280;">Vuelo</td>
+                                  <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:700;">{{FLIGHT_NUMBER}}</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding:12px 0; color:#6b7280;">Contacto del proveedor</td>
+                                  <td style="padding:12px 0; text-align:right; font-weight:700;">WhatsApp {{PROVIDER_WHATSAPP}} · {{PROVIDER_EMAIL}}</td>
+                                </tr>
+                              </table>
+                              <p style="margin:22px 0 0; font-size:14px; line-height:1.6; color:#4b5563;">
+                                Guarda este correo como comprobante. Si necesitas ayuda con cambios o consultas sobre tu viaje,
+                                puedes comunicarte con el proveedor usando los datos indicados arriba.
+                              </p>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </body>
+                </html>
+                """
+                .replace("{{CUSTOMER_NAME}}", escape(customerName))
+                .replace("{{PRODUCT_NAME}}", escape(productName))
+                .replace("{{BOOKING_DATE}}", escape(bookingDateLabel))
+                .replace("{{TRAVEL_DATE}}", escape(travelDateLabel))
+                .replace("{{RETURN_DATE}}", escape(returnDateLabel))
+                .replace("{{PROVIDER_NAME}}", escape(providerLabel))
+                .replace("{{FLIGHT_NUMBER}}", escape(flightLabel))
+                .replace("{{PROVIDER_WHATSAPP}}", escape(providerWhatsapp))
+                .replace("{{PROVIDER_EMAIL}}", escape(providerEmail));
     }
 
 }

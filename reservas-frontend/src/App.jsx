@@ -1,6 +1,6 @@
 // src/App.jsx
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import ProtectedAdminRoute from "./routes/ProtectedAdminRoute";
 
 // Páginas
@@ -14,12 +14,16 @@ import Register from "./pages/Register/Register.jsx";
 import Login from "./pages/Login/Login";
 import Profile from "./pages/Profile/Profile";
 import AdminUsersPage from "./pages/AdminPanel/AdminUsersPage";
+import FloatingWhatsApp from "./components/FloatingWhatsApp/FloatingWhatsApp";
 
 import "./app.css";
 import BottomNav from "./components/BottomNav/BottomNav";
 
 
 function App() {
+  const location = useLocation();
+  const showWhatsapp = ["/", "/profile"].includes(location.pathname) || location.pathname.startsWith("/vuelo/");
+
   return (
     <main>
       <Routes>
@@ -99,6 +103,7 @@ function App() {
           }
         />
       </Routes>
+      {showWhatsapp && <FloatingWhatsApp />}
     </main>
   );
 }

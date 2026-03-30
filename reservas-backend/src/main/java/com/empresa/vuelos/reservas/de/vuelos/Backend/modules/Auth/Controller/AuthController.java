@@ -1,10 +1,13 @@
 package com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Controller;
 
+import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.DTO.RoleUpdateRequest;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.DTO.UserRequest;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Model.User;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Service.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -12,29 +15,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@CrossOrigin(origins = "http://localhost:5173", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private final AuthService authService;
 
-
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
 
-    // Registro
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody UserRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody UserRequest request) {
         try {
-            // 1. Crear usuario
             User newUser = authService.register(request);
-
-            // 2. Devolver respuesta al frontend
             Map<String, Object> res = new HashMap<>();
             res.put("message", "Registro exitoso, email enviado");
             res.put("user", toSafeUser(newUser));
-
             return ResponseEntity.ok(res);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -44,7 +42,7 @@ public class AuthController {
     }
 
     @PostMapping("/resend-confirmation")
-    public ResponseEntity<?> resendConfirmation(@RequestBody Map<String, String> payload) {
+    public ResponseEntity<?> resendConfirmation(@Valid @RequestBody Map<String, String> payload) {
         try {
             String email = payload != null ? payload.get("email") : null;
             authService.resendConfirmationEmail(email);
@@ -56,10 +54,8 @@ public class AuthController {
         }
     }
 
-
-    // Login
     @PostMapping("/login/token")
-    public ResponseEntity<?> loginWithToken(@RequestBody Map<String, String> credentials) {
+    public ResponseEntity<?> loginWithToken(@Valid @RequestBody Map<String, String> credentials) {
         try {
             String email = credentials != null ? credentials.get("email") : null;
             String password = credentials != null ? credentials.get("password") : null;
@@ -86,26 +82,23 @@ public class AuthController {
         }
     }
 
-
-
-    // ===== ADMIN ROLES =====
     @PutMapping("/{userId}/role")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> updateUserRole(
-            @PathVariable Long userId,
-            @RequestParam String role
-    ) {
+    public ResponseEntity<?> updateUserRole(@PathVariable Long userId,
+                                            @Valid @RequestBody(required = false) RoleUpdateRequest request,
+                                            @RequestParam(required = false) String role,
+                                            Authentication authentication) {
         try {
-            User updatedUser = authService.updateUserRole(userId, role.toUpperCase());
+            String requestedRole = request != null && request.getRole() != null ? request.getRole() : role;
+            User updatedUser = authService.updateUserRole(userId, requestedRole, authentication != null ? authentication.getName() : null);
             return ResponseEntity.ok(toSafeUser(updatedUser));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-
-
-    // Listar todos los usuarios
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getAllUsers() {
@@ -119,22 +112,20 @@ public class AuthController {
 
             return ResponseEntity.ok(safeUsers);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // Solo ADMIN puede eliminar usuarios
     @DeleteMapping("/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteUser(@PathVariable Long userId) {
         try {
             authService.deleteUser(userId);
-            return ResponseEntity.ok("Usuario eliminado correctamente");
+            return ResponseEntity.ok(Map.of("message", "Usuario eliminado correctamente"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
-
 
     private Map<String, Object> toSafeUser(User user) {
         Map<String, Object> safe = new HashMap<>();

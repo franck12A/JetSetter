@@ -5,6 +5,7 @@ import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Auth.Repository.Use
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Model.Booking;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.Service.BookingService;
 import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Booking.dto.BookingRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -37,40 +38,29 @@ public class BookingController {
     }
 
     @GetMapping("/product/{productId}/dates")
-    public ResponseEntity<?> getBookedDatesByProduct(@PathVariable String productId) {
-        try {
-            Long resolvedProductId = bookingService.resolveProductId(productId);
-            List<String> dates = bookingService.getBookedDatesByProductId(resolvedProductId);
-            return ResponseEntity.ok(dates);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "No se pudo obtener disponibilidad"));
-        }
+    public ResponseEntity<List<String>> getBookedDatesByProduct(@PathVariable String productId) {
+        Long resolvedProductId = bookingService.resolveProductId(productId);
+        List<String> dates = bookingService.getBookedDatesByProductId(resolvedProductId);
+        return ResponseEntity.ok(dates);
     }
 
     @PostMapping("/create")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> createBooking(@RequestBody BookingRequest request,
-                                           Authentication authentication) {
+    public ResponseEntity<Booking> createBooking(@Valid @RequestBody BookingRequest request,
+                                                 Authentication authentication) throws Exception {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        try {
-            Long resolvedProductId = bookingService.resolveProductId(request.productId);
-            Booking booking = bookingService.createBooking(
-                    user.getId(),
-                    resolvedProductId,
-                    request.dateStr,
-                    request.passengers
-            );
-            return ResponseEntity.ok(booking);
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        Long resolvedProductId = bookingService.resolveProductId(request.productId);
+        Booking booking = bookingService.createBooking(
+                user.getId(),
+                resolvedProductId,
+                request.dateStr,
+                request.returnDateStr,
+                request.passengers
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(booking);
     }
 
     @DeleteMapping("/{bookingId}")

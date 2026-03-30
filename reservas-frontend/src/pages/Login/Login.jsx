@@ -1,5 +1,5 @@
-import React, { useState, useContext } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, useContext, useMemo } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import AuthLayout from "../../components/auth/AuthLayout";
 import AuthCard from "../../components/auth/AuthCard";
@@ -9,11 +9,13 @@ import { motion } from "framer-motion";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useContext(AuthContext);
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const infoMessage = useMemo(() => location.state?.message || "", [location.state]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -37,7 +39,7 @@ export default function Login() {
 
     if (!form.email || !form.password) {
       setLoading(false);
-      return setError("Completa email y contrasena.");
+      return setError("Completa correo electrónico y contraseña.");
     }
 
     try {
@@ -48,7 +50,7 @@ export default function Login() {
       });
 
       if (!res.ok) {
-        const msg = await parseErrorMessage(res, "Usuario o contrasena incorrectos");
+        const msg = await parseErrorMessage(res, "Usuario o contraseña incorrectos");
         setError(msg);
         setLoading(false);
         return;
@@ -56,7 +58,10 @@ export default function Login() {
 
       const data = await res.json();
       login(data.user, data.token);
-      navigate("/");
+      navigate(location.state?.redirectTo || "/", {
+        replace: true,
+        state: location.state?.redirectState,
+      });
     } catch (err) {
       console.error("Error login:", err);
       setError("Error de conexion con el servidor");
@@ -70,7 +75,7 @@ export default function Login() {
       <AuthCard title="JetSetter" subtitle="Bienvenido de nuevo">
         <form onSubmit={handleSubmit}>
           <InputField
-            label="Email"
+            label="Correo electrónico"
             name="email"
             type="email"
             placeholder="tuemail@gmail.com"
@@ -78,7 +83,7 @@ export default function Login() {
             onChange={handleChange}
           />
           <InputField
-            label="Contrasena"
+            label="Contraseña"
             name="password"
             type="password"
             placeholder="********"
@@ -88,11 +93,17 @@ export default function Login() {
 
           <div className="auth-helper-row">
             <a href="#" className="auth-link" onClick={(e) => e.preventDefault()}>
-              Olvidaste tu contrasena?
+              ¿Olvidaste tu contraseña?
             </a>
           </div>
 
-          <PrimaryButton loading={loading}>Iniciar sesion</PrimaryButton>
+          <PrimaryButton loading={loading}>Iniciar sesión</PrimaryButton>
+
+          {infoMessage && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="auth-message">
+              {infoMessage}
+            </motion.p>
+          )}
 
           {error && (
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="auth-message error">
@@ -101,14 +112,14 @@ export default function Login() {
           )}
         </form>
 
-        <div className="auth-divider">o continua con</div>
+        <div className="auth-divider">o continúa con</div>
         <div className="auth-socials">
           <button type="button" className="auth-social-btn">Google</button>
           <button type="button" className="auth-social-btn">Apple</button>
         </div>
 
         <p className="auth-switch">
-          No tienes cuenta? <Link to="/register">Registrate</Link>
+          ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
         </p>
       </AuthCard>
     </AuthLayout>

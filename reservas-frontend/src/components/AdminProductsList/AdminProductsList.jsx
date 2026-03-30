@@ -1,8 +1,9 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import "./AdminProductsList.css";
 
-export default function AdminProductsList({ vuelos, onEdit, onDelete }) {
+const normalizeStatus = (status) => (String(status || "").trim().toUpperCase() === "ACTIVE" ? "ACTIVE" : "DRAFT");
+
+export default function AdminProductsList({ vuelos, onEdit, onDelete, onToggleStatus, statusUpdatingId }) {
   const safeVuelos = vuelos || [];
 
   return (
@@ -11,42 +12,49 @@ export default function AdminProductsList({ vuelos, onEdit, onDelete }) {
         <thead>
           <tr>
             <th>ID</th>
-            <th>FLIGHT NAME <span style={{fontSize:'0.65rem',color:'#64748b'}}>(Nombre)</span></th>
-            <th>COUNTRY</th>
-            <th>PRICE (USD)</th>
-            <th>STATUS</th>
-            <th style={{ textAlign: "right" }}>ACTIONS <span style={{fontSize:'0.65rem',color:'#64748b'}}>(Acciones)</span></th>
+            <th>Vuelo</th>
+            <th>Destino</th>
+            <th>Precio</th>
+            <th>Estado</th>
+            <th style={{ textAlign: "right" }}>Acciones</th>
           </tr>
         </thead>
         <tbody>
           {safeVuelos.length > 0 ? (
-            safeVuelos.map((prod, index) => {
-              const isDraft = !prod.name || !prod.country || !prod.price || !prod.image;
+            safeVuelos.map((product, index) => {
+              const status = normalizeStatus(product.status);
+              const isDraft = status === "DRAFT";
               return (
-                <tr key={`vuelo-${prod.id}-${index}`}>
-                  <td className="admin-td-id">#{prod.id}</td>
-                  <td className="admin-td-name">{prod.name || "Sin nombre"}</td>
-                  <td className="admin-td-country">{prod.country || "-"}</td>
-                  <td className="admin-td-price">${prod.price || "0.00"}</td>
+                <tr key={`vuelo-${product.id}-${index}`}>
+                  <td className="admin-td-id">#{product.id}</td>
+                  <td className="admin-td-name">{product.name || "Sin nombre"}</td>
+                  <td className="admin-td-country">{product.country || "-"}</td>
+                  <td className="admin-td-price">${product.price || "0.00"}</td>
                   <td className="admin-td-status">
-                    <span className={`status-pill ${isDraft ? "draft" : "active"}`}>
-                      {isDraft ? "DRAFT" : "ACTIVE"}
-                    </span>
+                    <span className={`status-pill ${isDraft ? "draft" : "active"}`}>{isDraft ? "Borrador" : "Activo"}</span>
                   </td>
                   <td className="admin-td-actions">
-                    <button className="icon-btn-action" onClick={() => onEdit(prod)} title="Editar">
-                      ✎
+                    <button
+                      className="status-toggle-btn"
+                      type="button"
+                      onClick={() => onToggleStatus?.(product)}
+                      disabled={statusUpdatingId === product.id}
+                    >
+                      {statusUpdatingId === product.id ? "Actualizando..." : isDraft ? "Publicar" : "Pausar (Borrador)"}
                     </button>
-                    <button className="icon-btn-action delete" onClick={() => onDelete(prod.id)} title="Eliminar">
-                      🗑
+                    <button className="icon-btn-action" onClick={() => onEdit?.(product)} title="Editar" type="button">
+                      Editar
+                    </button>
+                    <button className="icon-btn-action delete" onClick={() => onDelete?.(product.id)} title="Eliminar" type="button">
+                      Eliminar
                     </button>
                   </td>
                 </tr>
-              )
+              );
             })
           ) : (
             <tr>
-              <td colSpan="3" style={{ textAlign: "center", padding: "1rem" }}>No hay productos</td>
+              <td colSpan="6" style={{ textAlign: "center", padding: "1rem" }}>No hay productos</td>
             </tr>
           )}
         </tbody>
