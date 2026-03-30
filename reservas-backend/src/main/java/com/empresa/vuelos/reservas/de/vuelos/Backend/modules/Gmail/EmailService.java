@@ -65,7 +65,7 @@ public class EmailService {
             helper.setTo(to);
             helper.setSubject("Reserva confirmada en JetSetter");
             helper.setText(buildBookingConfirmationTemplate(
-                    customerName,
+                    to,
                     productName,
                     bookingDate,
                     travelDate,
