@@ -22,8 +22,9 @@ export default function GaleriaPage() {
       setLoading(true);
       let vuelo = null;
       const numericId = Number(id);
+      const isDuffelOffer = String(id || "").startsWith("duffel:");
 
-      if (Number.isInteger(numericId) && numericId > 0) {
+      if (!isDuffelOffer && Number.isInteger(numericId) && numericId > 0) {
         try {
           vuelo = await productService.getById(numericId);
         } catch {
@@ -31,7 +32,7 @@ export default function GaleriaPage() {
         }
       }
 
-      if (!vuelo) {
+      if (!vuelo && !isDuffelOffer) {
         try {
           vuelo = await productService.obtenerVueloPorIdAPI(id);
         } catch {

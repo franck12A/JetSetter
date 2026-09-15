@@ -1,8 +1,7 @@
 // src/services/vuelosService.js
 import axios from "axios";
 import { normalizeAirlineName } from "../utils/flightMetadata";
-
-const API_URL = "http://localhost:8080";
+import { API_URL } from "./apiConfig";
 
 // ---------------- TOKEN ----------------
 const obtenerToken = () => {
@@ -33,14 +32,14 @@ const calcularDuracion = (inicio, fin) => {
 };
 
 // ---------------- OBTENER VUELOS ----------------
-export const obtenerVuelos = async (origen, destino, fecha) => {
+export const obtenerVuelos = async (origen, destino, fecha, pasajeros = 1) => {
   if (!origen || !destino || !fecha) return [];
 
   const token = obtenerToken();
 
   try {
-    const { data } = await axios.get(`${API_URL}/amadeus/buscar`, {
-      params: { origen, destino, fecha },
+    const { data } = await axios.get(`${API_URL}/api/flights/search`, {
+      params: { origen, destino, fecha, pasajeros },
       headers: { Authorization: token ? `Bearer ${token}` : undefined }
     });
 
@@ -69,6 +68,9 @@ export const obtenerVuelos = async (origen, destino, fecha) => {
       return {
         id: vuelo.id,
         productId: vuelo.productId ?? (Number.isInteger(Number(vuelo.id)) ? Number(vuelo.id) : null),
+        provider: vuelo.provider,
+        source: vuelo.provider || "external",
+        isExternal: true,
         airlineName,
         flightNumber,
         aerolinea: airlineName,
@@ -103,6 +105,7 @@ export const obtenerVuelos = async (origen, destino, fecha) => {
 // ---------------- OBTENER VUELO POR ID ----------------
 export const obtenerVueloPorId = async (id) => {
   if (!id) return null;
+  if (String(id).startsWith("duffel:")) return null;
 
   const token = obtenerToken();
 

@@ -5,6 +5,7 @@ import AuthLayout from "../../components/auth/AuthLayout";
 import AuthCard from "../../components/auth/AuthCard";
 import InputField from "../../components/auth/InputField";
 import PrimaryButton from "../../components/auth/PrimaryButton";
+import { API_URL } from "../../services/apiConfig";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -92,7 +93,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8080/api/auth/register", {
+      const res = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -123,7 +124,7 @@ export default function Register() {
     setResendLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8080/api/auth/resend-confirmation", {
+      const res = await fetch(`${API_URL}/api/auth/resend-confirmation`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: registeredEmail }),

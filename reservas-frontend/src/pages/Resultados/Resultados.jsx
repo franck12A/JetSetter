@@ -3,6 +3,7 @@ import { useLocation, useNavigate, Link } from "react-router-dom";
 import { FaPlane, FaClock, FaCalendarAlt, FaHeart, FaRegHeart, FaTimes, FaFilter, FaStar } from "react-icons/fa";
 import Paginacion from "../../components/Paginacion/Paginacion";
 import productService from "../../services/productService";
+import { getIataForCity } from "../../utils/airportCatalog";
 import { addFavorite as addFavApi, removeFavorite as removeFavApi, getUserFavorites } from "../../services/favoritesApi";
 import { createBooking } from "../../services/bookingsApi";
 import { getReviewsSummary } from "../../services/reviewsApi";
@@ -151,10 +152,13 @@ export default function Resultados() {
 
   const filtroOrigen = queryParams.get("origen") || "";
   const filtroDestino = queryParams.get("destino") || "";
+  const filtroOrigenIata = queryParams.get("origenIata") || getIataForCity(filtroOrigen);
+  const filtroDestinoIata = queryParams.get("destinoIata") || getIataForCity(filtroDestino);
   const filtroFecha = queryParams.get("fecha") || "";
   const filtroFechaSalida = queryParams.get("fechaSalida") || queryParams.get("fechaInicio") || "";
   const filtroFechaRegreso = queryParams.get("fechaRegreso") || queryParams.get("fechaFin") || "";
   const filtroCategoria = queryParams.get("categoria") || "";
+  const filtroPasajeros = Number(queryParams.get("pasajeros") || 1);
 
   const [vuelos, setVuelos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -178,7 +182,7 @@ export default function Resultados() {
       try {
         const [localResult, apiResult] = await Promise.allSettled([
           productService.getAllProducts(),
-          productService.obtenerVuelosAPI(null, null, null, 40),
+          productService.obtenerVuelosAPI(filtroOrigenIata, filtroDestinoIata, filtroFechaSalida || filtroFecha, 40, filtroPasajeros),
         ]);
 
         const localVuelos = localResult.status === "fulfilled" ? localResult.value || [] : [];

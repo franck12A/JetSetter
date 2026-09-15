@@ -1,8 +1,7 @@
 // src/services/productService.js
 import axios from "axios";
 import { normalizeAirlineName } from "../utils/flightMetadata";
-
-const API_URL = "http://localhost:8080";
+import { API_URL } from "./apiConfig";
 
 // ---------------- TOKEN ----------------
 const obtenerToken = () => {
@@ -52,15 +51,15 @@ const calcularDuracion = (inicio, fin) => {
 const productService = {
 
   // ---------------- VUELOS API ----------------
-obtenerVuelosAPI: async (origen, destino, fecha, limit = 20) => {
+obtenerVuelosAPI: async (origen, destino, fecha, limit = 20, pasajeros = 1) => {
 
   const token = obtenerToken();
 
   try {
-    const endpoint = (origen && destino && fecha) ? "/amadeus/buscar" : "/amadeus/random";
-    const params = (origen && destino && fecha)
-      ? { origen, destino, fecha, limit }
-      : { limit };
+    // Duffel requires a concrete route and departure date; it has no random-flight endpoint.
+    if (!origen || !destino || !fecha) return [];
+    const endpoint = "/api/flights/search";
+    const params = { origen, destino, fecha, pasajeros, limit };
 
     const { data } = await axios.get(`${API_URL}${endpoint}`, {
       params,
@@ -101,7 +100,8 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20) => {
       return {
         id: vuelo.id,
         productId: vuelo.productId ?? (Number.isInteger(Number(vuelo.id)) ? Number(vuelo.id) : null),
-        source: "amadeus",
+        provider: vuelo.provider || "external",
+        source: vuelo.provider || "external",
         isExternal: true,
         airlineName,
         flightNumber,
@@ -135,8 +135,9 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20) => {
 }
 ,
 
- obtenerVueloPorIdAPI: async (id) => {
+ obtenerVueloPorIdAPI: async (id, provider) => {
    if (!id) return null;
+   if (String(provider || "").toLowerCase() === "duffel" || String(id).startsWith("duffel:")) return null;
 
    const token = obtenerToken();
 
@@ -178,7 +179,8 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20) => {
      return {
        id: data.id,
        productId: data.productId ?? (Number.isInteger(Number(data.id)) ? Number(data.id) : null),
-       source: "amadeus",
+       provider: data.provider || "legacy",
+       source: data.provider || "legacy",
        isExternal: true,
        airlineName,
        flightNumber,

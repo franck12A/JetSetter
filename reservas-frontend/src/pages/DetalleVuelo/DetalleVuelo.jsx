@@ -358,7 +358,7 @@ const normalizeVuelo = (data) => {
   const duracion = data?.duracion || getFeatureValue([/duracion/i, /duración/i]) || "Consultar";
   const clase = data?.clase || getFeatureValue([/clase/i]) || "Económica";
   const equipaje = data?.equipaje || getFeatureValue([/equipaje/i, /maleta/i, /bag/i]) || "No incluido";
-  const isExternal = Boolean(data?.isExternal || data?.source === "amadeus" || data?.externalId);
+  const isExternal = Boolean(data?.isExternal || data?.provider || data?.source === "external" || data?.externalId);
   const rawProductId = data.productId ?? data.id;
   const parsedProductId = Number(rawProductId);
   const localProductId = Number.isInteger(parsedProductId) && parsedProductId > 0 ? parsedProductId : null;
@@ -851,6 +851,7 @@ export default function DetalleVuelo() {
 
       let data = null;
       const stateVuelo = location.state?.vuelo || null;
+      const isDuffelOffer = String(stateVuelo?.provider || "").toLowerCase() === "duffel" || String(stateVuelo?.id || "").startsWith("duffel:");
       const stateLocalId = Number(stateVuelo?.productId ?? stateVuelo?.id);
       const detailId = Number(id);
 
@@ -869,7 +870,7 @@ export default function DetalleVuelo() {
         }
       }
 
-      if (!data) {
+      if (!data && !isDuffelOffer) {
         try {
           data = await productService.obtenerVueloPorIdAPI(id);
         } catch {

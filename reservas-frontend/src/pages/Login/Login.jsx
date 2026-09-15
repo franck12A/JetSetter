@@ -6,6 +6,7 @@ import AuthCard from "../../components/auth/AuthCard";
 import InputField from "../../components/auth/InputField";
 import PrimaryButton from "../../components/auth/PrimaryButton";
 import { motion } from "framer-motion";
+import { API_URL } from "../../services/apiConfig";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -43,7 +44,7 @@ export default function Login() {
     }
 
     try {
-      const res = await fetch("http://localhost:8080/api/auth/login/token", {
+      const res = await fetch(`${API_URL}/api/auth/login/token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

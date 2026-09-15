@@ -1,5 +1,6 @@
 package com.empresa.vuelos.reservas.de.vuelos.Backend.config;
 
+import com.empresa.vuelos.reservas.de.vuelos.Backend.modules.Flight.provider.FlightProviderException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -46,6 +47,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleUnreadableBody(HttpMessageNotReadableException ex) {
         return buildBody(HttpStatus.BAD_REQUEST, "No se pudo interpretar la solicitud.");
+    }
+
+    @ExceptionHandler(FlightProviderException.class)
+    public ResponseEntity<Map<String, Object>> handleFlightProvider(FlightProviderException ex) {
+        return buildBody(HttpStatus.BAD_GATEWAY, ex.getMessage());
     }
 
     private ResponseEntity<Map<String, Object>> buildBody(HttpStatus status, String message) {

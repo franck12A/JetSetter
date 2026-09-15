@@ -1,4 +1,6 @@
-const API_URL = "http://localhost:8080/api/favorites";
+import { API_URL as API_BASE_URL } from "./apiConfig";
+
+const API_URL = `${API_BASE_URL}/api/favorites`;
 
 function getAuthToken() {
   const directToken = localStorage.getItem("token");

@@ -11,7 +11,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/features")
-@CrossOrigin
 public class FeatureController {
 
     private final FeatureService service;

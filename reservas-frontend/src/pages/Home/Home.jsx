@@ -19,6 +19,7 @@ import { normalizeAirlineName } from "../../utils/flightMetadata";
 import { getSafeIcon } from "../../utils/iconRegistry";
 import { inferFlightCategories } from "../../utils/flightCategories";
 import { getVueloImage } from "../../utils/images";
+import { API_URL } from "../../services/apiConfig";
 
 const splitRoute = (name = "") => {
   const clean = name.replace(/^Vuelo\s+/i, "");
@@ -69,7 +70,7 @@ export default function Home() {
   // Traer vuelos desde la API real
   const fetchVuelos = async () => {
     try {
-      const [productos, amadeusVuelos] = await Promise.all([
+      const [productos, externalFlights] = await Promise.all([
         productService.getAllProducts(),
         productService.obtenerVuelosAPI(null, null, null, 20),
       ]);
@@ -89,8 +90,8 @@ export default function Home() {
         precioTotal: p.price,
       }));
 
-      const vuelosAmadeus = Array.isArray(amadeusVuelos) ? amadeusVuelos : [];
-      const merged = [...vuelosBd, ...vuelosAmadeus].map((vuelo) => ({
+      const vuelosExternos = Array.isArray(externalFlights) ? externalFlights : [];
+      const merged = [...vuelosBd, ...vuelosExternos].map((vuelo) => ({
         ...vuelo,
         categorias: inferFlightCategories(vuelo),
       }));
@@ -138,7 +139,7 @@ export default function Home() {
   // Traer categorías desde la API
   const fetchCategorias = async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/categories");
+      const res = await fetch(`${API_URL}/api/categories`);
       if (!res.ok) throw new Error("Error al cargar categorías");
       const data = await res.json();
       // el backend puede enviar { id, name, icon } u otros campos
@@ -251,7 +252,7 @@ export default function Home() {
 
               const toggleFavorite = async () => {
                 if (!user || !token) return alert("Debes iniciar sesión para agregar favoritos");
-                if (!localProductId) return alert("Este vuelo de Amadeus no está guardado en la BD.");
+                if (!localProductId) return alert("Esta oferta externa no está guardada en la BD.");
                 try {
                   if (isFavorite) {
                     await removeFavApi(localProductId);
@@ -284,7 +285,7 @@ export default function Home() {
 
               const reservarVuelo = async () => {
                 if (!user || !token) return alert("Debes iniciar sesión para reservar un vuelo");
-                if (!localProductId) return alert("Este vuelo de Amadeus no está guardado en la BD.");
+                if (!localProductId) return alert("Esta oferta externa no está guardada en la BD.");
                 try {
                   await createBooking({
                     userId: user.id,

@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AdminProductsList from "../../components/AdminProductsList/AdminProductsList";
+import { API_URL } from "../../services/apiConfig";
 
 const LOCAL_KEY = "products";
 const PER_PAGE = 10;
@@ -45,7 +46,7 @@ export default function AdminProductsListPage() {
   const loadProducts = async () => {
     let backendProducts = [];
     try {
-      const res = await fetch("http://localhost:8080/api/products");
+      const res = await fetch(`${API_URL}/api/products`);
       if (res.ok) backendProducts = await res.json();
     } catch (err) {
       console.warn("No se pudo cargar productos del backend:", err);
@@ -68,7 +69,7 @@ export default function AdminProductsListPage() {
     if (!window.confirm("Eliminar este producto?")) return;
 
     try {
-      const res = await fetch(`http://localhost:8080/api/products/${id}`, {
+      const res = await fetch(`${API_URL}/api/products/${id}`, {
         method: "DELETE",
       });
 

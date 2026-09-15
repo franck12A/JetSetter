@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import "./components/VuelosList/VuelosList.css";
+import { API_URL } from "./services/apiConfig";
 
 function VuelosList() {
   const [vuelos, setVuelos] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/products/random?count=6")
+    fetch(`${API_URL}/api/products/random?count=6`)
       .then(res => res.json())
       .then(data => {
         setVuelos(data);

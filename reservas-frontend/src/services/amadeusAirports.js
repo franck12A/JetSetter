@@ -1,26 +1,6 @@
-import Amadeus from "amadeus";
-
-const amadeus = new Amadeus({
-  clientId: import.meta.env.VITE_AMADEUS_API_KEY,
-  clientSecret: import.meta.env.VITE_AMADEUS_API_SECRET,
-});
-
+// Airport lookups must be served by JetSetter, never with provider credentials in the browser.
+// This legacy helper is currently unused; retain its export without calling an external provider.
 export async function buscarAeropuertos(keyword) {
-  try {
-    const response = await amadeus.referenceData.locations.get({
-      keyword,
-      subType: "AIRPORT",
-    });
-
-    return response.data.map(a => ({
-      code: a.iataCode,
-      name: a.name,
-      city: a.address.cityName,
-      country: a.address.countryName,
-    }));
-
-  } catch (error) {
-    console.error("Error aeropuertos:", error);
-    return [];
-  }
+  void keyword;
+  return [];
 }

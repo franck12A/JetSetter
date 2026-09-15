@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/amadeus")
 public class AmadeusController {
 

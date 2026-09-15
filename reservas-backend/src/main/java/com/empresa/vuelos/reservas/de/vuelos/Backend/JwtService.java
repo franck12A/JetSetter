@@ -39,7 +39,7 @@ public class JwtService {
                 .signWith(key)
                 .compact();
 
-        System.out.println("🟢 Token generado para " + email + " con rol " + cleanRole + " → " + token);
+        System.out.println("🟢 Token generado para " + email + " con rol " + cleanRole);
         return token;
     }
 

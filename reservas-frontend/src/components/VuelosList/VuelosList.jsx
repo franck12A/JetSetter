@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import productService from "../../services/productService";
 import "./VuelosList.css";
+import { API_URL } from "../../services/apiConfig";
 
 function VuelosList() {
   const [vuelos, setVuelos] = useState([]);
@@ -86,7 +87,7 @@ function VuelosList() {
           <div key={vuelo.id} className="vuelos-list-item">
             <div className="vuelos-list-card">
               <img
-                src={`http://localhost:8080/images/${vuelo.image}`}
+                src={`${API_URL}/images/${vuelo.image}`}
                 className="vuelos-list-image"
                 alt={vuelo.name}
                 style={{ height: "200px", objectFit: "cover" }}

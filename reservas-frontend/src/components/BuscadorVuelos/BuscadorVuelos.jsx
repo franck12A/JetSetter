@@ -5,6 +5,7 @@ import { DateRange } from "react-date-range";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import "./BuscadorVuelos.css";
+import { AIRPORTS, getIataForCity } from "../../utils/airportCatalog";
 
 const splitRoute = (name = "") => {
   const clean = String(name || "").replace(/^Vuelo\s+/i, "").trim();
@@ -117,7 +118,7 @@ export default function BuscadorVuelos({
       const canUse = !destino || normalizeText(v.destino) === normalizeText(destino);
       if (canUse && v.origen) seen.add(v.origen);
     });
-    return Array.from(seen).sort((a, b) => a.localeCompare(b, "es"));
+    return Array.from(new Set([...AIRPORTS.map((airport) => airport.city), ...seen])).sort((a, b) => a.localeCompare(b, "es"));
   }, [sourceVuelos, destino]);
 
   const destinosDisponibles = useMemo(() => {
@@ -126,7 +127,7 @@ export default function BuscadorVuelos({
       const canUse = !origen || normalizeText(v.origen) === normalizeText(origen);
       if (canUse && v.destino) seen.add(v.destino);
     });
-    return Array.from(seen).sort((a, b) => a.localeCompare(b, "es"));
+    return Array.from(new Set([...AIRPORTS.map((airport) => airport.city), ...seen])).sort((a, b) => a.localeCompare(b, "es"));
   }, [sourceVuelos, origen]);
 
   const origenesFiltrados = useMemo(
@@ -152,6 +153,8 @@ export default function BuscadorVuelos({
   }, []);
 
   const handleBuscar = () => {
+    const origenIata = getIataForCity(origen);
+    const destinoIata = getIataForCity(destino);
     const fechaInicio = fechaSalida || fechaRegreso;
     const fechaFin = fechaRegreso || fechaSalida;
     const hasDateRange = Boolean(fechaInicio);
@@ -171,11 +174,13 @@ export default function BuscadorVuelos({
     });
 
     if (typeof onFiltrar === "function") onFiltrar(filtrados);
-    if (typeof onBuscar === "function") onBuscar({ filtros: { origen, destino, fechaSalida, fechaRegreso, categoriaSeleccionada, pasajeros }, filtrados });
+    if (typeof onBuscar === "function") onBuscar({ filtros: { origen, destino, origenIata, destinoIata, fechaSalida, fechaRegreso, categoriaSeleccionada, pasajeros }, filtrados });
 
     const params = new URLSearchParams();
     if (origen) params.set("origen", origen);
     if (destino) params.set("destino", destino);
+    if (origenIata) params.set("origenIata", origenIata);
+    if (destinoIata) params.set("destinoIata", destinoIata);
     if (fechaSalida) params.set("fechaSalida", fechaSalida);
     if (fechaRegreso) params.set("fechaRegreso", fechaRegreso);
     if (categoriaSeleccionada) params.set("categoria", categoriaSeleccionada);
