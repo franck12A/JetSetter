@@ -157,6 +157,16 @@ export default function BuscadorVuelos({
     const destinoIata = getIataForCity(destino);
     const fechaInicio = fechaSalida || fechaRegreso;
     const fechaFin = fechaRegreso || fechaSalida;
+
+    if (!origenIata || !destinoIata || !fechaSalida) {
+      const missing = [];
+      if (!origenIata) missing.push("un origen válido");
+      if (!destinoIata) missing.push("un destino válido");
+      if (!fechaSalida) missing.push("una fecha de salida");
+      window.alert(`Para buscar vuelos necesitas seleccionar ${missing.join(", ")}.`);
+      return;
+    }
+
     const hasDateRange = Boolean(fechaInicio);
 
     const filtrados = sourceVuelos.filter((v) => {

@@ -177,6 +177,8 @@ export default function Resultados() {
   }, [filtroFechaSalida, filtroFechaRegreso, filtroFecha]);
 
   useEffect(() => {
+    let isActive = true;
+
     const fetchVuelos = async () => {
       setLoading(true);
       try {
@@ -187,6 +189,8 @@ export default function Resultados() {
 
         const localVuelos = localResult.status === "fulfilled" ? localResult.value || [] : [];
         const apiVuelos = apiResult.status === "fulfilled" ? apiResult.value || [] : [];
+
+        if (!isActive) return;
 
         const all = [...localVuelos, ...apiVuelos].map(normalizeVuelo);
 
@@ -203,14 +207,18 @@ export default function Resultados() {
         setVuelos(unique);
       } catch (err) {
         console.error("Error cargando vuelos:", err);
-        setVuelos([]);
+        if (isActive) setVuelos([]);
       } finally {
-        setLoading(false);
+        if (isActive) setLoading(false);
       }
     };
 
     fetchVuelos();
-  }, []);
+
+    return () => {
+      isActive = false;
+    };
+  }, [filtroOrigenIata, filtroDestinoIata, filtroFechaSalida, filtroFecha, filtroPasajeros]);
 
 
   useEffect(() => {
@@ -666,6 +674,9 @@ export default function Resultados() {
                       </div>
 
                       <span className="resultados-category">{vuelo.categoria}</span>
+                      {vuelo.provider === "mock" && (
+                        <span className="resultados-provider-badge">Modo demo: datos simulados</span>
+                      )}
                     </div>
 
                     <div className="resultados-side">

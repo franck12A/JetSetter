@@ -57,7 +57,14 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20, pasajeros = 1) => {
 
   try {
     // FlightAPI requires a concrete route and departure date.
-    if (!origen || !destino || !fecha) return [];
+    if (!origen || !destino || !fecha) {
+      console.warn("Busqueda de vuelos omitida: faltan origen, destino o fecha.", {
+        origen,
+        destino,
+        fecha,
+      });
+      return [];
+    }
     const endpoint = "/api/flights/search";
     const params = { origen, destino, fecha, pasajeros, limit };
 

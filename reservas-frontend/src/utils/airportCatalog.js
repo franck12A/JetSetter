@@ -13,6 +13,11 @@ export const AIRPORTS = [
   { city: "Tokio", iata: "NRT" },
 ];
 
-const cityToIata = new Map(AIRPORTS.map(({ city, iata }) => [city.toLowerCase(), iata]));
+const cityToIata = new Map(
+  AIRPORTS.flatMap(({ city, iata }) => [
+    [city.toLowerCase(), iata],
+    [iata.toLowerCase(), iata],
+  ])
+);
 
-export const getIataForCity = (city) => cityToIata.get(String(city || "").toLowerCase()) || "";
+export const getIataForCity = (city) => cityToIata.get(String(city || "").trim().toLowerCase()) || "";
