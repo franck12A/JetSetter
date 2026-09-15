@@ -19,6 +19,7 @@ import { normalizeAirlineName } from "../../utils/flightMetadata";
 import { getSafeIcon } from "../../utils/iconRegistry";
 import { inferFlightCategories } from "../../utils/flightCategories";
 import { getVueloImage } from "../../utils/images";
+import { formatFlightLocation, formatFlightRoute } from "../../utils/flightLocations";
 import { API_URL } from "../../services/apiConfig";
 
 const splitRoute = (name = "") => {
@@ -136,18 +137,12 @@ export default function Home() {
 
       const vuelosConImagenes = await Promise.all(
         dedup.map(async (vuelo) => {
-          if (vuelo.provider !== "mock" || vuelo.imagenPrincipal !== "/assets/avionsito.png") return vuelo;
-          try {
-            const images = await productService.getCountryImages({
-              country: vuelo.destino,
-              query: vuelo.destino,
-              count: 1,
-            });
-            return images[0]?.url ? { ...vuelo, imagenPrincipal: images[0].url } : vuelo;
-          } catch (imageError) {
-            console.warn("No se pudo cargar la imagen del destino demo:", imageError);
-            return vuelo;
-          }
+          if (vuelo.provider !== "mock") return vuelo;
+          const imagenPrincipal = await productService.getDestinationImage({
+            country: vuelo.destinationCountry || vuelo.paisDestino,
+            city: vuelo.destinationCity,
+          });
+          return { ...vuelo, imagenPrincipal };
         })
       );
 
@@ -327,7 +322,7 @@ export default function Home() {
                   <div className="vnc-img-wrapper">
                     <img
                       src={getVueloImage(vuelo)}
-                      alt={vuelo.destino || "Vuelo"}
+                      alt={formatFlightLocation(vuelo, "destination")}
                     />
                     <div className="vnc-price-overlay">
                       <span className="vnc-desde">DESDE</span>
@@ -351,7 +346,7 @@ export default function Home() {
 
                   <div className="vnc-info">
                     <div className="vnc-title-row">
-                      <h3 className="vnc-route">{vuelo.origen} <FaPlane className="vnc-plane-icon" /> {vuelo.destino}</h3>
+                      <h3 className="vnc-route">{formatFlightLocation(vuelo, "origin")} <FaPlane className="vnc-plane-icon" /> {formatFlightLocation(vuelo, "destination")}</h3>
                       <span className="vnc-category">{vuelo.categorias?.[0] || "INTERNACIONAL"}</span>
                     </div>
 

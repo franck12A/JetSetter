@@ -11,12 +11,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class FlightDemoControllerTest {
     @Test
-    void exposesSixInMemoryMockFlights() throws Exception {
+    void exposesTheDemoCatalogInMemory() throws Exception {
         MockMvc mvc = MockMvcBuilders.standaloneSetup(new FlightDemoController(new MockFlightProvider())).build();
 
         mvc.perform(get("/api/flights/demo"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(6)))
+                .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(50)))
+                .andExpect(jsonPath("$[0].destinationCity").isNotEmpty())
+                .andExpect(jsonPath("$[0].destinationCountry").isNotEmpty())
                 .andExpect(jsonPath("$[0].provider").value("mock"));
     }
 }

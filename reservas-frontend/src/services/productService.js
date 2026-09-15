@@ -1,7 +1,11 @@
 // src/services/productService.js
 import axios from "axios";
 import { normalizeAirlineName } from "../utils/flightMetadata";
+import { getCountryFallbackImage } from "../utils/images";
 import { API_URL } from "./apiConfig";
+
+const destinationImageCache = new Map();
+const destinationImageRequests = new Map();
 
 // ---------------- TOKEN ----------------
 const obtenerToken = () => {
@@ -291,7 +295,15 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20, pasajeros = 1) => {
         numeroVuelo: flightNumber,
         precioTotal: vuelo.totalAmount ?? vuelo.precioTotal ?? 0,
         categorias: ["Demo"],
-        caracteristicas: ["Modo demo · datos simulados", "Clase: Economy", "Equipaje incluido: No"],
+        caracteristicas: [
+          "Modo demo · datos simulados",
+          `Duración: ${vuelo.duration || "Consultar"}`,
+          `Escalas: ${vuelo.stops ?? 0}`,
+          "Clase: Economy",
+          "Equipaje incluido: No",
+        ],
+        duracion: vuelo.duration || "Consultar",
+        escalas: vuelo.stops ?? 0,
         imagenPrincipal: vuelo.imagenPrincipal || "/assets/avionsito.png",
         origen: vuelo.origin || vuelo.origen || "-",
         destino: vuelo.destination || vuelo.destino || "-",
@@ -310,6 +322,33 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20, pasajeros = 1) => {
     });
   },
 
+  getDestinationImage: async ({ country, city }) => {
+    const safeCountry = String(country || "").trim();
+    const safeCity = String(city || "").trim();
+    const fallback = getCountryFallbackImage(safeCountry);
+    if (!safeCountry && !safeCity) return "/assets/avionsito.png";
+
+    const cacheKey = `${safeCountry.toLocaleLowerCase()}|${safeCity.toLocaleLowerCase()}`;
+    if (destinationImageCache.has(cacheKey)) return destinationImageCache.get(cacheKey);
+    if (destinationImageRequests.has(cacheKey)) return destinationImageRequests.get(cacheKey);
+
+    const request = productService.getCountryImages({
+      country: safeCountry,
+      city: safeCity,
+      count: 1,
+    })
+      .then((images) => images[0]?.url || fallback)
+      .catch(() => fallback)
+      .then((image) => {
+        destinationImageCache.set(cacheKey, image);
+        return image;
+      })
+      .finally(() => destinationImageRequests.delete(cacheKey));
+
+    destinationImageRequests.set(cacheKey, request);
+    return request;
+  },
+
   getRandomFlightsPaged: async (page = 0, size = 20) => {
     const token = obtenerToken();
     const { data } = await axios.get(`${API_URL}/amadeus/random/paged`, {
@@ -319,9 +358,10 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20, pasajeros = 1) => {
     return data;
   },
 
-    getCountryImages: async ({ country, query, count = 6 }) => {
+    getCountryImages: async ({ country, city, query, count = 6 }) => {
     const params = {};
     if (country) params.country = country;
+    if (city) params.city = city;
     if (query) params.query = query;
     params.count = count;
     const { data } = await axios.get(`${API_URL}/api/images/country`, { params });

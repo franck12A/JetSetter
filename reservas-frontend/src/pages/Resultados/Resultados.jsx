@@ -11,6 +11,7 @@ import { normalizeAirlineName } from "../../utils/flightMetadata";
 import { getVueloImage } from "../../utils/images";
 import { inferFlightCategories, hasCategoryMatch } from "../../utils/flightCategories";
 import { getSafeIcon } from "../../utils/iconRegistry";
+import { formatFlightLocation } from "../../utils/flightLocations";
 import "./Resultados.css";
 
 const normalizeText = (value = "") =>
@@ -650,7 +651,7 @@ export default function Resultados() {
 
                     <div className="resultados-info">
                       <h3>{vuelo.displayName}</h3>
-                      <p className="resultados-route">{vuelo.origen} {"->"} {vuelo.destino}</p>
+                      <p className="resultados-route">{formatFlightLocation(vuelo, "origin")} {"->"} {formatFlightLocation(vuelo, "destination")}</p>
 
                       <p>
                         <FaPlane /> {vuelo.aerolinea || "Aerolinea no disponible"}

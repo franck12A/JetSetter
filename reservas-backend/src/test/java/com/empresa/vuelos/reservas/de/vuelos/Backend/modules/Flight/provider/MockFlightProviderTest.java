@@ -23,6 +23,11 @@ class MockFlightProviderTest {
             assertThat(offer.getProvider()).isEqualTo("mock");
             assertThat(offer.getOrigin()).isEqualTo("EZE");
             assertThat(offer.getDestination()).isEqualTo("MAD");
+            assertThat(offer.getOriginCity()).isEqualTo("Buenos Aires");
+            assertThat(offer.getOriginCountry()).isEqualTo("Argentina");
+            assertThat(offer.getDestinationCity()).isEqualTo("Madrid");
+            assertThat(offer.getDestinationCountry()).isEqualTo("Spain");
+            assertThat(offer.getDestinationCountryCode()).isEqualTo("ES");
             assertThat(offer.getDepartureAt()).startsWith("2026-12-10T");
             assertThat(offer.getCurrency()).isEqualTo("USD");
             assertThat(offer.getSegments()).hasSize(1);
@@ -30,14 +35,24 @@ class MockFlightProviderTest {
     }
 
     @Test
-    void demoCatalogHasSixDistinctDestinations() {
+    void demoCatalogHasOneRoutePerCatalogDestination() {
         MockFlightProvider provider = new MockFlightProvider();
 
         List<FlightOfferResponse> offers = provider.demoCatalog();
 
-        assertThat(offers).hasSize(6);
+        assertThat(offers).hasSize(50);
         assertThat(offers).extracting(FlightOfferResponse::getDestination)
                 .doesNotHaveDuplicates();
-        assertThat(offers).allMatch(offer -> "mock".equals(offer.getProvider()));
+        assertThat(offers).allSatisfy(offer -> {
+            assertThat(offer.getProvider()).isEqualTo("mock");
+            assertThat(offer.getOriginCity()).isNotBlank();
+            assertThat(offer.getOriginCountry()).isNotBlank();
+            assertThat(offer.getDestinationCity()).isNotBlank();
+            assertThat(offer.getDestinationCountry()).isNotBlank();
+            assertThat(offer.getOriginCountryCode()).hasSize(2);
+            assertThat(offer.getDestinationCountryCode()).hasSize(2);
+            assertThat(offer.getOriginAirport()).isNotBlank();
+            assertThat(offer.getDestinationAirport()).isNotBlank();
+        });
     }
 }

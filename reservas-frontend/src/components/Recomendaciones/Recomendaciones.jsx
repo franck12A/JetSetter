@@ -7,6 +7,7 @@ import { FaHeart, FaRegHeart, FaShareAlt } from "react-icons/fa";
 
 import { normalizeAirlineName } from "../../utils/flightMetadata";
 import CarouselCard from "../CarouselCard/CarouselCard";
+import { formatFlightLocation, formatFlightRoute } from "../../utils/flightLocations";
 import { addFavorite, getUserFavorites, removeFavorite } from "../../services/favoritesApi";
 
 import "swiper/css";
@@ -188,8 +189,8 @@ export default function Recomendaciones({ vuelos = [], onShare }) {
                     >
                       <CarouselCard
                         image={v.imagenPrincipal}
-                        subtitle={`${v.origen} -> ${v.destino}`}
-                        title={v.destino}
+                        subtitle={formatFlightRoute(v)}
+                        title={formatFlightLocation(v, "destination")}
                         price={v.precioTotal}
                         tag={v.provider === "mock" ? "Modo demo · datos simulados" : undefined}
                         actions={

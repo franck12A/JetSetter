@@ -3,6 +3,7 @@ import React from "react";
 import { FaPlane } from "react-icons/fa";
 import { normalizeAirlineName } from "../utils/flightMetadata";
 import { getSafeIcon } from "../utils/iconRegistry";
+import { formatFlightLocation, formatFlightRoute } from "../utils/flightLocations";
 
 export default function VueloCard({
   vuelo,
@@ -50,9 +51,9 @@ export default function VueloCard({
     primerSegmento.flight_number ||
     "No disponible";
   const precio = vuelo.precioTotal || vuelo.price || 0;
-  const origen = vuelo.origen || vuelo.name || "-";
-  const destino = vuelo.destino || "-";
-  const paisDestino = vuelo.paisDestino || vuelo.country || "-";
+  const origen = formatFlightLocation(vuelo, "origin");
+  const destino = formatFlightLocation(vuelo, "destination");
+  const ruta = formatFlightRoute(vuelo);
 
   if (miniCard) {
     return (
@@ -89,8 +90,8 @@ export default function VueloCard({
         <div className="vuelo-icono">
           <Icon size={50} />
         </div>
-        <h4>{esApi ? `${origen} -> ${destino}` : origen}</h4>
-        <p>{paisDestino}</p>
+        <h4>{esApi ? ruta : origen}</h4>
+        <p>{vuelo.destination || vuelo.destino || "-"}</p>
         <p>Salida: {fechaSalida}</p>
       </div>
     );
@@ -106,14 +107,14 @@ export default function VueloCard({
         />
       )}
 
-      <h3>{esApi ? `${origen} -> ${destino}` : origen}</h3>
+      <h3>{esApi ? ruta : origen}</h3>
       <p>Aerolinea: {aerolinea}</p>
       <p>Numero de vuelo: {numeroVuelo}</p>
       <p>Precio: ${precio}</p>
       <p>Duracion: {vuelo.caracteristicas?.[0] || "-"}</p>
       <p>Clase: {vuelo.caracteristicas?.[1] || "-"}</p>
       <p>Equipaje: {vuelo.caracteristicas?.[2] || "-"}</p>
-      <p>Pais destino: {paisDestino}</p>
+      <p>Destino: {destino}</p>
       <p>Salida: {fechaSalida}</p>
       <p>Llegada: {fechaLlegada}</p>
 

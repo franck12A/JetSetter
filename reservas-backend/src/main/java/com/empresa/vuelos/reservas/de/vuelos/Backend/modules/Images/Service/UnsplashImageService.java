@@ -14,11 +14,10 @@ import org.springframework.web.client.RestTemplate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -33,7 +32,8 @@ public class UnsplashImageService {
     private final String appName;
 
     private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
-    private final Map<String, CacheEntry> countryCache = new ConcurrentHashMap<>();
+    private final Map<String, CacheEntry> destinationCache = new ConcurrentHashMap<>();
+    private final Map<String, CompletableFuture<List<ImageResultDTO>>> inFlightRequests = new ConcurrentHashMap<>();
     private final Duration cacheTtl = Duration.ofHours(24);
 
     public UnsplashImageService(
@@ -49,69 +49,66 @@ public class UnsplashImageService {
     }
 
     public List<ImageResultDTO> search(String query, int count) {
-        if (count <= 0) return List.of();
-        if (accessKey == null || accessKey.isBlank()) return List.of();
+        if (!isAvailable(count)) return List.of();
 
-        String trimmedQuery = query == null ? "" : query.trim();
+        String trimmedQuery = trim(query);
         if (trimmedQuery.isBlank()) return List.of();
 
-        int safeCount = Math.min(Math.max(count, 1), MAX_COUNT);
-        String cacheKey = trimmedQuery.toLowerCase(Locale.ROOT) + ":" + safeCount;
-
-        CacheEntry cached = cache.get(cacheKey);
-        if (cached != null && !cached.isExpired(cacheTtl)) {
-            return cached.items;
-        }
-
-        try {
-            List<ImageResultDTO> items = fetchFromUnsplash(trimmedQuery, safeCount);
-            List<ImageResultDTO> safeItems = List.copyOf(items);
-            cache.put(cacheKey, new CacheEntry(safeItems, Instant.now()));
-            return safeItems;
-        } catch (Exception ex) {
-            return List.of();
-        }
+        int safeCount = safeCount(count);
+        String normalizedQuery = normalize(trimmedQuery);
+        return getOrFetch(cache, normalizedQuery, normalizedQuery, normalizedQuery, trimmedQuery, safeCount);
     }
 
-    public List<ImageResultDTO> getCountryImages(String countryKey, String query, int count) {
-        if (count <= 0) return List.of();
-        if (accessKey == null || accessKey.isBlank()) return List.of();
+    public List<ImageResultDTO> getCountryImages(String country, String query, int count) {
+        return getCountryImages(country, "", query, count);
+    }
 
-        String trimmedQuery = query == null ? "" : query.trim();
-        if (trimmedQuery.isBlank()) return List.of();
+    public List<ImageResultDTO> getCountryImages(String country, String city, String query, int count) {
+        if (!isAvailable(count)) return List.of();
 
-        int safeCount = Math.min(Math.max(count, 1), MAX_COUNT);
-        String normalizedKey = normalizeCountryKey(countryKey, trimmedQuery);
+        String trimmedCountry = trim(country);
+        String trimmedCity = trim(city);
+        String trimmedQuery = trim(query);
+        if (trimmedCountry.isBlank() || trimmedQuery.isBlank()) return List.of();
 
-        CacheEntry cached = countryCache.get(normalizedKey);
-        List<ImageResultDTO> base = new ArrayList<>();
-        if (cached != null && !cached.isExpired(cacheTtl)) {
-            base.addAll(cached.items);
+        int safeCount = safeCount(count);
+        String destinationKey = destinationKey(trimmedCountry, trimmedCity);
+        String normalizedQuery = normalize(trimmedQuery);
+        String inFlightKey = destinationKey + "|" + normalizedQuery;
+        return getOrFetch(destinationCache, destinationKey, inFlightKey, normalizedQuery, trimmedQuery, safeCount);
+    }
+
+    private List<ImageResultDTO> getOrFetch(
+            Map<String, CacheEntry> targetCache,
+            String cacheKey,
+            String inFlightKey,
+            String normalizedQuery,
+            String fetchQuery,
+            int count
+    ) {
+        CacheEntry cached = targetCache.get(cacheKey);
+        if (cached != null && cached.canServe(normalizedQuery, count, cacheTtl)) {
+            return cached.itemsFor(count);
         }
 
-        if (base.size() < safeCount) {
-            int missing = safeCount - base.size();
-            List<ImageResultDTO> fresh = search(trimmedQuery, missing);
-            Set<String> seen = new HashSet<>();
-            for (ImageResultDTO item : base) {
-                if (item.getUrl() != null) {
-                    seen.add(item.getUrl());
-                }
+        CompletableFuture<List<ImageResultDTO>> newRequest = new CompletableFuture<>();
+        CompletableFuture<List<ImageResultDTO>> request = inFlightRequests.putIfAbsent(inFlightKey, newRequest);
+
+        if (request == null) {
+            request = newRequest;
+            try {
+                List<ImageResultDTO> items = List.copyOf(fetchFromUnsplash(fetchQuery, count));
+                targetCache.put(cacheKey, new CacheEntry(normalizedQuery, items, count, Instant.now()));
+                request.complete(items);
+            } catch (Exception ex) {
+                // The frontend owns the local-country and avionsito fallbacks.
+                request.complete(List.of());
+            } finally {
+                inFlightRequests.remove(inFlightKey, request);
             }
-            for (ImageResultDTO item : fresh) {
-                if (item.getUrl() == null) continue;
-                if (seen.add(item.getUrl())) {
-                    base.add(item);
-                }
-            }
         }
 
-        List<ImageResultDTO> stored = List.copyOf(base);
-        countryCache.put(normalizedKey, new CacheEntry(stored, Instant.now()));
-        if (stored.size() <= safeCount) {
-            return stored;
-        }
-        return stored.subList(0, safeCount);
+        return limit(request.join(), count);
     }
 
     private List<ImageResultDTO> fetchFromUnsplash(String query, int count) throws Exception {
@@ -156,12 +153,28 @@ public class UnsplashImageService {
         return items;
     }
 
-    private String normalizeCountryKey(String countryKey, String fallback) {
-        String key = countryKey == null ? "" : countryKey.trim();
-        if (key.isBlank()) {
-            key = fallback == null ? "" : fallback.trim();
-        }
-        return key.toLowerCase(Locale.ROOT);
+    private boolean isAvailable(int count) {
+        return count > 0 && accessKey != null && !accessKey.isBlank();
+    }
+
+    private int safeCount(int count) {
+        return Math.min(Math.max(count, 1), MAX_COUNT);
+    }
+
+    private String destinationKey(String country, String city) {
+        return normalize(country) + "|" + normalize(city);
+    }
+
+    private String normalize(String value) {
+        return trim(value).toLowerCase(Locale.ROOT);
+    }
+
+    private String trim(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private List<ImageResultDTO> limit(List<ImageResultDTO> items, int count) {
+        return items.size() <= count ? items : items.subList(0, count);
     }
 
     private String withUtm(String url) {
@@ -172,16 +185,26 @@ public class UnsplashImageService {
     }
 
     private static class CacheEntry {
+        private final String query;
         private final List<ImageResultDTO> items;
+        private final int requestedCount;
         private final Instant createdAt;
 
-        private CacheEntry(List<ImageResultDTO> items, Instant createdAt) {
+        private CacheEntry(String query, List<ImageResultDTO> items, int requestedCount, Instant createdAt) {
+            this.query = query;
             this.items = items;
+            this.requestedCount = requestedCount;
             this.createdAt = createdAt;
         }
 
-        private boolean isExpired(Duration ttl) {
-            return createdAt.plus(ttl).isBefore(Instant.now());
+        private boolean canServe(String requestedQuery, int requestedCount, Duration ttl) {
+            return query.equals(requestedQuery)
+                    && this.requestedCount >= requestedCount
+                    && !createdAt.plus(ttl).isBefore(Instant.now());
+        }
+
+        private List<ImageResultDTO> itemsFor(int count) {
+            return items.size() <= count ? items : items.subList(0, count);
         }
     }
 }

@@ -35,6 +35,7 @@ import { getProductBookedDates, getUserBookings } from "../../services/bookingsA
 import { createReview, getProductReviews } from "../../services/reviewsApi";
 import { normalizeAirlineName } from "../../utils/flightMetadata";
 import { getVueloImage } from "../../utils/images";
+import { formatFlightLocation } from "../../utils/flightLocations";
 import { getSafeIcon } from "../../utils/iconRegistry";
 import "react-day-picker/style.css";
 import "./DetalleVuelo.css";
@@ -304,7 +305,9 @@ const buildComputedFeatures = (vuelo) => {
     items.push({ label, value: cleaned, iconName: label });
   };
 
-  const route = vuelo.origen && vuelo.destino ? `${vuelo.origen} -> ${vuelo.destino}` : "";
+  const route = vuelo.origen && vuelo.destino
+    ? `${formatFlightLocation(vuelo, "origin")} -> ${formatFlightLocation(vuelo, "destination")}`
+    : "";
   addItem("Ruta", route);
   addItem("Aerolínea", vuelo.aerolinea);
   addItem("Número de vuelo", vuelo.numeroVuelo);
@@ -1217,7 +1220,7 @@ export default function DetalleVuelo() {
           className="dv-hero"
           style={{ backgroundImage: `url("${heroImage}")` }}
           role="img"
-          aria-label={`Vuelo ${vuelo.origen} a ${vuelo.destino}`}
+          aria-label={`Vuelo ${formatFlightLocation(vuelo, "origin")} a ${formatFlightLocation(vuelo, "destination")}`}
         >
           <div className="dv-hero-overlay" />
           <div className="dv-hero-topbar">
