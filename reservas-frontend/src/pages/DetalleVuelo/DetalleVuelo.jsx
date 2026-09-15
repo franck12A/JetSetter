@@ -851,7 +851,7 @@ export default function DetalleVuelo() {
 
       let data = null;
       const stateVuelo = location.state?.vuelo || null;
-      const isDuffelOffer = String(stateVuelo?.provider || "").toLowerCase() === "duffel" || String(stateVuelo?.id || "").startsWith("duffel:");
+      const isFlightApiOffer = String(stateVuelo?.provider || "").toLowerCase() === "flightapi" || String(stateVuelo?.id || "").startsWith("flightapi:");
       const stateLocalId = Number(stateVuelo?.productId ?? stateVuelo?.id);
       const detailId = Number(id);
 
@@ -870,7 +870,7 @@ export default function DetalleVuelo() {
         }
       }
 
-      if (!data && !isDuffelOffer) {
+      if (!data && !isFlightApiOffer) {
         try {
           data = await productService.obtenerVueloPorIdAPI(id);
         } catch {

@@ -21,9 +21,9 @@ class FlightControllerTest {
     void exposesTheNewSearchEndpointUsingJetSetterDtos() throws Exception {
         FlightSearchService service = mock(FlightSearchService.class);
         FlightOfferResponse offer = new FlightOfferResponse();
-        offer.setId("duffel:off_123");
-        offer.setProvider("duffel");
-        offer.setExternalId("duffel:off_123");
+        offer.setId("flightapi:it_123");
+        offer.setProvider("flightapi");
+        offer.setExternalId("flightapi:it_123");
         when(service.search(any())).thenReturn(List.of(offer));
         MockMvc mvc = MockMvcBuilders.standaloneSetup(new FlightController(service))
                 .setControllerAdvice(new ApiExceptionHandler()).build();
@@ -34,8 +34,8 @@ class FlightControllerTest {
                         .param("fecha", "2026-12-10")
                         .param("pasajeros", "2"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].provider").value("duffel"))
-                .andExpect(jsonPath("$[0].externalId").value("duffel:off_123"));
+                .andExpect(jsonPath("$[0].provider").value("flightapi"))
+                .andExpect(jsonPath("$[0].externalId").value("flightapi:it_123"));
     }
 
     @Test

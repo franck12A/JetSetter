@@ -56,7 +56,7 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20, pasajeros = 1) => {
   const token = obtenerToken();
 
   try {
-    // Duffel requires a concrete route and departure date; it has no random-flight endpoint.
+    // FlightAPI requires a concrete route and departure date.
     if (!origen || !destino || !fecha) return [];
     const endpoint = "/api/flights/search";
     const params = { origen, destino, fecha, pasajeros, limit };
@@ -137,7 +137,7 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20, pasajeros = 1) => {
 
  obtenerVueloPorIdAPI: async (id, provider) => {
    if (!id) return null;
-   if (String(provider || "").toLowerCase() === "duffel" || String(id).startsWith("duffel:")) return null;
+  if (String(provider || "").toLowerCase() === "flightapi" || String(id).startsWith("flightapi:")) return null;
 
    const token = obtenerToken();
 

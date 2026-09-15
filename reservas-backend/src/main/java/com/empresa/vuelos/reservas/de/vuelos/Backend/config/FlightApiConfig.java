@@ -6,10 +6,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 
 @Configuration
-@EnableConfigurationProperties(DuffelProperties.class)
-public class DuffelConfig {
+@EnableConfigurationProperties(FlightApiProperties.class)
+public class FlightApiConfig {
     @Bean
-    RestClient duffelRestClient(RestClient.Builder builder, DuffelProperties properties) {
+    RestClient flightApiRestClient(RestClient.Builder builder, FlightApiProperties properties) {
         return builder.baseUrl(properties.normalizedBaseUrl()).build();
     }
 }

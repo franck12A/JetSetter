@@ -20,7 +20,7 @@ class FlightSearchServiceTest {
         FlightSearchService service = new FlightSearchService(provider);
         FlightSearchCriteria criteria = new FlightSearchCriteria("eze", "mad", LocalDate.of(2026, 12, 10), 2);
         FlightOfferResponse offer = new FlightOfferResponse();
-        offer.setExternalId("duffel:off_123");
+        offer.setExternalId("flightapi:it_123");
         when(provider.search(criteria)).thenReturn(List.of(offer));
 
         List<FlightOfferResponse> result = service.search(criteria);

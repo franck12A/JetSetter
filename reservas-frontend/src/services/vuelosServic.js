@@ -105,7 +105,7 @@ export const obtenerVuelos = async (origen, destino, fecha, pasajeros = 1) => {
 // ---------------- OBTENER VUELO POR ID ----------------
 export const obtenerVueloPorId = async (id) => {
   if (!id) return null;
-  if (String(id).startsWith("duffel:")) return null;
+  if (String(id).startsWith("flightapi:")) return null;
 
   const token = obtenerToken();
 
