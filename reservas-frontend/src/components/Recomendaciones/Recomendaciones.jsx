@@ -5,7 +5,6 @@ import { Navigation, Pagination, A11y, Autoplay } from "swiper/modules";
 import { Link } from "react-router-dom";
 import { FaHeart, FaRegHeart, FaShareAlt } from "react-icons/fa";
 
-import productService from "../../services/productService";
 import { normalizeAirlineName } from "../../utils/flightMetadata";
 import CarouselCard from "../CarouselCard/CarouselCard";
 import { addFavorite, getUserFavorites, removeFavorite } from "../../services/favoritesApi";
@@ -50,28 +49,9 @@ export default function Recomendaciones({ vuelos = [], onShare }) {
   };
 
   useEffect(() => {
-    // si vienen vuelos por props, los usamos directamente
-    if (vuelos && vuelos.length > 0) {
-      setProductos(vuelos);
-      setLoading(false);
-      return;
-    }
-
-    const loadProductos = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const data = await productService.getRandomProducts(MAX_RECOS);
-        setProductos(data);
-      } catch (err) {
-        console.error("Error al cargar productos:", err);
-        setError("No se pudieron cargar las recomendaciones");
-        setProductos([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadProductos();
+    setProductos(Array.isArray(vuelos) ? vuelos : []);
+    setError("");
+    setLoading(false);
   }, [vuelos]);
 
   useEffect(() => {
@@ -211,6 +191,7 @@ export default function Recomendaciones({ vuelos = [], onShare }) {
                         subtitle={`${v.origen} -> ${v.destino}`}
                         title={v.destino}
                         price={v.precioTotal}
+                        tag={v.provider === "mock" ? "Modo demo · datos simulados" : undefined}
                         actions={
                           <>
                             <button

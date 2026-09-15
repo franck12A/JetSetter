@@ -67,13 +67,19 @@ export default function Home() {
   const [shareData, setShareData] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
 
-  // Traer vuelos desde la API real
+  // Cargar productos locales y el catalogo demo sin persistir vuelos ficticios.
   const fetchVuelos = async () => {
     try {
-      const [productos, externalFlights] = await Promise.all([
+      const [productosResult, demoFlightsResult] = await Promise.allSettled([
         productService.getAllProducts(),
-        productService.obtenerVuelosAPI(null, null, null, 20),
+        productService.obtenerVuelosDemo(),
       ]);
+      const productos = productosResult.status === "fulfilled" ? productosResult.value : [];
+      const demoFlights = demoFlightsResult.status === "fulfilled" ? demoFlightsResult.value : [];
+
+      if (demoFlightsResult.status === "rejected") {
+        console.warn("No se pudo cargar el catalogo demo de vuelos:", demoFlightsResult.reason);
+      }
 
       const productosLocales = (Array.isArray(productos) ? productos : [])
         .filter((p) => !p.externalId);
@@ -90,7 +96,7 @@ export default function Home() {
         precioTotal: p.price,
       }));
 
-      const vuelosExternos = Array.isArray(externalFlights) ? externalFlights : [];
+      const vuelosExternos = Array.isArray(demoFlights) ? demoFlights : [];
       const merged = [...vuelosBd, ...vuelosExternos].map((vuelo) => ({
         ...vuelo,
         categorias: inferFlightCategories(vuelo),
@@ -128,7 +134,24 @@ export default function Home() {
         console.error("Error al obtener resúmenes de valoraciones:", err);
       }
 
-      setVuelos(dedup);
+      const vuelosConImagenes = await Promise.all(
+        dedup.map(async (vuelo) => {
+          if (vuelo.provider !== "mock" || vuelo.imagenPrincipal !== "/assets/avionsito.png") return vuelo;
+          try {
+            const images = await productService.getCountryImages({
+              country: vuelo.destino,
+              query: vuelo.destino,
+              count: 1,
+            });
+            return images[0]?.url ? { ...vuelo, imagenPrincipal: images[0].url } : vuelo;
+          } catch (imageError) {
+            console.warn("No se pudo cargar la imagen del destino demo:", imageError);
+            return vuelo;
+          }
+        })
+      );
+
+      setVuelos(vuelosConImagenes);
     } catch (err) {
       console.error("Error al obtener vuelos desde productService:", err);
     }

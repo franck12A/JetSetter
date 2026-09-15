@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -27,6 +28,21 @@ public class MockFlightProvider implements FlightProvider {
         String queriedAt = Instant.now().toString();
         return IntStream.range(0, AIRLINES.length)
                 .mapToObj(index -> createOffer(criteria, index, queriedAt))
+                .toList();
+    }
+
+    public List<FlightOfferResponse> demoCatalog() {
+        LocalDate departureDate = LocalDate.now().plusDays(14);
+        List<FlightSearchCriteria> routes = List.of(
+                new FlightSearchCriteria("EZE", "MAD", departureDate, 1),
+                new FlightSearchCriteria("EZE", "CDG", departureDate, 1),
+                new FlightSearchCriteria("EZE", "JFK", departureDate, 1),
+                new FlightSearchCriteria("EZE", "FCO", departureDate, 1),
+                new FlightSearchCriteria("EZE", "GRU", departureDate, 1),
+                new FlightSearchCriteria("EZE", "NRT", departureDate, 1));
+
+        return IntStream.range(0, routes.size())
+                .mapToObj(index -> createOffer(routes.get(index), index, Instant.now().toString()))
                 .toList();
     }
 

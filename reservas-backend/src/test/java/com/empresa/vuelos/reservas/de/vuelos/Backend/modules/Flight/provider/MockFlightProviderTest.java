@@ -28,4 +28,16 @@ class MockFlightProviderTest {
             assertThat(offer.getSegments()).hasSize(1);
         });
     }
+
+    @Test
+    void demoCatalogHasSixDistinctDestinations() {
+        MockFlightProvider provider = new MockFlightProvider();
+
+        List<FlightOfferResponse> offers = provider.demoCatalog();
+
+        assertThat(offers).hasSize(6);
+        assertThat(offers).extracting(FlightOfferResponse::getDestination)
+                .doesNotHaveDuplicates();
+        assertThat(offers).allMatch(offer -> "mock".equals(offer.getProvider()));
+    }
 }

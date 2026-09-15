@@ -264,6 +264,52 @@ obtenerVuelosAPI: async (origen, destino, fecha, limit = 20, pasajeros = 1) => {
     return data;
   },
 
+  obtenerVuelosDemo: async () => {
+    const { data } = await axios.get(`${API_URL}/api/flights/demo`, { headers: getHeaders() });
+    if (!Array.isArray(data)) return [];
+
+    return data.map((vuelo) => {
+      const segmentos = Array.isArray(vuelo.segmentos) ? vuelo.segmentos : [];
+      const primerSegmento = segmentos[0] || {};
+      const airlineName = normalizeAirlineName(
+        vuelo.airlineName || vuelo.aerolinea || primerSegmento.airlineName || primerSegmento.aerolinea
+      );
+      const flightNumber = vuelo.flightNumber || vuelo.numeroVuelo || primerSegmento.flightNumber || primerSegmento.numeroVuelo || "No disponible";
+      const departureAt = vuelo.departureAt || vuelo.fechaSalida || primerSegmento.departureAt || primerSegmento.salida;
+      const arrivalAt = vuelo.arrivalAt || vuelo.fechaLlegada || primerSegmento.arrivalAt || primerSegmento.llegada;
+
+      return {
+        ...vuelo,
+        id: vuelo.id,
+        productId: null,
+        provider: "mock",
+        source: "mock",
+        isExternal: true,
+        airlineName,
+        flightNumber,
+        aerolinea: airlineName,
+        numeroVuelo: flightNumber,
+        precioTotal: vuelo.totalAmount ?? vuelo.precioTotal ?? 0,
+        categorias: ["Demo"],
+        caracteristicas: ["Modo demo · datos simulados", "Clase: Economy", "Equipaje incluido: No"],
+        imagenPrincipal: vuelo.imagenPrincipal || "/assets/avionsito.png",
+        origen: vuelo.origin || vuelo.origen || "-",
+        destino: vuelo.destination || vuelo.destino || "-",
+        fechaSalida: departureAt,
+        fechaLlegada: arrivalAt,
+        fechaRaw: departureAt,
+        segmentos: segmentos.map((segmento) => ({
+          airlineName: normalizeAirlineName(segmento.airlineName || segmento.aerolinea),
+          flightNumber: segmento.flightNumber || segmento.numeroVuelo || "No disponible",
+          aerolinea: normalizeAirlineName(segmento.airlineName || segmento.aerolinea),
+          numeroVuelo: segmento.flightNumber || segmento.numeroVuelo || "No disponible",
+          salida: segmento.departureAt || segmento.salida,
+          llegada: segmento.arrivalAt || segmento.llegada,
+        })),
+      };
+    });
+  },
+
   getRandomFlightsPaged: async (page = 0, size = 20) => {
     const token = obtenerToken();
     const { data } = await axios.get(`${API_URL}/amadeus/random/paged`, {
