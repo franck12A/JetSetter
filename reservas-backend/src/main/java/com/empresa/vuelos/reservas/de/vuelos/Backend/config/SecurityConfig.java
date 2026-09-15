@@ -17,19 +17,24 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
-    private final String frontendUrl;
+    private final List<String> frontendOrigins;
 
     public SecurityConfig(JwtAuthenticationFilter jwtFilter,
-                          @Value("${FRONTEND_URL:http://localhost:5173}") String frontendUrl) {
+                          @Value("${FRONTEND_URLS:https://jet-setter.vercel.app,https://jet-setter-keqev4wtk-franck12as-projects.vercel.app}") String frontendUrls) {
         this.jwtFilter = jwtFilter;
-        this.frontendUrl = frontendUrl;
+        this.frontendOrigins = Arrays.stream(frontendUrls.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isBlank())
+                .toList();
     }
 
     @Bean
@@ -38,10 +43,13 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
-                    config.setAllowedOriginPatterns(List.of(frontendUrl, "http://localhost:*", "http://127.0.0.1:*"));
+                    List<String> allowedOrigins = Stream.concat(
+                            frontendOrigins.stream(),
+                            Stream.of("http://localhost:*", "http://127.0.0.1:*")
+                    ).toList();
+                    config.setAllowedOriginPatterns(allowedOrigins);
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(List.of("*"));
-                    config.setExposedHeaders(List.of("*"));
                     config.setAllowCredentials(true);
                     return config;
                 }))
